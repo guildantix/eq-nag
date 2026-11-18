@@ -3009,8 +3009,38 @@ export class IpcService {
         } );
     }
 
-    public showPushRecap( logFilePath: string, characterName: string, serverName: string, recap?: PushRecapSummary, saved?: boolean ): void {
-        let message = new IpcMessage( { logFilePath: logFilePath, characterName: characterName, serverName: serverName, recap: recap, saved: saved } );
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the Push Recap pop-up, for the last kill in a character's log or for a saved fight.
+     *
+     * @param logFilePath The log file to read.
+     * @param characterName The character the log belongs to.
+     * @param serverName The character's server.
+     * @param recap The saved summary to show as a snapshot, instead of reading the log.
+     * @param saved True when the snapshot is one of the saved recaps.
+     */
+    public showPushRecap(
+        logFilePath: string,
+        characterName: string,
+        serverName: string,
+        recap?: PushRecapSummary,
+        saved?: boolean,
+    ): void {
+        const message = new IpcMessage( {
+            logFilePath: logFilePath,
+            characterName: characterName,
+            serverName: serverName,
+            recap: recap,
+            saved: saved,
+        } );
         window.api.ipc.send( 'window:push-recap', message );
     }
 

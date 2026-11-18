@@ -310,12 +310,39 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         this.ipcService.showPushRecap( character.logFile, character.name, character.server );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the selected fight in the pop-up as a snapshot, so the pop-up shows what the tab shows.
+     */
     public openSelectedFight(): void {
-        if ( this.detail != null && this.selected != null ) {
+        if ( this.detail !== null && this.detail !== undefined && this.selected !== null && this.selected !== undefined ) {
             this.ipcService.showPushRecap( '', this.detail.characterName, '', this.detail, this.source === 'saved' || this.isSaved( this.selected ) );
         }
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows the push of one proc hit, as a range when the landing message fits spells
+     * with different values.
+     *
+     * @param proc The proc to describe.
+     */
     public procPush( proc: PushRecapProc ): string {
         if ( proc.pushMin === null || proc.pushMin === undefined ) {
             return '-';
@@ -466,21 +493,62 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Picks the recap whose details are shown, and scrolls its row into view.
+     *
+     * @param recap The recap that was clicked.
+     * @param event The click event, used to find the row.
+     */
     public select( recap: PushRecapSummary, event: Event ): void {
-        let row = event.currentTarget as HTMLElement;
+        const row = event.currentTarget as HTMLElement;
         this.selected = recap;
         this.loadDetail();
         setTimeout( () => row.scrollIntoView( { block: 'nearest' } ) );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Closes the docked details panel and drops the selection.
+     */
     public closeDetails(): void {
         this.selected = null;
         this.loadDetail();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Labels a spell column in the grid with its push value, when it has one.
+     *
+     * @param spell The spell name.
+     */
     public spellHeader( spell: string ): string {
-        let push = this.gridSpellPush.get( spell );
-        return push == null ? spell : `${spell} (${push})`;
+        const push = this.gridSpellPush.get( spell );
+        return ( push === null || push === undefined ) ? spell : `${spell} (${push})`;
     }
 
 

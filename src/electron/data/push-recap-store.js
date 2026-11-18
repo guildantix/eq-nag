@@ -61,11 +61,12 @@ const maxNpcAbilities = 100;
  * @property {number} pushValue The total push value.
  * @property {string | null} topPusher The player with the most events.
  * @property {PushRecapPlayerSummary[]} players The players that pushed.
- * @property {{ events: number, pushValue: number, procs?: PushRecapProc[] }} unattributed The events with no player.
+ * @property {{ events: number, pushValue: number, procs?: PushRecapProc[] }} unattributed
+ *     The events with no player.
  * @property {PushRecapNpcAbility[]} [npcAbilities] The push abilities the NPCs used.
  * @property {boolean} [othersSeen] True when hits from other players were in the log.
- * @property {boolean} [startsAtLogEdge] True when the fight may have started before the part of the log that was read.
- * @property {boolean} [reachedStart] True when the part of the log that was read began at the start of the log.
+ * @property {boolean} [startsAtLogEdge] True when the fight may have begun before the part read.
+ * @property {boolean} [reachedStart] True when the part read began at the start of the log.
  */
 
 
@@ -182,7 +183,7 @@ function sanitize( data ) {
     const unattributed = { events: toCount( data.unattributed?.events ), pushValue: toCount( data.unattributed?.pushValue ) };
     if ( Array.isArray( data.unattributed?.procs ) ) {
         unattributed.procs = data.unattributed.procs.slice( 0, maxProcs ).map( p => {
-            let proc = {
+            const proc = {
                 name: toText( p?.name ),
                 push: toOptionalCount( p?.push ),
                 pushMin: toOptionalCount( p?.pushMin ),
@@ -196,7 +197,7 @@ function sanitize( data ) {
         } );
     }
 
-    let summary = {
+    const summary = {
         id: typeof data.id === 'string' && data.id !== '' ? data.id.substring( 0, 64 ) : crypto.randomUUID(),
         savedAt: new Date().toISOString(),
         characterName: toText( data.characterName ),
@@ -214,7 +215,9 @@ function sanitize( data ) {
     };
 
     if ( Array.isArray( data.npcAbilities ) ) {
-        summary.npcAbilities = data.npcAbilities.slice( 0, maxNpcAbilities ).map( a => ( { actor: toText( a?.actor ), name: toText( a?.name ), count: toCount( a?.count ), push: toCount( a?.push ) } ) );
+        summary.npcAbilities = data.npcAbilities.slice( 0, maxNpcAbilities ).map( a => {
+            return { actor: toText( a?.actor ), name: toText( a?.name ), count: toCount( a?.count ), push: toCount( a?.push ) };
+        } );
     }
     [ 'othersSeen', 'startsAtLogEdge', 'reachedStart' ].forEach( key => {
         if ( typeof data[ key ] === 'boolean' ) {
@@ -349,7 +352,9 @@ class PushRecapStore {
         if ( !await this.#load() ) {
             return [];
         }
-        return this.#recaps.map( ( { players, npcAbilities, unattributed, ...row } ) => ( { ...row, unattributed: { events: unattributed.events, pushValue: unattributed.pushValue } } ) );
+        return this.#recaps.map( ( { players, npcAbilities, unattributed, ...row } ) => {
+            return { ...row, unattributed: { events: unattributed.events, pushValue: unattributed.pushValue } };
+        } );
     }
 
 
