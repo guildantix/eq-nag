@@ -986,7 +986,7 @@ button.connected-button {
     }
 }
 
-// Sub-tab rows inside a main tab (Combat, Features) are shorter and darker
+// Sub-tab rows inside a main tab (Combat) are shorter and darker
 // than the main tab bar, so they read as a second level instead of a copy of it.
 mat-tab-group.sub-tabs {
     > .mat-tab-header {
