@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTabChangeEvent } from '@angular/material/tabs';
 
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from '../dialog.service';
@@ -10,8 +11,8 @@ import { TriggerModel, ActionTypes, TriggerAction, OverlayWindowModel, OperatorT
 import { Observable } from 'rxjs';
 import { TriggerActionsComponent } from 'src/app/editors/trigger-actions/trigger-actions.component';
 
-/** Position of the Actions tab in the tab group, used to show its New button only on that tab. */
-const actionsTabIndex = 1;
+/** Label of the Actions tab, compared by label so inserting a tab never breaks the New button. */
+const actionsTabLabel = 'Actions';
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -124,10 +125,11 @@ export class TriggerDialogComponent implements OnInit {
 
     /**
      * Tracks the selected tab so the Actions tab's New button is only shown there.
-     * @param index Index of the newly selected tab.
+     *
+     * @param event Tab change event carrying the newly selected tab.
      */
-    public onChangeTabs( index: number ): void {
-        this.isActionsTabSelected = index === actionsTabIndex;
+    public onChangeTabs( event: MatTabChangeEvent ): void {
+        this.isActionsTabSelected = event.tab.textLabel === actionsTabLabel;
     }
 
 
