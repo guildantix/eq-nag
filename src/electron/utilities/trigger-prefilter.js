@@ -14,6 +14,8 @@ const maxLiteralLength = 16;
 // Matches a numeric quantifier such as {2} or {0,3} at the sticky position, but
 // not a shortcode such as {C}.  Example phrase: ^You gain (\d+) exp{2,4}\.$
 const braceQuantifier = /\{(\d+)(?:,\d*)?\}/y;
+// Matches a shortcode such as {C}, {N1}, {N>5} or {N(1,5)} at the sticky position.
+const braceShortcode = /\{[A-Za-z][^{}|]*\}/y;
 
 /**
  * Returns the literal a plain phrase needs in the log line, in lower case, or
@@ -61,9 +63,6 @@ function skipGroup( source, start ) {
             if ( position < 0 ) {
                 return -1;
             }
-        } else if ( character === '{' ) {
-            const close = source.indexOf( '}', position );
-            position = close < 0 ? position + 1 : close + 1;
         } else if ( character === '(' ) {
             depth++;
             position++;
@@ -116,6 +115,52 @@ function skipClass( source, start ) {
     }
 
     return -1;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the index after an escape that starts with a letter or digit, so
+ * the characters it takes as arguments are never read as literal text, or -1
+ * if the escape isn't complete.  Example: \x41, \u{41}, \p{L}, \k<who>, \12
+ *
+ * @param {string} source The regex source.
+ * @param {number} start The index of the backslash.
+ * @returns {number} The index after the escape, or -1.
+ */
+function skipLetterEscape( source, start ) {
+    const escaped = source[ start + 1 ];
+    let position = start + 2;
+
+    if ( /[0-9]/.test( escaped ) ) {
+        // Backreference or octal: swallowing every digit can only lose literal text.
+        while ( /[0-9]/.test( source[ position ] ?? '' ) ) {
+            position++;
+        }
+    } else if ( escaped === 'x' ) {
+        position += 2;
+    } else if ( escaped === 'c' ) {
+        position += 1;
+    } else if ( escaped === 'u' && source[ position ] !== '{' ) {
+        position += 4;
+    } else if ( escaped === 'u' || escaped === 'p' || escaped === 'P' || escaped === 'k' ) {
+        const opener = escaped === 'k' ? '<' : '{';
+        if ( source[ position ] !== opener ) {
+            // Without its argument it is a plain letter in a non-unicode regex; unknown either way.
+            return position;
+        }
+        const close = source.indexOf( escaped === 'k' ? '>' : '}', position );
+        return close < 0 ? -1 : close + 1;
+    }
+
+    return position > source.length ? -1 : position;
 }
 
 
@@ -181,11 +226,21 @@ function extractRegexLiterals( source ) {
         }
 
         if ( character === '{' ) {
-            // Shortcodes and quantifiers: skip to the closing brace.
-            const close = source.indexOf( '}', position );
+            // A shortcode such as {C} is skipped.  Any other brace group, for example
+            // {foo|bar}, can't be read for sure, so the phrase always runs.  A numeric
+            // quantifier never gets here: it is taken together with its atom below.
+            braceShortcode.lastIndex = position;
+            const match = braceShortcode.exec( source );
             endCurrentRun();
             atBranchStart = false;
-            position = close < 0 ? position + 1 : close + 1;
+            if ( match ) {
+                position += match[ 0 ].length;
+            } else if ( source.indexOf( '}', position ) < 0 ) {
+                // Never closed, so it is plain text in a regex.
+                position++;
+            } else {
+                return null;
+            }
             continue;
         }
 
@@ -221,7 +276,12 @@ function extractRegexLiterals( source ) {
             }
             const escaped = source[ position + 1 ];
             next = position + 2;
-            if ( escaped.charCodeAt( 0 ) < 128 && !/[A-Za-z0-9]/.test( escaped ) ) {
+            if ( /[A-Za-z0-9]/.test( escaped ) ) {
+                next = skipLetterEscape( source, position );
+                if ( next < 0 ) {
+                    return null;
+                }
+            } else if ( escaped.charCodeAt( 0 ) < 128 ) {
                 literal = escaped;
             }
         } else if ( character === '(' ) {

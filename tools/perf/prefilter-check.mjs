@@ -107,6 +107,28 @@ const regexCases = [
     [ 'nothing to repeat', '*bad', null ],
     [ 'double quantifier', 'a**b', null ],
     [ 'trailing backslash', 'abc\\', null ],
+    [ 'named backreference', '^(?<who>\\w+) heals \\k<who> for', [ ' heals ' ] ],
+    [ 'named backreference arguments are not literal', '(?<who>x)\\k<who>', null ],
+    [ 'hex escape', 'abc\\x27def', [ 'abc' ] ],
+    [ 'hex escape arguments are not literal', 'ab\\x27cd', null ],
+    [ 'unicode escape', 'abc\\u0041de', [ 'abc' ] ],
+    [ 'unicode escape arguments are not literal', 'ab\\u0041cd', null ],
+    [ 'unicode brace escape', 'ab\\u{41}defg', [ 'defg' ] ],
+    [ 'control escape', 'abc\\cJde', [ 'abc' ] ],
+    [ 'control escape argument is not literal', 'ab\\cJ', null ],
+    [ 'property escape', 'ab\\p{L}cdef', [ 'cdef' ] ],
+    [ 'negated property escape', 'ab\\P{Lu}cdef', [ 'cdef' ] ],
+    [ 'numeric backreference', 'ab\\1cdef', [ 'cdef' ] ],
+    [ 'multi digit backreference', 'ab\\12cdef', [ 'cdef' ] ],
+    [ 'octal escape', 'ab\\0cdef', [ 'cdef' ] ],
+    [ 'incomplete hex escape', 'abc\\x', null ],
+    [ 'unclosed property escape', 'abc\\p{L', null ],
+    [ 'brace group with alternation', 'abc{foo|bar}def', null ],
+    [ 'brace group that is not a shortcode', 'abc{ foo }def', null ],
+    [ 'brace group without digits before the comma', 'abcd{,3}', null ],
+    [ 'quantifier keeps one required char', 'abcd{2,3}ef', [ 'abcd' ] ],
+    [ 'zero lower bound drops the char', 'ab{0,3}cdef', [ 'cdef' ] ],
+    [ 'open ended zero bound drops the char', 'ab{0,}cdef', [ 'cdef' ] ],
 ];
 
 regexCases.forEach( ( [ label, source, expected ] ) => {
@@ -442,6 +464,12 @@ function fuzzExtractor( seed, patternCount ) {
         [ '\\D', () => 'k' ],
         [ '\\W', () => '-' ],
         [ '\\S', () => 'z' ],
+        [ '\\x27', () => '\'' ],
+        [ '\\u0041', () => 'A' ],
+        [ '\\u{41}', () => 'u'.repeat( 41 ) ],
+        [ '\\cJ', () => '\n' ],
+        [ '\\p{L}', () => 'p{L}' ],
+        [ '\\0', () => '\0' ],
     ];
     const escapeNode = () => {
         const [ source, make ] = pick( escapes );
@@ -499,6 +527,18 @@ function fuzzExtractor( seed, patternCount ) {
         return { source: node.source + suffix + lazy, make: () => Array.from( { length: count() }, () => node.make() ).join( '' ) };
     };
 
+    // A named group followed by a reference to it.  Names are unique per phrase.
+    let referenceCount = 0;
+    const backreferencePair = () => {
+        const name = 'ref' + ( referenceCount++ );
+        const word = Array.from( { length: int( 1, 4 ) }, () => pick( letters ) ).join( '' );
+        const separator = Array.from( { length: int( 2, 6 ) }, () => pick( letters + ' ' ) ).join( '' );
+        return {
+            source: '(?<' + name + '>' + word + ')' + escapeLiteral( separator ) + '\\k<' + name + '>',
+            make: () => word + separator + word,
+        };
+    };
+
     const alternation = ( depth, allowEmptyBranch ) => {
         const branches = Array.from( { length: int( 1, 3 ) }, () => sequence( depth, allowEmptyBranch ) );
         return { source: branches.map( b => b.source ).join( '|' ), make: () => pick( branches ).make() };
@@ -528,6 +568,9 @@ function fuzzExtractor( seed, patternCount ) {
         if ( r < 0.78 ) {
             return shortcodeNode();
         }
+        if ( r < 0.82 ) {
+            return backreferencePair();
+        }
         if ( depth < 2 ) {
             const g = group( depth );
             return chance( 0.4 ) ? quantify( g, true ) : g;
@@ -546,6 +589,17 @@ function fuzzExtractor( seed, patternCount ) {
 
     // Anchors go on every top-level branch; the generated instance is the same.
     const pattern = () => {
+        if ( chance( 0.06 ) ) {
+            // Without the u flag a brace group is plain text, so the pipe inside it
+            // splits the whole phrase: the two sides are "before{foo" and "bar}after".
+            const before = literalRun();
+            const after = literalRun();
+            return {
+                source: before.source + '{foo|bar}' + after.source,
+                make: () => ( chance( 0.5 ) ? before.make() + '{foo' : 'bar}' + after.make() ),
+            };
+        }
+
         const branches = Array.from( { length: int( 1, 3 ) }, () => sequence( 0, true ) );
         const start = chance( 0.3 ) ? '^' : '';
         const end = chance( 0.2 ) ? '$' : '';
