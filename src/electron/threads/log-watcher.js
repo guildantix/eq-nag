@@ -332,6 +332,7 @@ function LogWatcher(character, logPosition) {
         fileMonitor = new FileMonitor( character.logFile );
         logHistoryMgr.startBatchTriggerParseHistory();
         reportedInvalidPatternKeys.clear();
+        invalidPatternMessages.clear();
     }
 
     loadCachedStoredVariables( () => {
