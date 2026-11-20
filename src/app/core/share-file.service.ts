@@ -116,7 +116,11 @@ export class ShareFileService {
                     }
                 },
                 error: finish,
-                complete: () => received || finish(),
+                complete: () => {
+                    if ( !received ) {
+                        finish();
+                    }
+                },
             } );
         } catch ( error ) {
             finish();
@@ -235,22 +239,16 @@ export class ShareFileService {
         const size = isNaN( bytes ) ? null : this.formatSize( bytes );
         let message: string;
 
-        switch ( result.code ) {
-            case 'wrongType':
-                message = `${name} isn't a trigger file. Nag can import .nag, .zip and .json files.`;
-                break;
-            case 'tooLarge':
-                message = `${name} is ${size ? size + ', ' : ''}larger than a trigger file can be, so Nag didn't open it.`;
-                break;
-            case 'unpackTooLarge':
-                message = `${name} would unpack to ${size ?? 'a very large size'}, so Nag stopped before extracting it.`;
-                break;
-            case 'notNagFile':
-                message = `${name} doesn't contain Nag triggers. If someone sent it to you, ask them to save it again from Nag's share dialog.`;
-                break;
-            default:
-                message = `${name} is damaged and can't be read. Ask the sender to save it again.`;
-                break;
+        if ( result.code === 'wrongType' ) {
+            message = `${name} isn't a trigger file. Nag can import .nag, .zip and .json files.`;
+        } else if ( result.code === 'tooLarge' ) {
+            message = `${name} is ${size ? size + ', ' : ''}larger than a trigger file can be, so Nag didn't open it.`;
+        } else if ( result.code === 'unpackTooLarge' ) {
+            message = `${name} would unpack to ${size ?? 'a very large size'}, so Nag stopped before extracting it.`;
+        } else if ( result.code === 'notNagFile' ) {
+            message = `${name} doesn't contain Nag triggers. If someone sent it to you, ask them to save it again from Nag's share dialog.`;
+        } else {
+            message = `${name} is damaged and can't be read. Ask the sender to save it again.`;
         }
 
         return this.dialogService.showErrorDialog( 'Import from File', message ).pipe( map( () => undefined ) );

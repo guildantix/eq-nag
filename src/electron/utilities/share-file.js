@@ -371,7 +371,11 @@ function findUnknownActionKeys( payload ) {
         for ( const trigger of quickShare.model.triggers ) {
             for ( const action of trigger.actions ?? [] ) {
                 if ( isObject( action ) ) {
-                    Object.keys( action ).forEach( key => !known.has( key ) && unknown.add( key ) );
+                    Object.keys( action ).forEach( key => {
+                        if ( !known.has( key ) ) {
+                            unknown.add( key );
+                        }
+                    } );
                 }
             }
         }
