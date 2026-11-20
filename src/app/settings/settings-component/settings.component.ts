@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, Input, NgZone, OnDestroy, OnInit } from '
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { customAlphabet } from 'nanoid';
 import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys, SharedTriggerPermissions, DpsMeterSettings, FileReadDelays } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
@@ -44,6 +45,8 @@ const advancedStorageKey = 'nagSettingsAdvanced';
     selector: 'app-settings',
     templateUrl: 'settings.component.html', 
     styleUrls: [ 'settings.component.scss', '../../core.scss' ],
+    // Scoped here, not in app.module, so fields outside Settings keep the default label.
+    providers: [ { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { floatLabel: 'always' } } ],
 } )
 export class SettingsComponent implements OnInit, OnDestroy {
 

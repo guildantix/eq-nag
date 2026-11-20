@@ -18,7 +18,6 @@ import { ClassNamePipe } from './pipes/class-name.pipe';
 import { LocaleTimePipe } from './pipes/locale-time.pipe';
 import { WindowsModule } from './windows/windows.module';
 import { IpcService } from './ipc.service';
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { CoreModule } from './core/core.module';
 import { SettingsComponent } from './settings/settings-component/settings.component';
 import { SettingsService } from './settings/settings-http.service';
@@ -83,7 +82,6 @@ import { QuickActionsComponent } from './quick-actions/quick-actions.component';
         IpcService,
         SettingsService,
         SetupService,
-        { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { floatLabel: 'always' } },
     ],
     bootstrap: [ AppComponent ],
 } )

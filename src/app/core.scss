@@ -59,8 +59,8 @@ fieldset {
             margin:0 5px;
         }
         span.title {
-            font-size: 20px;
-            font-weight: 500;
+            font-size: 24px;
+            font-weight: 100;
         }
 
         span.material-symbols-outlined {
@@ -96,7 +96,7 @@ fieldset {
     }
 
     small {
-        font-weight: 400;
+        font-weight: 300;
         display: block;
     }
 
@@ -271,7 +271,7 @@ table {
             flex-flow: column nowrap;
 
             h3 {
-                font-weight: 500;
+                font-weight: 300;
                 color: #f1f1f1;
                 text-shadow: 1px 1px 10px #000, 1px 1px 10px #000;
                 padding-left: 1em;
@@ -412,11 +412,30 @@ table {
 ::ng-deep mat-form-field {
     .mat-hint {
         font-weight: normal;
-        font-size: 12px;
+        font-size: 10px;
+        padding-left: 5px;
     }
     .mat-form-field-label {
+        .mat-placeholder-required.mat-form-field-required-marker {
+            top: 10px;
+            position: absolute;
+            left: 3px;
+        }
         overflow: unset !important;
     }
+    .mat-form-field-infix {
+        padding-left: 5px !important;
+    }
+    .mat-form-field-underline {
+        .mat-form-field-ripple {
+            top: -2px;
+        }
+        height: 18px !important;
+        bottom: -6px !important;
+    }
+    border-radius: 3px;
+    padding: 5px 0;
+    margin: 5px 0;
 }
 
 .flex-layout {
@@ -523,7 +542,7 @@ fieldset.trigger-property-group {
             }
             > span {
                 padding: 5px;
-                font-weight: 400;
+                font-weight: 100;
                 font-size: 14px;
                 display: flex;
                 flex: 1;
@@ -627,7 +646,7 @@ mat-icon {
 mat-card {
     mat-card-header {
         mat-card-title {
-            font-weight: 500;
+            font-weight: 100;
             font-size: 24px;
         }
         background-color: #0000004a;
