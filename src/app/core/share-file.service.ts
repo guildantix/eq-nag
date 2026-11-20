@@ -157,15 +157,15 @@ export class ShareFileService {
 
         const newerVersion = result.warnings?.find( f => f.code === 'newerVersion' );
 
-        if ( newerVersion ) {
-            const unknownKeys = newerVersion.unknownKeys ?? [];
+        const unknownKeys = newerVersion?.unknownKeys ?? [];
+
+        // Nothing is lost when no setting is unrecognized, so a warning would only be noise.
+        if ( newerVersion && unknownKeys.length > 0 ) {
             const message = [
-                `This file was made with a newer version of Nag (${newerVersion.fileVersion}). It can still be imported, but ${unknownKeys.length} setting${unknownKeys.length === 1 ? '' : 's'} this version doesn't recognize ${unknownKeys.length === 1 ? 'is' : 'are'} kept and may not take effect.`,
+                `This file was made with a newer version of Nag (${newerVersion.fileVersion}). It can still be imported, but ${unknownKeys.length === 1 ? '1 setting' : unknownKeys.length + ' settings'} this version doesn't recognize ${unknownKeys.length === 1 ? 'is' : 'are'} kept and may not take effect.`,
             ];
 
-            if ( unknownKeys.length > 0 ) {
-                message.push( `Unrecognized: ${unknownKeys.join( ', ' )}` );
-            }
+            message.push( `Unrecognized: ${unknownKeys.join( ', ' )}` );
 
             return new Observable<void>( observer => {
                 this.dialogService
