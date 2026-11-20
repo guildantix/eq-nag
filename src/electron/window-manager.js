@@ -368,6 +368,7 @@ class WindowManager {
 
             if ( rendererOnTopId ) {
                 clearInterval( rendererOnTopId );
+                rendererOnTopId = null;
             }
         } );
 
@@ -379,7 +380,15 @@ class WindowManager {
         ipcMain.on( 'renderer:end-arrange-overlays', ( event ) => {
             this.#renderer.webContents.send( 'renderer:end-arrange-overlays' );
 
+            if ( rendererOnTopId ) {
+                clearInterval( rendererOnTopId );
+            }
             rendererOnTopId = setInterval( () => {
+                if ( this.#renderer?.isDestroyed() !== false ) {
+                    clearInterval( rendererOnTopId );
+                    rendererOnTopId = null;
+                    return;
+                }
                 this.#renderer.setAlwaysOnTop( true, "screen-saver" );
             }, 1000 );
         } );
@@ -474,6 +483,10 @@ class WindowManager {
             } );
 
             let moveInterval = setInterval( () => {
+                if ( overlayMoveDialog.isDestroyed() ) {
+                    clearInterval( moveInterval );
+                    return;
+                }
                 overlayMoveDialog.setAlwaysOnTop( true, "screen-saver" );
             }, 500 );
 
@@ -956,10 +969,22 @@ class WindowManager {
         this.#renderer = renderer;
 
         rendererOnTopId = setInterval( () => {
+            if ( this.#renderer?.isDestroyed() !== false ) {
+                clearInterval( rendererOnTopId );
+                rendererOnTopId = null;
+                return;
+            }
             this.#renderer.setAlwaysOnTop( true, "screen-saver" );
             this.#renderer.setVisibleOnAllWorkspaces( true );
             this.#renderer.setFullScreenable( false );
         }, 1000 );
+
+        renderer.once( 'closed', () => {
+            if ( rendererOnTopId ) {
+                clearInterval( rendererOnTopId );
+                rendererOnTopId = null;
+            }
+        } );
 
         // Reading the cursor here is cheap; the renderer used to ask for it
         // 30 times a second through @electron/remote, which cost CPU in both
@@ -1337,7 +1362,8 @@ class WindowManager {
      */
     unload() {
         if ( rendererOnTopId ) {
-            clearTimeout( rendererOnTopId );
+            clearInterval( rendererOnTopId );
+            rendererOnTopId = null;
         }
         if ( rendererCursorId ) {
             clearInterval( rendererCursorId );
