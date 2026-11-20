@@ -58,8 +58,10 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
     }
     
     public get maxFontWeightIndex(): number {
-        if ( this.fontFamily != null ) {
-            return availableFonts[ this.fontFamily ].length - 1;
+        const weights = availableFonts[ this.fontFamily ];
+
+        if ( weights !== undefined ) {
+            return weights.length - 1;
         } else {
             return 1;
         }
@@ -512,7 +514,16 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
      * family's availabe properties.
      */
     public onChangeFontFamily(): void {
-        let fi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight );
+        const weights = availableFonts[ this.fontFamily ];
+
+        // Without weights for this family, keep the stored weight and show no selection.
+        if ( weights === undefined ) {
+            this.fontWeightIndex = -1;
+            this.updateRenderToken();
+            return;
+        }
+
+        const fi: number = weights.indexOf( this.action.textWeight );
         this.fontWeightIndex = -1;
 
         if ( fi > -1 ) {
@@ -521,8 +532,8 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         } else {
 
             for ( let i = 100; i < 500; i += 100 ) {
-                let lfi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight - i );
-                let ufi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight + i );
+                const lfi: number = weights.indexOf( this.action.textWeight - i );
+                const ufi: number = weights.indexOf( this.action.textWeight + i );
                 if ( lfi > -1 ) {
                     this.fontWeightIndex = lfi;
                     break;
@@ -553,7 +564,13 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
      * weight index.
      */
     onFontWeightChange(): void {
-        this.action.textWeight = availableFonts[ this.fontFamily ][ this.fontWeightIndex ];
+        const weights = availableFonts[ this.fontFamily ];
+
+        if ( weights === undefined ) {
+            return;
+        }
+
+        this.action.textWeight = weights[ this.fontWeightIndex ];
 
         this.updateRenderToken();
     }

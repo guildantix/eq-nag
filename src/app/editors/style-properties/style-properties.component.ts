@@ -33,8 +33,10 @@ export class StylePropertiesComponent implements OnInit {
     public glowIntensity: number = 0;
     
     public get maxFontWeightIndex(): number {
-        if ( this.model?.fontFamily != null ) {
-            return availableFonts[ this.model.fontFamily ].length - 1;
+        const weights = availableFonts[ this.model?.fontFamily ];
+
+        if ( weights !== undefined ) {
+            return weights.length - 1;
         } else {
             return 1;
         }
@@ -58,7 +60,7 @@ export class StylePropertiesComponent implements OnInit {
     constructor() { }
 
     ngOnInit() {
-        this.fontWeightIndex = availableFonts[ this.model.fontFamily ].indexOf( this.model.fontWeight );
+        this.fontWeightIndex = availableFonts[ this.model.fontFamily ]?.indexOf( this.model.fontWeight ) ?? -1;
         this.borderIntensity = Math.round( this.model.borderIntensity * 100 );
         this.glowIntensity = Math.round( this.model.glowIntensity * 100 );
 
@@ -81,7 +83,15 @@ export class StylePropertiesComponent implements OnInit {
      * emitChange.
      */
     public onChangeFontFamily(): void {
-        let fi: number = availableFonts[ this.model.fontFamily ].indexOf( this.model.fontWeight );
+        const weights = availableFonts[ this.model.fontFamily ];
+
+        // Without weights for this family, keep the stored weight and show no selection.
+        if ( weights === undefined ) {
+            this.fontWeightIndex = -1;
+            return;
+        }
+
+        const fi: number = weights.indexOf( this.model.fontWeight );
         this.fontWeightIndex = -1;
 
         if ( fi > -1 ) {
@@ -90,8 +100,8 @@ export class StylePropertiesComponent implements OnInit {
         } else {
 
             for ( let i = 100; i < 500; i += 100 ) {
-                let lfi: number = availableFonts[ this.model.fontFamily ].indexOf( this.model.fontWeight - i );
-                let ufi: number = availableFonts[ this.model.fontFamily ].indexOf( this.model.fontWeight + i );
+                const lfi: number = weights.indexOf( this.model.fontWeight - i );
+                const ufi: number = weights.indexOf( this.model.fontWeight + i );
                 if ( lfi > -1 ) {
                     this.fontWeightIndex = lfi;
                     break;
@@ -159,7 +169,12 @@ export class StylePropertiesComponent implements OnInit {
      */
     emitChange() {
         if ( this.model != null ) {
-            this.model.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
+            const weights = availableFonts[ this.model.fontFamily ];
+
+            if ( weights !== undefined ) {
+                this.model.fontWeight = weights[ this.fontWeightIndex ];
+            }
+
             this.onChange.emit( this.model );
             if ( this.styleElement?.length > 0 ) {
                 this.styleElement.forEach( e => StylePropertiesModel.applyStyles( e, this.model ) );
@@ -186,7 +201,7 @@ export class StylePropertiesComponent implements OnInit {
         if ( this.styleElement?.length > 0 ) {
             let x = Object.assign( new StylePropertiesModel(), this.model );
             if ( propertyName == 'fontWeight' ) {
-                x.fontWeight = availableFonts[ this.model.fontFamily ][ e.value ];
+                x.fontWeight = availableFonts[ this.model.fontFamily ]?.[ e.value ] ?? x.fontWeight;
             } else if ( propertyName === 'glowIntensity' || propertyName === 'borderIntensity' ) {
                 x[ propertyName ] = e.value / 100;
             } else {
