@@ -12,6 +12,9 @@
  * (no id, no name, no usable capture phrase) is skipped. Nothing here ever throws.
  */
 
+const { ActionTypes } = require( '../data/models/trigger' );
+const { nagId } = require( './nag-id' );
+
 /** The most folder levels a share may nest, matching the limit of a shared file. */
 const maxFolderDepth = 50;
 /**
@@ -37,8 +40,11 @@ const maxSkippedNameLength = 60;
  * dropped whole. The same limit is used where icons are installed from a file.
  */
 const maxIconLength = 262144;
-/** The highest action type number, ActionTypes.List. */
-const highestActionType = 15;
+/**
+ * The highest action type number, read from the ActionTypes model so a new action type is
+ * accepted by shares as soon as it is added there, with no second list to keep in step.
+ */
+const highestActionType = Math.max( ...Object.values( ActionTypes ).filter( value => typeof value === 'number' ) );
 /** Returned by a field cleaner when the value can not be kept. */
 const dropField = Symbol( 'dropField' );
 /**
@@ -483,6 +489,31 @@ actionSubActionListFields.forEach( fieldName => actionFieldTypes[ fieldName ] = 
 
 
 /**
+ * Every field table above, by the model it describes. The drift check in tools compares these
+ * with the model classes, so a field added to a model can not be silently stripped from shares.
+ */
+const shareFieldAllowlists = {
+    trigger: triggerFieldTypes,
+    action: actionFieldTypes,
+    phrase: phraseFieldTypes,
+    condition: conditionFieldTypes,
+    classLevel: classLevelFieldTypes,
+    subAction: subActionFieldTypes,
+    variableAssignment: variableAssignmentFieldTypes,
+    folder: folderFieldTypes,
+    overlay: overlayFieldTypes,
+};
+
+
+
+
+
+
+
+
+
+
+/**
  * Returns true when the value is a plain object (not null, not a list).
  *
  * @param {any} value The value to test.
@@ -910,7 +941,7 @@ function cleanKnownFields( source, fieldTypes, tally ) {
 
 
 /**
- * Cleans one phrase. A phrase without text is dropped.
+ * Cleans one phrase. A phrase without text is dropped, and one without a usable id gets a new one.
  *
  * @param {any} phrase The phrase to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
@@ -920,6 +951,13 @@ function cleanPhrase( phrase, tally ) {
 
     if ( cleaned === null || typeof cleaned.phrase !== 'string' ) {
         return null;
+    }
+
+    // The log watcher caches each phrase's compiled pattern by phraseId, so two phrases that
+    // share a missing or rejected id would both match with the first one's pattern.
+    if ( typeof cleaned.phraseId !== 'string' || cleaned.phraseId === '' ) {
+        cleaned.phraseId = nagId();
+        tally.repairCount++;
     }
 
     return cleaned;
@@ -1431,6 +1469,7 @@ function normalizeSharedModel( model ) {
 
 
 module.exports = {
+    shareFieldAllowlists,
     normalizeSharedTriggers,
     normalizeSharedFolders,
     normalizeSharedOverlays,
