@@ -117,7 +117,7 @@ const logBootstrap = new LogBootstrapper();
 const gameResources = new GameResources();
 const pushRecapStore = new PushRecapStore( app.getPath( 'userData' ) );
 const pushScanService = new PushScanService( app.getPath( 'userData' ), characterDatabase, userPreferences );
-pushScanService.setResultsListener( results => pushRecapStore.refresh( results ).catch( error => console.error( 'Could not refresh the saved push recaps.', error ) ) );
+pushScanService.setResultsListener( results => pushRecapStore.refresh( results ).catch( error => log.error( 'Could not refresh the saved push recaps.', error ) ) );
 const fileDatabase = new FilesDatabaseStore();
 const ginaImporter = new GinaImporter();
 const rollTracker = new RollTracker();

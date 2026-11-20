@@ -2,6 +2,7 @@ const fs = require( 'fs' );
 const fsp = fs.promises;
 const path = require( 'path' );
 const crypto = require( 'crypto' );
+const log = require( 'electron-log' );
 
 const fileName = 'push-recaps.json';
 const badFileName = 'push-recaps.json.bad';
@@ -238,6 +239,32 @@ function sanitize( data ) {
 
 
 /**
+ * Tells whether a scanned recap is a worse copy of the saved one.  Log maintenance trims the start
+ * of the log, so a rescan of an old fight can see only the end of it, and must not replace the
+ * full recap.
+ *
+ * @returns {boolean} True when the saved recap should be kept.
+ *
+ * @param {PushRecapSummary} scanned The recap from the scan.
+ * @param {PushRecapSummary} saved The recap that is saved.
+ */
+function isWorseThanSaved( scanned, saved ) {
+    if ( scanned.startsAtLogEdge === true && saved.startsAtLogEdge !== true ) {
+        return true;
+    }
+    return scanned.events < saved.events || scanned.fightSeconds < saved.fightSeconds;
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Keeps the saved push recaps.  The file is read the first time a recap is requested,
  * then kept in memory and written when it changes.
  */
@@ -254,6 +281,7 @@ class PushRecapStore {
     /** @type {Promise<void> | null} */
     #writing = null;
     #dirty = false;
+    #lastWriteFailed = false;
     #closed = false;
     #tempCounter = 0;
     /** @type {any} */
@@ -312,9 +340,13 @@ class PushRecapStore {
         } );
 
         ipcMain.on( 'push-recaps:save', async ( event, summary ) => {
-            const ok = await this.save( summary );
+            let ok = await this.save( summary );
             if ( ok ) {
                 this.#notifyChanged();
+                // save() returns before the file is written.  Wait for the write, so the window
+                // never reports Saved for a recap that could not be written.
+                await this.flush();
+                ok = !this.#lastWriteFailed;
             }
             if ( !event.sender.isDestroyed() ) {
                 event.sender.send( 'push-recaps:saved', { key: summary?.saveKey, ok: ok } );
@@ -448,7 +480,7 @@ class PushRecapStore {
             const index = this.#recaps.findIndex( r => {
                 return r.characterName === summary.characterName && r.mob === summary.mob && r.killTime === summary.killTime;
             } );
-            if ( index > -1 ) {
+            if ( index > -1 && !isWorseThanSaved( summary, this.#recaps[ index ] ) ) {
                 summary.id = this.#recaps[ index ].id;
                 summary.savedAt = this.#recaps[ index ].savedAt;
                 if ( JSON.stringify( summary ) !== JSON.stringify( this.#recaps[ index ] ) ) {
@@ -528,6 +560,10 @@ class PushRecapStore {
      * @returns {Promise<void>} The promise.
      */
     async flush() {
+        // A write that failed left its change pending.  Try it again before waiting.
+        if ( this.#dirty && !this.#closed && ( this.#writing === null || this.#writing === undefined ) ) {
+            this.#persist();
+        }
         while ( this.#writing !== null && this.#writing !== undefined ) {
             await this.#writing;
         }
@@ -578,7 +614,7 @@ class PushRecapStore {
             fs.writeFileSync( tempPath, JSON.stringify( { version: 1, recaps: this.#recaps } ) );
             fs.renameSync( tempPath, this.#path );
         } catch ( error ) {
-            console.error( 'Could not save the push recaps.', error );
+            log.error( 'Could not save the push recaps.', error );
             fs.rmSync( tempPath, { force: true } );
         }
     }
@@ -717,9 +753,15 @@ class PushRecapStore {
                     }
                     // Synchronous, so a quit cannot slip in between the check above and the rename.
                     fs.renameSync( tempPath, this.#path );
+                    this.#lastWriteFailed = false;
                 } catch ( error ) {
-                    console.error( 'Could not save the push recaps.', error );
+                    log.error( 'Could not save the push recaps.', error );
+                    // Keep the change pending, so the next change, flush or the quit flush writes
+                    // it again.  Looping here would retry at once and spin on a locked file.
+                    this.#dirty = true;
+                    this.#lastWriteFailed = true;
                     await fsp.rm( tempPath, { force: true } ).catch( () => { } );
+                    break;
                 }
             }
             this.#writing = null;

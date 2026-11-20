@@ -2,6 +2,7 @@ const fs = require( 'fs' );
 const fsp = fs.promises;
 const path = require( 'path' );
 const crypto = require( 'crypto' );
+const log = require( 'electron-log' );
 const { Worker } = require( 'worker_threads' );
 
 const cacheFileName = 'push-scan-cache.json';
@@ -515,9 +516,9 @@ class PushScanService {
      */
     #notifyResults( results ) {
         try {
-            Promise.resolve( this.#resultsListener?.( results ) ).catch( error => console.error( 'The push scan results listener failed.', error ) );
+            Promise.resolve( this.#resultsListener?.( results ) ).catch( error => log.error( 'The push scan results listener failed.', error ) );
         } catch ( error ) {
-            console.error( 'The push scan results listener failed.', error );
+            log.error( 'The push scan results listener failed.', error );
         }
     }
 
@@ -649,7 +650,7 @@ class PushScanService {
                 await fsp.writeFile( tempPath, JSON.stringify( { version: cacheVersion, logs: kept } ) );
                 await fsp.rename( tempPath, this.#cachePath );
             } catch ( error ) {
-                console.error( 'Could not save the push scan cache.', error );
+                log.error( 'Could not save the push scan cache.', error );
                 await fsp.rm( tempPath, { force: true } ).catch( () => { } );
             }
         } );
