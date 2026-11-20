@@ -1,7 +1,7 @@
 import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatTabGroup } from '@angular/material/tabs';
 import { Subscription } from 'rxjs';
-import { ActionTypes, availableFonts, generateRenderToken, ListObjectModel, OverlayWindowModel, Phrase, RenderTokenModel, TriggerAction } from 'src/app/core.model';
+import { ActionTypes, getFontWeights, generateRenderToken, ListObjectModel, OverlayWindowModel, Phrase, RenderTokenModel, TriggerAction } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { StringUtility } from 'src/app/utilities';
@@ -58,13 +58,30 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
     }
     
     public get maxFontWeightIndex(): number {
-        const weights = availableFonts[ this.fontFamily ];
+        const weights = getFontWeights( this.fontFamily );
 
         if ( weights !== undefined ) {
             return weights.length - 1;
         } else {
             return 1;
         }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Whether the selected font family has weights to choose from; the weight 
+     * slider is disabled otherwise because there is nothing to pick.
+     */
+    public get hasFontWeights(): boolean {
+        return getFontWeights( this.fontFamily ) !== undefined;
     }
 
     public get invalidDeactivatePhrase(): boolean {
@@ -514,7 +531,7 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
      * family's availabe properties.
      */
     public onChangeFontFamily(): void {
-        const weights = availableFonts[ this.fontFamily ];
+        const weights = getFontWeights( this.fontFamily );
 
         // Without weights for this family, keep the stored weight and show no selection.
         if ( weights === undefined ) {
@@ -564,9 +581,10 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
      * weight index.
      */
     onFontWeightChange(): void {
-        const weights = availableFonts[ this.fontFamily ];
+        const weights = getFontWeights( this.fontFamily );
 
-        if ( weights === undefined ) {
+        // An index of -1 means no weight is selected; keep the stored one.
+        if ( weights === undefined || this.fontWeightIndex < 0 ) {
             return;
         }
 

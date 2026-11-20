@@ -67,7 +67,7 @@
                             <div class="f-row">
                                 <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.fontSize" name="sldrFontSize" (change)="broadcastModel()"></mat-slider></div>
                                 <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" step="5" min="10" max="300" style="width: 100%;" [(ngModel)]="model.lineHeight" name="sldrLineHeight" (change)="broadcastModel()"></mat-slider></div>
-                                <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="broadcastModel()"></mat-slider></div>
+                                <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" [disabled]="!hasFontWeights" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="broadcastModel()"></mat-slider></div>
                             </div>
     
                             <div class="f-row">
@@ -256,7 +256,7 @@
                         <div class="f-row">
                             <div class="f-sm-4 al-left"></div>
                             <div class="f-sm-4 al-right"><mat-label *ngIf="model.groupByTarget">Weight</mat-label></div>
-                            <div class="f-sm-4 al-left"><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="dotGroupHeaderWeightIndex" name="sldrFontWeight" (change)="broadcastModel()" *ngIf="model.groupByTarget"></mat-slider></div>
+                            <div class="f-sm-4 al-left"><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" [disabled]="!hasFontWeights" style="width: 100%;" [(ngModel)]="dotGroupHeaderWeightIndex" name="sldrFontWeight" (change)="broadcastModel()" *ngIf="model.groupByTarget"></mat-slider></div>
                         </div>
                         <div class="f-row">
                             <div class="f-sm-4 al-center"></div>

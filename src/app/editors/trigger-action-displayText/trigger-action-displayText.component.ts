@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
 import { ContextService } from 'src/app/context-menu/context.service';
-import { availableFonts, OverlayWindowModel, TriggerAction } from 'src/app/core.model';
+import { getFontWeights, OverlayWindowModel, TriggerAction } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 
 /**
@@ -76,13 +76,30 @@ export class TriggerActionDisplayTextComponent implements OnInit {
     }
     
     public get maxFontWeightIndex(): number {
-        const weights = availableFonts[ this.fontFamily ];
+        const weights = getFontWeights( this.fontFamily );
 
         if ( weights !== undefined ) {
             return weights.length - 1;
         } else {
             return 1;
         }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Whether the selected font family has weights to choose from; the weight 
+     * slider is disabled otherwise because there is nothing to pick.
+     */
+    public get hasFontWeights(): boolean {
+        return getFontWeights( this.fontFamily ) !== undefined;
     }
 
     public get textShadow(): string {
@@ -141,7 +158,7 @@ export class TriggerActionDisplayTextComponent implements OnInit {
      * family's availabe properties.
      */
     public onChangeFontFamily(): void {
-        const weights = availableFonts[ this.fontFamily ];
+        const weights = getFontWeights( this.fontFamily );
 
         // Without weights for this family, keep the stored weight and show no selection.
         if ( weights === undefined ) {
@@ -188,9 +205,10 @@ export class TriggerActionDisplayTextComponent implements OnInit {
      * weight index.
      */
     onFontWeightChange(): void {
-        const weights = availableFonts[ this.fontFamily ];
+        const weights = getFontWeights( this.fontFamily );
 
-        if ( weights === undefined ) {
+        // An index of -1 means no weight is selected; keep the stored one.
+        if ( weights === undefined || this.fontWeightIndex < 0 ) {
             return;
         }
 
