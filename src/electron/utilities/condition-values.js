@@ -1,9 +1,8 @@
 
 /**
- * Splits a condition value into its trimmed, non-empty alternatives.  The
- * trimming has to really happen here: the old per-name code trimmed a copy
- * that was thrown away, so "A | B" never matched a stored "A".  Returns null
- * when there are none.
+ * Splits a condition value on "|" into its alternatives, with the
+ * whitespace around each one removed and empty ones dropped.  Returns the
+ * list, or null when the input is empty or has only empty alternatives.
  *
  * @param {string} variableValue The value as typed by the user.  Ex: Knowledge | Tranquility
  * @returns {string[]|null}
