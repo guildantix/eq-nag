@@ -3,7 +3,7 @@
 <mat-dialog-content>
 
     <p *ngFor="let msg of messages" [innerHtml]="msg | coloredString"></p>
-    <div class="btn-info">
+    <div class="btn-info" *ngIf="hasButtonInfo">
         <small *ngIf="data.yesMessage != null">{{data.yesMessage}}</small>
         <small *ngIf="data.noMessage != null">{{data.noMessage}}</small>
         <small *ngIf="data.cancelMessage != null">{{data.cancelMessage}}</small>

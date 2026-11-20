@@ -40,5 +40,23 @@ export class ConfirmDialogComponent implements OnInit {
             this.title = this.data.title;
         }
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Whether any button has an explanation to show, so the info box is not an empty bar.
+     */
+    public get hasButtonInfo(): boolean {
+        const messages = [ this.data.yesMessage, this.data.noMessage, this.data.cancelMessage ];
+
+        return messages.some( message => message !== null && message !== undefined );
+    }
     
 }
