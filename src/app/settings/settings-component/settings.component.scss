@@ -399,11 +399,19 @@ div.tab-content {
         min-height: 32px;
     }
 
+    h3 {
+        font-weight: 500;
+    }
+
     > mat-hint {
         position: static;
         padding: 0 0 0 32px;
         font-size: 12px;
         background: none !important;
+    }
+
+    > .formless-input:has( > mat-checkbox ) + mat-hint {
+        padding-left: 26px;
     }
 }
 

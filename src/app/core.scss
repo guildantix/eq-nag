@@ -665,14 +665,18 @@ div.formless-hint {
         width: calc(100% - 10px);
     }
 
-    padding: 0 0 8px 0;
+    padding: 0px 5px 25px 5px;
+    border: 2px solid #0000006b;
+    background-color: #0000002e;
+    
+    border-radius: 3px;
     display: inline-block;
     position: relative;
     text-align: left;
     margin-bottom: 5px;
 
     h3 {
-        font-weight: 500;
+        font-weight: 300;
         margin: 4px 0 7px;
         font-size: 19px;
     }
@@ -695,15 +699,18 @@ div.formless-hint {
     }
 
     > mat-hint {
+        
         color: rgba(255,255,255,.7);
-        display: block;
-        padding: 0;
-        font-weight: normal;
-        font-size: 12px;
-    }
+        background-color: #00000052 !important;
 
-    > .formless-input:has( > mat-checkbox ) + mat-hint {
-        padding-left: 26px;
+        display: block;
+        padding: 5px 5px 5px 5px;
+        font-weight: normal;
+        font-size: 10px;
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
     }
 }
 

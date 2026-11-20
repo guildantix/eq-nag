@@ -325,7 +325,7 @@
                         </mat-form-field>
                     </div>
 
-                    <ng-template [ngIf]="author?.authorId != null" [ngIfElse]="noAuthorFile">
+                    <ng-template [ngIf]="( author?.authorId !== null && author?.authorId !== undefined )" [ngIfElse]="noAuthorFile">
                         <button mat-stroked-button (click)="updateAuthor()">Save changes</button>
                         <button mat-stroked-button *ngIf="!trustedAuthor" (click)="requestVerification()">Request verification</button>
                     </ng-template>
@@ -347,7 +347,7 @@
                     </mat-radio-group>
                     <mat-form-field style="width:100%;">
                         <mat-label>Characters list</mat-label>
-                        <textarea matInput [(ngModel)]="quickShareAuthorList" name="txtQuickShareAuthorList" rows="5" [disabled]="quickShareAuthorListType == quickShareAuthorListTypes.Disabled" (change)="onQuickShareImportsChange()"></textarea>
+                        <textarea matInput [(ngModel)]="quickShareAuthorList" name="txtQuickShareAuthorList" rows="5" [disabled]="quickShareAuthorListType === quickShareAuthorListTypes.Disabled" (change)="onQuickShareImportsChange()"></textarea>
                     </mat-form-field>
                 </div>
             </div>
