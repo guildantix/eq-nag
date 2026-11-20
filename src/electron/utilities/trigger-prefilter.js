@@ -14,6 +14,10 @@ const maxLiteralLength = 16;
 // Matches a numeric quantifier such as {2} or {0,3} at the sticky position, but
 // not a shortcode such as {C}.  Example phrase: ^You gain (\d+) exp{2,4}\.$
 const braceQuantifier = /\{(\d+)(?:,\d*)?\}/y;
+// The only letter escapes that take no arguments.  Every other letter or digit escape
+// (\x, \u, \c, \k, \p, \1, ...) can read characters after it, and without the u flag
+// its meaning depends on them, so the phrase is never filtered.
+const argumentFreeEscape = /[dDwWsSbBnrtfv]/;
 // Matches a shortcode such as {C}, {N1}, {N>5} or {N(1,5)} at the sticky position.
 const braceShortcode = /\{[A-Za-z][^{}|]*\}/y;
 
@@ -115,52 +119,6 @@ function skipClass( source, start ) {
     }
 
     return -1;
-}
-
-
-
-
-
-
-
-
-
-
-/**
- * Returns the index after an escape that starts with a letter or digit, so
- * the characters it takes as arguments are never read as literal text, or -1
- * if the escape isn't complete.  Example: \x41, \u{41}, \p{L}, \k<who>, \12
- *
- * @param {string} source The regex source.
- * @param {number} start The index of the backslash.
- * @returns {number} The index after the escape, or -1.
- */
-function skipLetterEscape( source, start ) {
-    const escaped = source[ start + 1 ];
-    let position = start + 2;
-
-    if ( /[0-9]/.test( escaped ) ) {
-        // Backreference or octal: swallowing every digit can only lose literal text.
-        while ( /[0-9]/.test( source[ position ] ?? '' ) ) {
-            position++;
-        }
-    } else if ( escaped === 'x' ) {
-        position += 2;
-    } else if ( escaped === 'c' ) {
-        position += 1;
-    } else if ( escaped === 'u' && source[ position ] !== '{' ) {
-        position += 4;
-    } else if ( escaped === 'u' || escaped === 'p' || escaped === 'P' || escaped === 'k' ) {
-        const opener = escaped === 'k' ? '<' : '{';
-        if ( source[ position ] !== opener ) {
-            // Without its argument it is a plain letter in a non-unicode regex; unknown either way.
-            return position;
-        }
-        const close = source.indexOf( escaped === 'k' ? '>' : '}', position );
-        return close < 0 ? -1 : close + 1;
-    }
-
-    return position > source.length ? -1 : position;
 }
 
 
@@ -277,8 +235,7 @@ function extractRegexLiterals( source ) {
             const escaped = source[ position + 1 ];
             next = position + 2;
             if ( /[A-Za-z0-9]/.test( escaped ) ) {
-                next = skipLetterEscape( source, position );
-                if ( next < 0 ) {
+                if ( !argumentFreeEscape.test( escaped ) ) {
                     return null;
                 }
             } else if ( escaped.charCodeAt( 0 ) < 128 ) {
