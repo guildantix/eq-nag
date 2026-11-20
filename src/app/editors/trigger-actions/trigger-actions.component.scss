@@ -40,7 +40,7 @@ mat-form-field {
 
 ::ng-deep .card.action-card {
     mat-card-content {
-        padding-top: 0; // Matches the gap to the dropdown below.
+        padding-top: 10px; // Matches the gap to the dropdown below.
     }
 }
 
