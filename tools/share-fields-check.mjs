@@ -1,7 +1,9 @@
 /**
  * Fails when a field of a trigger, action, phrase, condition, folder or overlay model is
- * missing from the share allowlist in share-trigger-fields.js. Without this, a new model
- * field is silently stripped from every shared trigger and nobody notices.
+ * missing from the share allowlist in share-trigger-fields.js, or when the allowlist expects
+ * another type than the model's default value has. Without this, a new model field is
+ * silently stripped from every shared trigger, and a wrongly typed one is stripped or
+ * mangled, and nobody notices.
  *
  * Run from the repository root: node tools/share-fields-check.mjs
  */
@@ -39,6 +41,54 @@ const deliberatelyExcludedFields = {
 
 
 
+/**
+ * The JavaScript type each allowlist type name stands for, as 'array' for lists, so it can be
+ * compared with the type of a model field's default value.
+ */
+const javaScriptTypeByAllowlistType = {
+    text: 'string',
+    icon: 'string',
+    number: 'number',
+    boolean: 'boolean',
+    rectangle: 'object',
+    textOverflow: 'object',
+    textList: 'array',
+    phraseList: 'array',
+    actionList: 'array',
+    conditionList: 'array',
+    classLevelList: 'array',
+    hotkeyList: 'array',
+    subActionList: 'array',
+    variableAssignmentList: 'array',
+};
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns 'array' for a list, otherwise the typeof of the value.
+ *
+ * @param {any} value The value to describe.
+ */
+function describeValueType( value ) {
+    return Array.isArray( value ) ? 'array' : typeof value;
+}
+
+
+
+
+
+
+
+
+
+
 /** Each allowlist, with the model classes whose fields it has to cover. */
 const checks = [
     { allowlist: 'trigger', models: [ triggerModels.Trigger ] },
@@ -53,6 +103,7 @@ const checks = [
 ];
 
 let checkedFieldCount = 0;
+let typeComparedFieldCount = 0;
 const problems = [];
 
 checks.forEach( check => {
@@ -65,7 +116,9 @@ checks.forEach( check => {
             return;
         }
 
-        Object.keys( new ModelClass() ).forEach( fieldName => {
+        const modelInstance = new ModelClass();
+
+        Object.keys( modelInstance ).forEach( fieldName => {
             checkedFieldCount++;
 
             const isListed = Object.prototype.hasOwnProperty.call( allowlist, fieldName );
@@ -74,14 +127,27 @@ checks.forEach( check => {
             if ( !isListed && !isExcluded ) {
                 problems.push( `${ModelClass.name}.${fieldName} is not in the ${check.allowlist} share allowlist.` );
             }
+
+            const defaultValue = modelInstance[ fieldName ];
+
+            // A null default says nothing about the real type, so only real defaults are compared.
+            if ( isListed && defaultValue !== null && defaultValue !== undefined ) {
+                typeComparedFieldCount++;
+                const modelType = describeValueType( defaultValue );
+                const allowlistType = javaScriptTypeByAllowlistType[ allowlist[ fieldName ] ] ?? `unknown type ${allowlist[ fieldName ]}`;
+
+                if ( modelType !== allowlistType ) {
+                    problems.push( `${ModelClass.name}.${fieldName}: model has ${modelType}, allowlist says ${allowlistType}` );
+                }
+            }
         } );
     } );
 } );
 
 if ( problems.length > 0 ) {
     problems.forEach( problem => console.error( problem ) );
-    console.error( `share-fields-check: ${problems.length} missing of ${checkedFieldCount} model fields.` );
+    console.error( `share-fields-check: ${problems.length} problem(s) in ${checkedFieldCount} model fields.` );
     process.exit( 1 );
 }
 
-console.log( `share-fields-check: all ${checkedFieldCount} model fields are covered.` );
+console.log( `share-fields-check: all ${checkedFieldCount} model fields are covered, ${typeComparedFieldCount} types compared.` );
