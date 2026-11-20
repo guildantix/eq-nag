@@ -1,16 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { MatSliderChange } from '@angular/material/slider';
-import { StylePropertiesModel } from 'src/app/core.model';
-
-const availableFonts = {
-    'Roboto': [ 100, 300, 400, 500, 700, 900 ],
-    'Red Rose': [ 300, 400, 700 ],
-    'Oswald': [ 200, 300, 400, 500, 600, 700 ],
-    'Roboto Mono': [ 100, 200, 300, 400, 500, 600, 700 ],
-    'Open Sans Condensed': [ 300, 700 ],
-    'Ranchers': [ 400 ],
-    'Press Start 2P': [ 400 ],
-};
+import { StylePropertiesModel, availableFonts } from 'src/app/core.model';
 
 @Component( {
     selector: 'app-style-properties',

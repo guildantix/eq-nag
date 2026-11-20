@@ -1,6 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { IpcService } from 'src/app/ipc.service';
-import { OverlayWindowModel, ActionTypes, TriggerAction, TimerSortTypes, TimerRestartBehaviors, StylePropertiesModel } from 'src/app/core.model';
+import { OverlayWindowModel, ActionTypes, TriggerAction, TimerSortTypes, TimerRestartBehaviors, StylePropertiesModel, availableFonts } from 'src/app/core.model';
 import { ActivatedRoute } from '@angular/router';
 import { ThemePalette } from '@angular/material/core';
 import { AbstractControl, FormControl } from '@angular/forms';
@@ -13,15 +13,6 @@ const nanoid = customAlphabet( alphabet, 16 );
 // import { Color } from '@angular-material-components/color-picker';
 // import { NgForm } from '@angular/forms';
 
-const availableFonts = {
-    'Roboto': [ 100, 300, 400, 500, 700, 900 ],
-    'Red Rose': [ 300, 400, 700 ],
-    'Oswald': [ 200, 300, 400, 500, 600, 700 ],
-    'Roboto Mono': [ 100, 200, 300, 400, 500, 600, 700 ],
-    'Open Sans Condensed': [ 300, 700 ],
-    'Ranchers': [ 400 ],
-    'Press Start 2P': [ 400 ],
-};
 // <!-- Roboto(i): 100, 300, 400, 500, 700, 900 -->
 // <!-- Red Rose: 300, 400, 700 -->
 // <!-- Oswald: 200, 300, 400, 500, 600, 700 -->
