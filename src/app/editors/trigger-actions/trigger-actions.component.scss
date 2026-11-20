@@ -37,18 +37,6 @@ mat-form-field {
     }
 }
 
-.floating-top-right {
-    position: fixed;
-    top: 115px;
-    right: 16px;
-    border-radius: 16px;
-    box-shadow: inset 0px 0px 20px 7px #000000a8; 
-    padding: 4px 8px;
-    backdrop-filter: blur(3px);
-    z-index: 2;
-    background-color: #0b1c0c29;  /* very subtle glow effect around the text */
-}
-
 .flex-layout {
     padding-top: 30px;
 }

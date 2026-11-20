@@ -18,6 +18,19 @@ mat-form-field {
     }
 }
 
+// Anchors the New button to the tab row. It scrolls with the tabs, so it never overlaps a card or the scrollbar.
+.tab-group-host {
+    position: relative;
+}
+
+// 48px is the Material tab header height; the button is 36px, so it stays clear of the 2px ink bar.
+.new-action-button {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 2;
+}
+
 legend.full-width {
     min-width: 100%;
 }
