@@ -314,6 +314,9 @@ function createWindow() {
     if ( userPreferences.setup ) {
         // Set the last viewed version to the current version.
         userPreferences.lastViewedUpdateNotes = app.getVersion();
+        // A brand-new profile has no old FCT or combat group styles to migrate. Without this the
+        // migration dialog would appear on the second launch, once `setup` is no longer true.
+        userPreferences.askForCombatGroupMigrations = false;
     }
     
 };
