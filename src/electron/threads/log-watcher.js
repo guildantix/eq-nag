@@ -21,6 +21,7 @@ const { parseConditionValues } = require( '../utilities/condition-values' );
 const perf = require( '../utilities/perf' );
 const TriggerPrefilter = require( '../utilities/trigger-prefilter' );
 const { detectPersonaClassCode, detectOwnWhoClassCode } = require( '../utilities/persona-class' );
+const captureZoneTriggerId = require( '../data/predefined-triggers/capture-zone.json' ).triggerId;
 const { TriggerGate, storeHasValue: storeHasValueIn, storeContainsValue: storeContainsValueIn } = require( '../utilities/trigger-gate' );
 // Triggers are timed on one log line in ten (perf-taps.js scales them up), so
 // the per-trigger timing doesn't slow the log watcher down much.
@@ -70,6 +71,12 @@ let triggerPrefilter = null;
 /** @type {number} Counts log lines so a mark can be told apart from the previous line's. */
 let triggerPrefilterStamp = 0;
 /**
+ * @type {boolean} Whether the Capture Zone trigger is on for this character.  The
+ * gate only keeps CurrentZone up to date then, so with Capture Zone off the
+ * variable stays untouched, as it was before the gate.
+ */
+let isCaptureZoneActive = false;
+/**
  * @type {boolean}
  * The kill switch: --no-trigger-prefilter or NAG_NO_TRIGGER_PREFILTER=1 runs
  * every trigger on every line.
@@ -84,8 +91,6 @@ const isTriggerPrefilterDisabled = process.env.NAG_NO_TRIGGER_PREFILTER === '1' 
 let triggerGate = null;
 /** @type {number|null} The timer that rebuilds the prefilter at the end of a batch of log lines. */
 let triggerGateTimer = null;
-/** @type {number} The open trigger count last written to the console, so it only logs changes. */
-let triggerGateLoggedCount = -1;
 /** @type {boolean} Whether the zone changed since the console last showed the trigger count. */
 let hasTriggerGateZoneChanged = false;
 /**
@@ -95,8 +100,8 @@ let hasTriggerGateZoneChanged = false;
  */
 const isTriggerGateDisabled = process.env.NAG_NO_TRIGGER_GATE === '1' || process.argv.includes( '--no-trigger-gate' );
 /**
- * Matches the line EverQuest writes when the character zones in, so the zone
- * is known even without a Capture Zone trigger.  Example log line:
+ * Matches the line EverQuest writes when the character zones in, so the gate
+ * sees the new zone before the Capture Zone trigger has run.  Example log line:
  * You have entered Crystal Caverns.
  */
 const enteredZonePattern = /^You have entered ([A-Z].*)\.$/;
@@ -1297,6 +1302,7 @@ function buildTriggerPrefilter() {
  */
 function buildTriggerGate() {
     triggerGate = null;
+    isCaptureZoneActive = activeTriggers.some( trigger => trigger.triggerId === captureZoneTriggerId );
     if ( isTriggerGateDisabled ) {
         return;
     }
@@ -1324,11 +1330,11 @@ function buildTriggerGate() {
 
 
 /**
- * Writes the number of triggers that can fire to the console, when it changed.
+ * Writes the number of triggers that can fire to the console, when the zone
+ * changed.
  */
 function logTriggerGate() {
-    if ( triggerGate && ( triggerGate.openCount !== triggerGateLoggedCount || hasTriggerGateZoneChanged ) ) {
-        triggerGateLoggedCount = triggerGate.openCount;
+    if ( triggerGate && hasTriggerGateZoneChanged ) {
         hasTriggerGateZoneChanged = false;
         log( `Triggers active in this zone: ${triggerGate.openCount} of ${activeTriggers.length}` );
     }
@@ -2454,7 +2460,7 @@ function parseLogEntries( raw, simulating, padTime ) {
         } );
 
         // Char code 89 is "Y": a cheap test so only lines starting with "You" run the regex.
-        if ( !isTriggerGateDisabled && log.charCodeAt( 0 ) === 89 ) {
+        if ( !isTriggerGateDisabled && isCaptureZoneActive && log.charCodeAt( 0 ) === 89 ) {
             const enteredZone = enteredZonePattern.exec( log );
             if ( enteredZone ) {
                 const current = storedVariables[ 'CurrentZone' ];

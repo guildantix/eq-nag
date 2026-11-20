@@ -360,13 +360,14 @@ const counterAction = ( name, resetSeconds, resetPhrases ) => ( {
         triggers: [
             makeTrigger( 'In zone', [ 'a gnoll hits you' ], { folderId: 'folderA' } ),
             makeTrigger( 'Anywhere', [ 'a gnoll misses you' ] ),
+            captureZoneTrigger,
         ],
         folders: [ folder ],
     } );
     watcher.tick();
     const gate = watcher.internals.triggerGate;
-    check( gate && gate.openCount === 1, 'zone gate: only the trigger without a zone condition is open at the start' );
-    check( watcher.console.some( x => x === 'Triggers active in this zone: 1 of 2' ), 'zone gate: console line after the first gate' );
+    check( gate && gate.openCount === 2, 'zone gate: only the triggers without a zone condition are open at the start' );
+    check( !watcher.console.some( x => typeof x === 'string' && x.startsWith( 'Triggers active' ) ), 'zone gate: no console line before a zone change' );
 
     watcher.batch( [ 'a gnoll hits you', 'a gnoll misses you' ] );
     check( watcher.matched( 'In zone' ) === 0 && watcher.matched( 'Anywhere' ) === 1, 'zone gate: closed trigger does not match' );
@@ -374,14 +375,14 @@ const counterAction = ( name, resetSeconds, resetPhrases ) => ( {
 
     watcher.batch( [ 'You have entered Some Zone.' ] );
     check( same( watcher.internals.storedVariables.CurrentZone, [ 'Some Zone' ] ), 'zone gate: native zone capture stores the zone' );
-    check( gate.openCount === 2, 'zone gate: entering the zone opens the trigger' );
-    check( watcher.console.some( x => x === 'Triggers active in this zone: 2 of 2' ), 'zone gate: console line after the zone changed' );
+    check( gate.openCount === 3, 'zone gate: entering the zone opens the trigger' );
+    check( watcher.console.some( x => x === 'Triggers active in this zone: 3 of 3' ), 'zone gate: console line after the zone changed' );
     watcher.batch( [ 'a gnoll hits you' ] );
     check( watcher.matched( 'In zone' ) === 1, 'zone gate: trigger matches in the zone' );
 
     watcher.batch( [ 'You have entered Other Zone.' ] );
     check( same( watcher.internals.storedVariables.CurrentZone, [ 'Other Zone' ] ), 'zone gate: a new zone replaces the old one' );
-    check( gate.openCount === 1, 'zone gate: leaving the zone closes the trigger' );
+    check( gate.openCount === 2, 'zone gate: leaving the zone closes the trigger' );
     const runsBefore = watcher.runs;
     watcher.batch( [ 'a gnoll hits you' ] );
     check( watcher.matched( 'In zone' ) === 1 && watcher.runs === runsBefore, 'zone gate: closed again, not run' );
@@ -391,7 +392,7 @@ const counterAction = ( name, resetSeconds, resetPhrases ) => ( {
 {
     const folder = { folderId: 'folderD', name: 'Zone folder', folderConditions: [ variableIs( 'CurrentZone', 'Some Zone|Other Zone' ) ], children: [] };
     const watcher = createWatcher( {
-        triggers: [ makeTrigger( 'In zone', [ '^a gnoll hits you$' ], { folderId: 'folderD' } ), makeTrigger( 'Setter', [ '^Set flag (\\w+)$' ], { actions: [ storeAction( 'Flag' ) ] } ) ],
+        triggers: [ makeTrigger( 'In zone', [ '^a gnoll hits you$' ], { folderId: 'folderD' } ), makeTrigger( 'Setter', [ '^Set flag (\\w+)$' ], { actions: [ storeAction( 'Flag' ) ] } ), captureZoneTrigger ],
         folders: [ folder ],
     } );
     watcher.tick();
@@ -418,7 +419,27 @@ const counterAction = ( name, resetSeconds, resetPhrases ) => ( {
     const off = createWatcher( { triggers: [ captureZoneTrigger ], disabled: [ captureZoneTrigger.triggerId ] } );
     off.tick();
     off.batch( [ 'You have entered Some Zone.' ] );
-    check( same( off.internals.storedVariables.CurrentZone, [ 'Some Zone' ] ), 'capture zone: native capture works with the trigger disabled' );
+    check( off.internals.storedVariables.CurrentZone === undefined, 'capture zone: nothing stored with the trigger disabled' );
+}
+
+// Capture Zone off: the gate leaves CurrentZone alone, so zone conditions stay closed.
+{
+    const folder = { folderId: 'folderE', name: 'Zone folder', folderConditions: [ variableIs( 'CurrentZone', 'Some Zone' ) ], children: [] };
+    const watcher = createWatcher( {
+        triggers: [ makeTrigger( 'In zone', [ '^a gnoll hits you$' ], { folderId: 'folderE' } ), makeTrigger( 'Anywhere', [ '^a gnoll misses you$' ] ) ],
+        folders: [ folder ],
+    } );
+    watcher.tick();
+    watcher.batch( [ 'LOADING, PLEASE WAIT...', 'You have entered Some Zone.', 'a gnoll hits you', 'a gnoll misses you' ] );
+    check( watcher.internals.storedVariables.CurrentZone === undefined, 'capture zone off: CurrentZone untouched' );
+    check( watcher.matched( 'In zone' ) === 0 && watcher.matched( 'Anywhere' ) === 1, 'capture zone off: zone condition stays closed' );
+    check( !watcher.console.some( x => typeof x === 'string' && x.startsWith( 'Triggers active' ) ), 'capture zone off: no zone change, no console line' );
+
+    const stored = createWatcher( { triggers: [ makeTrigger( 'Anywhere', [ '^a gnoll misses you$' ] ) ] } );
+    stored.tick();
+    stored.internals.storedVariables.CurrentZone = [ 'Kept Zone' ];
+    stored.batch( [ 'You have entered Some Zone.' ] );
+    check( same( stored.internals.storedVariables.CurrentZone, [ 'Kept Zone' ] ), 'capture zone off: an existing value is not replaced' );
 }
 
 // A variable set and used in the same batch: the trigger that opened mid-batch is not missed.
