@@ -15,6 +15,35 @@ export const availableFonts = {
 };
 
 
+
+
+
+
+
+
+
+
+/**
+ * Looks up the weights of a font family. A plain index into availableFonts 
+ * would also match inherited keys such as "constructor", which a trigger file 
+ * can contain, and return a function instead of a weight list.
+ * 
+ * @param fontFamily The font family name, which may be missing or unknown.
+ * @returns The weights of the family, or undefined if it is not an available font.
+ */
+export function getFontWeights( fontFamily: string | null | undefined ): number[] | undefined {
+    if ( fontFamily === null || fontFamily === undefined ) {
+        return undefined;
+    }
+
+    if ( Object.prototype.hasOwnProperty.call( availableFonts, fontFamily ) ) {
+        return availableFonts[ fontFamily ];
+    }
+
+    return undefined;
+}
+
+
 export const ErrorCodes = {
     EqFolderNotFound: {
         code: 'EQDIRNULL',

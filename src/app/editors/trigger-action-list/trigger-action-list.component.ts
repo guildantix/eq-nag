@@ -1,7 +1,7 @@
 import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatTabGroup } from '@angular/material/tabs';
 import { Subscription } from 'rxjs';
-import { ActionTypes, availableFonts, generateRenderToken, ListObjectModel, OverlayWindowModel, Phrase, RenderTokenModel, TriggerAction } from 'src/app/core.model';
+import { ActionTypes, getFontWeights, generateRenderToken, ListObjectModel, OverlayWindowModel, Phrase, RenderTokenModel, TriggerAction } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { StringUtility } from 'src/app/utilities';
@@ -58,11 +58,30 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
     }
     
     public get maxFontWeightIndex(): number {
-        if ( this.fontFamily != null ) {
-            return availableFonts[ this.fontFamily ].length - 1;
+        const weights = getFontWeights( this.fontFamily );
+
+        if ( weights !== undefined ) {
+            return weights.length - 1;
         } else {
             return 1;
         }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Whether the selected font family has weights to choose from; the weight 
+     * slider is disabled otherwise because there is nothing to pick.
+     */
+    public get hasFontWeights(): boolean {
+        return getFontWeights( this.fontFamily ) !== undefined;
     }
 
     public get invalidDeactivatePhrase(): boolean {
@@ -512,7 +531,16 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
      * family's availabe properties.
      */
     public onChangeFontFamily(): void {
-        let fi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight );
+        const weights = getFontWeights( this.fontFamily );
+
+        // Without weights for this family, keep the stored weight and show no selection.
+        if ( weights === undefined ) {
+            this.fontWeightIndex = -1;
+            this.updateRenderToken();
+            return;
+        }
+
+        const fi: number = weights.indexOf( this.action.textWeight );
         this.fontWeightIndex = -1;
 
         if ( fi > -1 ) {
@@ -521,8 +549,8 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         } else {
 
             for ( let i = 100; i < 500; i += 100 ) {
-                let lfi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight - i );
-                let ufi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight + i );
+                const lfi: number = weights.indexOf( this.action.textWeight - i );
+                const ufi: number = weights.indexOf( this.action.textWeight + i );
                 if ( lfi > -1 ) {
                     this.fontWeightIndex = lfi;
                     break;
@@ -553,7 +581,14 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
      * weight index.
      */
     onFontWeightChange(): void {
-        this.action.textWeight = availableFonts[ this.fontFamily ][ this.fontWeightIndex ];
+        const weights = getFontWeights( this.fontFamily );
+
+        // An index of -1 means no weight is selected; keep the stored one.
+        if ( weights === undefined || this.fontWeightIndex < 0 ) {
+            return;
+        }
+
+        this.action.textWeight = weights[ this.fontWeightIndex ];
 
         this.updateRenderToken();
     }
