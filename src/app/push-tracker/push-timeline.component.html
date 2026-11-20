@@ -30,10 +30,10 @@
             </tr>
         </tbody>
     </table>
-    <div class="tip" *ngIf="tip != null" [style.left.px]="tip.x" [style.top.px]="tip.y">
+    <div class="tip" *ngIf="( tip !== null && tip !== undefined )" [style.left.px]="tip.x" [style.top.px]="tip.y">
         <div class="tip-title">{{tip.title}}</div>
         <div class="tip-row" *ngFor="let row of tip.rows"><span>{{row.name}}</span><b>{{row.value}}</b></div>
     </div>
 </ng-template>
 <p class="note" *ngIf="available && recap?.timelineTruncated">Long fight: the timeline shows only {{recap?.timeline?.length}} entries, so some are left out.</p>
-<p class="note" *ngIf="!available && recap != null">Scan the log again to see the timeline for this fight.</p>
+<p class="note" *ngIf="!available && ( recap !== null && recap !== undefined )">Scan the log again to see the timeline for this fight.</p>
