@@ -538,8 +538,11 @@ class CharacterDatabaseStore extends Store {
         if ( fs.existsSync( logsPath ) ) {
             var files = await fs.promises.readdir( logsPath );
             files.forEach( file => {
-                let results = /eqlog_(?<Character>.*)_(?<Server>[a-z]*)\.txt$/gi.exec( file );
-                if ( results != null && results?.groups?.Character != null && results?.groups?.Server != null ) {
+                // Anchored so copies like `old_eqlog_Soandso_test.txt` are not listed.
+                // Live logs look like `eqlog_Soandso_test.txt`.
+                const results = /^eqlog_(?<Character>.*)_(?<Server>[a-z]*)\.txt$/gi.exec( file );
+                if ( results !== null && results?.groups?.Character !== undefined && results?.groups?.Character !== null
+                    && results?.groups?.Server !== undefined && results?.groups?.Server !== null ) {
                     const thj = results.groups.Server === 'thj';
                     const key = thj ? 'The Heroe\'s Journey' : results.groups.Server.toUpperCase();
                     if ( dictionary[ key ] == null ) {
