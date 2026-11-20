@@ -422,6 +422,23 @@ const counterAction = ( name, resetSeconds, resetPhrases ) => ( {
     check( off.internals.storedVariables.CurrentZone === undefined, 'capture zone: nothing stored with the trigger disabled' );
 }
 
+// The loading line and the zone line in separate batches print one console line per zone change.
+{
+    const folder = { folderId: 'folderF', name: 'Zone folder', folderConditions: [ variableIs( 'CurrentZone', 'Some Zone|Other Zone' ) ], children: [] };
+    const watcher = createWatcher( {
+        triggers: [ makeTrigger( 'In zone', [ '^a gnoll hits you$' ], { folderId: 'folderF' } ), captureZoneTrigger ],
+        folders: [ folder ],
+    } );
+    watcher.tick();
+    const lines = () => watcher.console.filter( x => typeof x === 'string' && x.startsWith( 'Triggers active' ) ).length;
+    watcher.batch( [ 'LOADING, PLEASE WAIT...' ] );
+    watcher.batch( [ 'You have entered Some Zone.' ] );
+    check( lines() === 1, 'console: one line for a zone change split over two batches' );
+    watcher.batch( [ 'LOADING, PLEASE WAIT...' ] );
+    watcher.batch( [ 'You have entered Other Zone.' ] );
+    check( lines() === 2, 'console: one more line for the next zone change' );
+}
+
 // Capture Zone off: the gate leaves CurrentZone alone, so zone conditions stay closed.
 {
     const folder = { folderId: 'folderE', name: 'Zone folder', folderConditions: [ variableIs( 'CurrentZone', 'Some Zone' ) ], children: [] };

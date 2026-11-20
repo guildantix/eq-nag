@@ -93,6 +93,8 @@ let triggerGate = null;
 let triggerGateTimer = null;
 /** @type {boolean} Whether the zone changed since the console last showed the trigger count. */
 let hasTriggerGateZoneChanged = false;
+/** @type {string} The zone the console last showed the trigger count for. */
+let triggerGateLoggedZone = '';
 /**
  * @type {boolean}
  * The kill switch: --no-trigger-gate or NAG_NO_TRIGGER_GATE=1 runs every
@@ -1331,11 +1333,18 @@ function buildTriggerGate() {
 
 /**
  * Writes the number of triggers that can fire to the console, when the zone
- * changed.
+ * changed to a new, non-empty value.  The Capture Zone trigger clears the zone
+ * on the loading line and sets it on a later line, possibly in another batch;
+ * the empty step in between must not print a line of its own.
  */
 function logTriggerGate() {
     if ( triggerGate && hasTriggerGateZoneChanged ) {
         hasTriggerGateZoneChanged = false;
+        const currentZone = storedVariables[ 'CurrentZone' ]?.join( ', ' ) ?? '';
+        if ( currentZone === '' || currentZone === triggerGateLoggedZone ) {
+            return;
+        }
+        triggerGateLoggedZone = currentZone;
         log( `Triggers active in this zone: ${triggerGate.openCount} of ${activeTriggers.length}` );
     }
 }
