@@ -1,6 +1,7 @@
 const fs = require( 'fs' );
 const path = require( 'path' );
 const readline = require( 'readline' );
+const log = require( 'electron-log' );
 
 const cacheFileName = 'push-spells.json';
 const cacheVersion = 6;
@@ -330,7 +331,7 @@ async function loadPushSpells( eqFolder, cacheFolder ) {
     const spellCount = Object.keys( table.spells ).length;
     const instantCount = Object.values( table.spells ).filter( s => s.instantDamage === true ).length;
     if ( spellCount > 0 && instantCount === 0 ) {
-        console.warn( `Push table built: ${spellCount} spells, 0 instant damage. The spell file format may have changed.` );
+        log.warn( `Push table built: ${spellCount} spells, 0 instant damage. The spell file format may have changed.` );
     }
 
     try {
