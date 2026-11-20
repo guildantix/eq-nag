@@ -1,13 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTabChangeEvent } from '@angular/material/tabs';
 
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from '../dialog.service';
 import { ColorUtility } from 'src/app/utilities';
 import { TriggerModel, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, ImportTypes, ExternalDataSources } from 'src/app/core.model';
 import { Observable } from 'rxjs';
+import { TriggerActionsComponent } from 'src/app/editors/trigger-actions/trigger-actions.component';
+
+/** Label of the Actions tab, compared by label so inserting a tab never breaks the New button. */
+const actionsTabLabel = 'Actions';
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -29,6 +34,8 @@ export class TriggerDialogComponent implements OnInit {
     public actionTypes: typeof ActionTypes = ActionTypes;
     public operatorTypes: typeof OperatorTypes = OperatorTypes;
     public isDev: boolean = false;
+    public isActionsTabSelected: boolean = false;
+    @ViewChild( TriggerActionsComponent ) private triggerActions?: TriggerActionsComponent;
     private _fullName: string = '';
     public get fullName(): string {
         return this._fullName;
@@ -107,8 +114,39 @@ export class TriggerDialogComponent implements OnInit {
         this.ipcService.closeThisChild();
     }
 
-    public onChangeTabs( index: number ): void {
-        
+
+
+
+
+
+
+
+
+
+    /**
+     * Tracks the selected tab so the Actions tab's New button is only shown there.
+     *
+     * @param event Tab change event carrying the newly selected tab.
+     */
+    public onChangeTabs( event: MatTabChangeEvent ): void {
+        this.isActionsTabSelected = event.tab.textLabel === actionsTabLabel;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Adds an action through the actions editor, because the button sits in the tab row
+     * outside that editor.
+     */
+    public addNewAction(): void {
+        this.triggerActions?.addNewAction();
     }
 
     public save(): Observable<boolean> {
