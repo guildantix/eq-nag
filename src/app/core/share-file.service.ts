@@ -157,15 +157,24 @@ export class ShareFileService {
 
         const newerVersion = result.warnings?.find( f => f.code === 'newerVersion' );
 
-        const unknownKeys = newerVersion?.unknownKeys ?? [];
+        const unknownKeys = newerVersion?.unknownKeys;
 
-        // Nothing is lost when no setting is unrecognized, so a warning would only be noise.
-        if ( newerVersion && unknownKeys.length > 0 ) {
-            const message = [
-                `This file was made with a newer version of Nag (${newerVersion.fileVersion}). It can still be imported, but ${unknownKeys.length === 1 ? '1 setting' : unknownKeys.length + ' settings'} this version doesn't recognize ${unknownKeys.length === 1 ? 'is' : 'are'} kept and may not take effect.`,
-            ];
+        const couldNotCheck = unknownKeys === null || unknownKeys === undefined;
 
-            message.push( `Unrecognized: ${unknownKeys.join( ', ' )}` );
+        // Only top-level action settings and action types are checked. A clean check would only
+        // warn for nothing, but a check that could not run proves nothing, so it still warns.
+        if ( newerVersion && ( couldNotCheck || unknownKeys.length > 0 ) ) {
+            const message: string[] = [];
+
+            if ( couldNotCheck ) {
+                message.push( `This file was made with a newer version of Nag (${newerVersion.fileVersion}). Some of its settings may not take effect in this version.` );
+            } else {
+                const unknownCount = Math.max( newerVersion.unknownCount ?? 0, unknownKeys.length );
+                const countText = unknownCount === 1 ? '1 setting' : `${unknownCount} settings`;
+
+                message.push( `This file was made with a newer version of Nag (${newerVersion.fileVersion}). It can still be imported, but ${countText} this version doesn't recognize ${unknownCount === 1 ? 'is' : 'are'} kept and may not take effect.` );
+                message.push( `Unrecognized: ${unknownKeys.join( ', ' )}${unknownCount > unknownKeys.length ? ', ...' : ''}` );
+            }
 
             return new Observable<void>( observer => {
                 this.dialogService

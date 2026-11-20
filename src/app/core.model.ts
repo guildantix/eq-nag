@@ -1752,8 +1752,10 @@ export class ShareFileWarning {
     /** The warning code: 'newerVersion'. */
     public code: string;
     public fileVersion: string;
-    /** Action keys this version does not know, up to 10. */
-    public unknownKeys: string[] = [];
+    /** Unknown action keys and types, up to 10; null when the check could not run. */
+    public unknownKeys: string[] | null = [];
+    /** The true number of unknown entries, which can exceed the 10 listed. */
+    public unknownCount = 0;
 
 }
 

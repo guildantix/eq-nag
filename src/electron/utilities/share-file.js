@@ -29,8 +29,8 @@ const maxFolderDepth = 50;
 const forbiddenKeys = [ '__proto__', 'constructor', 'prototype' ];
 /** The most unknown action keys reported in a warning. */
 const maxReportedKeys = 10;
-/** @type {Set<string> | null | undefined} */
-let knownActionKeys;
+/** @type {{ keys: Set<string>, types: Set<number> } | null | undefined} */
+let knownActionModel;
 
 /**
  * @typedef {object} ShareManifest
@@ -49,7 +49,9 @@ let knownActionKeys;
  * @typedef {object} ShareWarning
  * @property {string} code The warning code, 'newerVersion'.
  * @property {string} fileVersion The app version that wrote the file.
- * @property {string[]} unknownKeys Action keys this version does not know, up to 10.
+ * @property {string[] | null} unknownKeys Unknown action keys and types, up to 10; null when the
+ *   check could not run.
+ * @property {number} unknownCount The true number of unknown entries, possibly more than listed.
  */
 
 /**
@@ -332,27 +334,30 @@ function isNewerVersion( a, b ) {
 
 
 /**
- * Returns the action keys in the payload that this version's trigger action model does not have.
+ * Returns the action keys and action types in the payload that this version's model does not have.
+ * Null means the model could not be loaded, which must not look like "nothing unknown".
  *
- * @returns {string[]} Returns up to the first ten unknown keys.
+ * @returns {{ unknownKeys: string[], unknownCount: number } | null} Returns up to the first ten
+ *   unknown entries and the true count, or null when the check could not run.
  *
  * @param {SharePayload} payload The validated payload.
  */
 function findUnknownActionKeys( payload ) {
 
-    if ( knownActionKeys === undefined ) {
+    if ( knownActionModel === undefined ) {
         try {
-            const { TriggerAction } = require( '../data/models/trigger' );
-            knownActionKeys = new Set( Object.keys( new TriggerAction() ) );
+            const { TriggerAction, ActionTypes } = require( '../data/models/trigger' );
+            const knownTypes = new Set( Object.values( ActionTypes ).filter( value => typeof value === 'number' ) );
+            knownActionModel = { keys: new Set( Object.keys( new TriggerAction() ) ), types: knownTypes };
         } catch ( error ) {
-            knownActionKeys = null;
+            knownActionModel = null;
         }
     }
 
-    const known = knownActionKeys;
+    const known = knownActionModel;
 
     if ( !known ) {
-        return [];
+        return null;
     }
 
 
@@ -372,16 +377,21 @@ function findUnknownActionKeys( payload ) {
             for ( const action of trigger.actions ?? [] ) {
                 if ( isObject( action ) ) {
                     Object.keys( action ).forEach( key => {
-                        if ( !known.has( key ) ) {
+                        if ( !known.keys.has( key ) ) {
                             unknown.add( key );
                         }
                     } );
+
+                    // A newer version can add an action type whose key set looks entirely familiar.
+                    if ( typeof action.actionType === 'number' && !known.types.has( action.actionType ) ) {
+                        unknown.add( `actionType ${action.actionType}` );
+                    }
                 }
             }
         }
     }
 
-    return Array.from( unknown ).slice( 0, maxReportedKeys );
+    return { unknownKeys: Array.from( unknown ).slice( 0, maxReportedKeys ), unknownCount: unknown.size };
 
 }
 
@@ -755,7 +765,14 @@ function readShareFileChecked( filePath, appVersion ) {
     const warnings = [];
 
     if ( typeof manifest?.version === 'string' && isNewerVersion( manifest.version, appVersion ) ) {
-        warnings.push( { code: 'newerVersion', fileVersion: manifest.version, unknownKeys: findUnknownActionKeys( sharePayload ) } );
+        const unknownResult = findUnknownActionKeys( sharePayload );
+
+        warnings.push( {
+            code: 'newerVersion',
+            fileVersion: manifest.version,
+            unknownKeys: unknownResult ? unknownResult.unknownKeys : null,
+            unknownCount: unknownResult ? unknownResult.unknownCount : 0,
+        } );
     }
 
     return { ok: true, payload: normalizePayload( sharePayload ), manifest: manifest, warnings: warnings, fileName: fileName };
