@@ -18,6 +18,13 @@ export class TriggerActionsComponent implements OnInit {
     @Input() public predefined: boolean = false;
     @Input() public capturePhrases: CapturePhrase[] = [];
 
+    /**
+     * Whether this editor renders its own New button. The trigger dialog turns it off because
+     * it shows the button in its tab row instead; other hosts, such as the GINA import wizard,
+     * keep the default.
+     */
+    @Input() public showNewButton: boolean = true;
+
     public actionTypes: typeof ActionTypes = ActionTypes;
     public actionTypeLabels = ActionTypeLabels;
     public actionTypeIcons = ActionTypeIcons;

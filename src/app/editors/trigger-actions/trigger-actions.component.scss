@@ -25,6 +25,13 @@ mat-form-field {
     }
 }
 
+// Plain in-flow row, so the button never overlaps a card.
+.new-action-row {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+}
+
 .content {
     position: relative; // Relative position renders it inside parent frame, scrollbar works.
     margin-left: -30px; // Force it closer to the borders. Result is same margins as the other tabs.
