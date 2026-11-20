@@ -54,6 +54,7 @@ export class QuestionDialogComponent implements OnInit {
 
 
 
+
     public executeAnswer( answer: QuestionDialogAnswerModel ) {
         answer.action();
         this.dialogRef.close();
