@@ -8,7 +8,7 @@ const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes, TimerR
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
 const { sanitizeHtml } = require( '../utilities/html' );
-const { sanitizeTimerIcon } = require( '../utilities/icons' );
+const { isDisplayableTimerIcon } = require( '../utilities/icons' );
 const perf = require( '../utilities/perf' );
 const _ = require( 'lodash' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -4580,16 +4580,15 @@ function getTimerLabel( overlayId, comp ) {
 
 /**
  * Puts the timer icon in front of the content of the given element.  Only
- * embedded images (png, jpeg, gif, webp or svg) are shown.
+ * embedded base64 images are shown.
  *
  * @param {HTMLElement} div The element for the timer.
  * @param {string} icon The icon of the timer action.
  */
 function prependTimerIcon( div, icon ) {
-    const source = sanitizeTimerIcon( icon, Infinity );
-    if ( source !== null ) {
+    if ( isDisplayableTimerIcon( icon ) ) {
         const img = document.createElement( 'img' );
-        img.src = source;
+        img.src = icon;
         img.classList.add( 'dot-icon' );
         img.style.cssText = 'position: absolute; margin-left: -1.7em;  height: 1.5em;';
         div.insertBefore( img, div.firstChild );

@@ -1,16 +1,7 @@
-import { iconPattern, maxIconLength } from '../../electron/utilities/icons';
+import { isDisplayableTimerIcon, isShareableTimerIcon } from '../../electron/utilities/icons';
 
-// The rules for a timer icon in a share are shared with src/electron/utilities/icons.js.
-export { iconPattern, maxIconLength };
-
-/**
- * Returns true if the given timer icon is accepted when it is received.
- *
- * @param icon The timer icon.
- */
-export function isShareableTimerIcon( icon: string ): boolean {
-    return typeof icon === 'string' && icon.length <= maxIconLength && iconPattern.test( icon );
-}
+// The icon rules live in src/electron/utilities/icons.js so the app and main process agree.
+export { isDisplayableTimerIcon, isShareableTimerIcon };
 
 
 
