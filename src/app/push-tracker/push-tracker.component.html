@@ -1,13 +1,13 @@
 <mat-toolbar>
     <span>Push</span>
     <span class="spacer"></span>
-    <button mat-button (click)="openSelectedFight()" *ngIf="detail != null" matTooltip="Open this fight in the Push Recap"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
-    <button mat-button [matMenuTriggerFor]="characterMenu" [disabled]="characters.length === 0" *ngIf="detail == null && characters.length > 1" matTooltip="Open the Push Recap pop-up for the last boss kill in a character's log"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
-    <button mat-button (click)="openPushRecap( characters[ 0 ] )" [disabled]="characters.length === 0" *ngIf="detail == null && characters.length <= 1" matTooltip="Open the Push Recap pop-up for the last boss kill in the character's log"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
+    <button mat-button (click)="openSelectedFight()" *ngIf="( detail !== null && detail !== undefined )" matTooltip="Open this fight in the Push Recap"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
+    <button mat-button [matMenuTriggerFor]="characterMenu" [disabled]="characters.length === 0" *ngIf="( detail === null || detail === undefined ) && characters.length > 1" matTooltip="Open the Push Recap pop-up for the last boss kill in a character's log"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
+    <button mat-button (click)="openPushRecap( characters[ 0 ] )" [disabled]="characters.length === 0" *ngIf="( detail === null || detail === undefined ) && characters.length <= 1" matTooltip="Open the Push Recap pop-up for the last boss kill in the character's log"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
     <mat-menu #characterMenu="matMenu">
         <button mat-menu-item *ngFor="let character of characters" (click)="openPushRecap( character )">{{characterLabel( character )}}</button>
     </mat-menu>
-    <button mat-button (click)="copySummary()" [disabled]="detail == null"><mat-icon class="material-icons-outlined">content_copy</mat-icon> Copy summary</button>
+    <button mat-button (click)="copySummary()" [disabled]="( detail === null || detail === undefined )"><mat-icon class="material-icons-outlined">content_copy</mat-icon> Copy summary</button>
     <button mat-button class="color-red" (click)="clearAll()" [disabled]="source !== 'saved' || recaps.length === 0"><mat-icon class="material-icons-outlined">delete_sweep</mat-icon> Clear all</button>
 </mat-toolbar>
 <div class="tab-content nag-scrollbar">
@@ -42,7 +42,7 @@
                         <mat-option *ngFor="let option of scanFloorOptions" [value]="option.value">{{option.label}} damage</mat-option>
                     </mat-select>
                 </mat-form-field>
-                <button mat-flat-button color="primary" (click)="startScan()" [disabled]="scanRunning || scanCharacterId == null">Scan</button>
+                <button mat-flat-button color="primary" (click)="startScan()" [disabled]="scanRunning || ( scanCharacterId === null || scanCharacterId === undefined )">Scan</button>
                 <button mat-button *ngIf="scanRunning" (click)="cancelScan()">Cancel</button>
             </div>
             <div class="scan-progress" *ngIf="scanRunning">
@@ -109,7 +109,7 @@
         </ng-template>
     </div>
 
-    <div class="detail-panel" *ngIf="selected != null" nagResizeable location="top" resizeVisibility="hidden" resizeMax="80%">
+    <div class="detail-panel" *ngIf="( selected !== null && selected !== undefined )" nagResizeable location="top" resizeVisibility="hidden" resizeMax="80%">
         <div class="panel-head">
             <h3 class="grid-title">Push hits by player and spell &middot; {{selected.mob}} {{formatTime( selected )}}</h3>
             <span class="spacer"></span>
@@ -132,12 +132,12 @@
                                 <tr *ngFor="let row of gridRows; trackBy: trackByName">
                                     <td>{{row.name}}</td>
                                     <td *ngFor="let cell of row.cells" class="num cell" [style.background-color]="cell?.background" [matTooltip]="cell?.tooltip">
-                                        <ng-template [ngIf]="cell != null">{{cell.events}}<span class="assumed" *ngIf="cell.assumed > 0"> ~{{cell.assumed}}</span></ng-template>
+                                        <ng-template [ngIf]="( cell !== null && cell !== undefined )">{{cell.events}}<span class="assumed" *ngIf="cell.assumed > 0"> ~{{cell.assumed}}</span></ng-template>
                                     </td>
                                     <td class="num total">{{row.events}}<span class="assumed" *ngIf="row.assumed > 0"> ~{{row.assumed}}</span></td>
                                     <td class="num total">{{row.pushValue}}</td>
                                 </tr>
-                                <tr *ngIf="detail != null && gridRows.length === 0"><td [attr.colspan]="gridSpells.length + 3" class="empty">No push events were found in this fight.</td></tr>
+                                <tr *ngIf="( detail !== null && detail !== undefined ) && gridRows.length === 0"><td [attr.colspan]="gridSpells.length + 3" class="empty">No push events were found in this fight.</td></tr>
                             </tbody>
                         </table>
                     </div>

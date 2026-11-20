@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { Subscription } from 'rxjs';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
@@ -50,6 +51,8 @@ export interface PushGridRow {
     selector: 'app-push-tracker',
     templateUrl: './push-tracker.component.html',
     styleUrls: [ './push-tracker.component.scss', '../core.scss' ],
+    // Scoped here, not in app.module, so fields outside Settings and Push keep the default label.
+    providers: [ { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { floatLabel: 'always' } } ],
     changeDetection: ChangeDetectionStrategy.OnPush,
 } )
 export class PushTrackerComponent implements OnInit, OnDestroy {

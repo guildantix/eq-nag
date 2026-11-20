@@ -152,9 +152,10 @@ div.flex-row {
     }
 }
 
-/* Floating labels, Settings tab only */
+/* Floating labels, Settings and Push tabs only */
 app-settings,
-combat-statistics {
+combat-statistics,
+app-push-tracker {
     .mat-form-field-appearance-legacy.mat-form-field-can-float.mat-form-field-should-float {
         .mat-form-field-label-wrapper {
             overflow: visible;
