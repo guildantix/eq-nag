@@ -30,6 +30,30 @@ export class QuestionDialogComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Whether there are answers to explain, so the info box is not an empty bar.
+     */
+    public get hasQuestions(): boolean {
+        return this.data.questions !== null && this.data.questions !== undefined && this.data.questions.length > 0;
+    }
+
+
+
+
+
+
+
+
+
     public executeAnswer( answer: QuestionDialogAnswerModel ) {
         answer.action();
         this.dialogRef.close();
