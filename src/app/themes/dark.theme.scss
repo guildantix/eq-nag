@@ -986,11 +986,31 @@ button.connected-button {
     }
 }
 
-mat-tab-group {
-    mat-tab-group.sub-tabs {
-        .mat-tab-header {
-            background-color: #181818;
-            padding-left: 5em;
+// Sub-tab rows inside a main tab (Combat) are shorter and darker
+// than the main tab bar, so they read as a second level instead of a copy of it.
+mat-tab-group.sub-tabs {
+    > .mat-tab-header {
+        background-color: #161616;
+        box-shadow: inset 0 3px 4px -2px rgba(0, 0, 0, .6);
+        border-bottom: 1px solid #2c2c2c;
+        padding-left: 8px;
+
+        .mat-tab-label {
+            height: 32px;
+            min-width: 0;
+            padding: 0 18px;
+            font-size: 12px;
+            letter-spacing: .02em;
+            opacity: 1;
+            color: #9e9e9e;
+
+            &.mat-tab-label-active {
+                color: $color-bright-white;
+            }
+        }
+
+        .mat-ink-bar {
+            background-color: #b26ef0;
         }
     }
 }
