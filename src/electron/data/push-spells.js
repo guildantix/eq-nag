@@ -244,7 +244,7 @@ async function loadPushSpells( logFilePath, eqFolder, cacheFolder ) {
     const resolvedFolder = resolveSpellFolder( logFilePath, eqFolder );
     if ( resolvedFolder === null ) {
         const folderExists = !!eqFolder && fs.existsSync( eqFolder );
-        const error = new Error( 'Nag could not find the EverQuest spell data (spells_us.txt).  Set your EverQuest folder in Settings › Characters & log.' );
+        const error = new Error( "Nag couldn't find the EverQuest spell data (spells_us.txt) next to this character's log or in your EverQuest folder." );
         error.code = folderExists ? 'no-file' : 'no-folder';
         throw error;
     }
