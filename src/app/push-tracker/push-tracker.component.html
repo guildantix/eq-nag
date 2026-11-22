@@ -38,12 +38,12 @@
                         <mat-option *ngFor="let character of characters" [value]="character.characterId">{{characterLabel( character )}}</mat-option>
                     </mat-select>
                 </mat-form-field>
-                <mat-form-field>
-                    <mat-label>Fights over</mat-label>
-                    <mat-select [(ngModel)]="scanFloor" name="scanFloor" [disabled]="scanRunning">
-                        <mat-option *ngFor="let option of scanFloorOptions" [value]="option.value">{{option.label}} damage</mat-option>
-                    </mat-select>
-                </mat-form-field>
+                <div class="slider-field">
+                    <div class="slider-head"><label id="scanFloorLabel">Analyze fights where the mob took at least</label><span class="readout">{{stepLabel( scanFloor )}}</span></div>
+                    <mat-slider min="0" [max]="lastDamageStepIndex" step="1" [value]="stepIndex( scanFloor )" [disabled]="scanRunning" aria-labelledby="scanFloorLabel" (input)="onScanFloorSlide( $event )" (change)="saveView()"></mat-slider>
+                    <div class="ticks"><span *ngFor="let tick of scanSliderTicks" [style.left.%]="tick.percent" [class.start]="tick.percent === 0" [class.end]="tick.percent === 100">{{tick.label}}</span></div>
+                    <span class="hint">Smaller fights are skipped while scanning. Lower finds more fights but scans slower.</span>
+                </div>
                 <button mat-flat-button color="primary" (click)="startScan()" [disabled]="scanRunning || ( scanCharacterId === null || scanCharacterId === undefined )">Scan</button>
                 <button mat-button *ngIf="scanRunning" (click)="cancelScan()">Cancel</button>
             </div>
@@ -58,12 +58,12 @@
         <ng-template [ngIf]="loaded && ( source === 'scan' || recaps.length > 0 )">
 
             <div class="filters">
-                <mat-form-field>
-                    <mat-label>Min damage taken</mat-label>
-                    <mat-select [(ngModel)]="minDamage" name="minDamage" (selectionChange)="onFilterChange()">
-                        <mat-option *ngFor="let option of minDamageOptions" [value]="option.value">{{option.label}}</mat-option>
-                    </mat-select>
-                </mat-form-field>
+                <div class="slider-field">
+                    <div class="slider-head"><label id="minDamageLabel">Show fights where the mob took at least</label><span class="readout">{{stepLabel( minDamage )}}</span></div>
+                    <mat-slider [min]="minDamageSliderMinimum" [max]="lastDamageStepIndex" step="1" [value]="stepIndex( minDamage )" aria-labelledby="minDamageLabel" (input)="onMinDamageSlide( $event )" (change)="saveView()"></mat-slider>
+                    <div class="ticks"><span *ngFor="let tick of minDamageSliderTicks" [style.left.%]="tick.percent" [class.start]="tick.percent === 0" [class.end]="tick.percent === 100">{{tick.label}}</span></div>
+                    <span class="hint">{{source === 'scan' ? 'Filters the scanned list right away. It can\'t go lower than the scan setting.' : 'Filters the list right away.'}}</span>
+                </div>
                 <mat-form-field>
                     <mat-label>Date</mat-label>
                     <mat-select [(ngModel)]="dateFilter" name="dateFilter" (selectionChange)="onFilterChange()" matTooltip="A night runs from 06:00 to 06:00">
@@ -81,15 +81,15 @@
             <table class="fights">
                 <thead>
                     <tr>
-                        <th>Time</th>
-                        <th *ngIf="showCharacter">Character</th>
-                        <th>Mob</th>
-                        <th class="num">Length</th>
-                        <th class="num">Damage taken</th>
-                        <th class="num" matTooltip="Times a push spell or proc landed on the mob. ~ = casts assumed to have landed.">Push hits</th>
-                        <th class="num" matTooltip="The push values of those hits added up.">Total push</th>
-                        <th class="num" matTooltip="Procs that landed with no player named (not in the player totals)">Procs</th>
-                        <th>Top pusher</th>
+                        <th [attr.aria-sort]="sortAria( 'fights', 'time' )"><button type="button" class="sort" (click)="sortBy( 'fights', 'time' )">Time<span class="arrow" aria-hidden="true">{{sortArrow( 'fights', 'time' )}}</span></button></th>
+                        <th *ngIf="showCharacter" [attr.aria-sort]="sortAria( 'fights', 'character' )"><button type="button" class="sort" (click)="sortBy( 'fights', 'character' )">Character<span class="arrow" aria-hidden="true">{{sortArrow( 'fights', 'character' )}}</span></button></th>
+                        <th [attr.aria-sort]="sortAria( 'fights', 'mob' )"><button type="button" class="sort" (click)="sortBy( 'fights', 'mob' )">Mob<span class="arrow" aria-hidden="true">{{sortArrow( 'fights', 'mob' )}}</span></button></th>
+                        <th class="num" [attr.aria-sort]="sortAria( 'fights', 'length' )"><button type="button" class="sort" (click)="sortBy( 'fights', 'length' )">Length<span class="arrow" aria-hidden="true">{{sortArrow( 'fights', 'length' )}}</span></button></th>
+                        <th class="num" [attr.aria-sort]="sortAria( 'fights', 'damage' )"><button type="button" class="sort" (click)="sortBy( 'fights', 'damage' )">Damage taken<span class="arrow" aria-hidden="true">{{sortArrow( 'fights', 'damage' )}}</span></button></th>
+                        <th class="num" [attr.aria-sort]="sortAria( 'fights', 'hits' )" matTooltip="Times a push spell or proc landed on the mob. ~ = casts assumed to have landed."><button type="button" class="sort" (click)="sortBy( 'fights', 'hits' )">Push hits<span class="arrow" aria-hidden="true">{{sortArrow( 'fights', 'hits' )}}</span></button></th>
+                        <th class="num" [attr.aria-sort]="sortAria( 'fights', 'push' )" matTooltip="The push values of those hits added up."><button type="button" class="sort" (click)="sortBy( 'fights', 'push' )">Total push<span class="arrow" aria-hidden="true">{{sortArrow( 'fights', 'push' )}}</span></button></th>
+                        <th class="num" [attr.aria-sort]="sortAria( 'fights', 'procs' )" matTooltip="Procs that landed with no player named (not in the player totals)"><button type="button" class="sort" (click)="sortBy( 'fights', 'procs' )">Procs<span class="arrow" aria-hidden="true">{{sortArrow( 'fights', 'procs' )}}</span></button></th>
+                        <th [attr.aria-sort]="sortAria( 'fights', 'top' )"><button type="button" class="sort" (click)="sortBy( 'fights', 'top' )">Top pusher<span class="arrow" aria-hidden="true">{{sortArrow( 'fights', 'top' )}}</span></button></th>
                         <th></th>
                     </tr>
                 </thead>
@@ -160,11 +160,11 @@
                             <table class="grid">
                                 <thead>
                                     <tr>
-                                        <th>Player</th>
-                                        <th class="num">Fights</th>
-                                        <th *ngFor="let spell of totals.spells" class="num">{{( totals.spellPush.get( spell ) ?? null ) === null ? spell : spell + ' (' + totals.spellPush.get( spell ) + ')'}}</th>
-                                        <th class="num">Hits</th>
-                                        <th class="num">Push</th>
+                                        <th [attr.aria-sort]="sortAria( 'totals', 'name' )"><button type="button" class="sort" (click)="sortBy( 'totals', 'name' )">Player<span class="arrow" aria-hidden="true">{{sortArrow( 'totals', 'name' )}}</span></button></th>
+                                        <th class="num" [attr.aria-sort]="sortAria( 'totals', 'fights' )"><button type="button" class="sort" (click)="sortBy( 'totals', 'fights' )">Fights<span class="arrow" aria-hidden="true">{{sortArrow( 'totals', 'fights' )}}</span></button></th>
+                                        <th *ngFor="let spell of totals.spells" class="num" [attr.aria-sort]="sortAria( 'totals', 'spell:' + spell )"><button type="button" class="sort" (click)="sortBy( 'totals', 'spell:' + spell )">{{( totals.spellPush.get( spell ) ?? null ) === null ? spell : spell + ' (' + totals.spellPush.get( spell ) + ')'}}<span class="arrow" aria-hidden="true">{{sortArrow( 'totals', 'spell:' + spell )}}</span></button></th>
+                                        <th class="num" [attr.aria-sort]="sortAria( 'totals', 'hits' )"><button type="button" class="sort" (click)="sortBy( 'totals', 'hits' )">Hits<span class="arrow" aria-hidden="true">{{sortArrow( 'totals', 'hits' )}}</span></button></th>
+                                        <th class="num" [attr.aria-sort]="sortAria( 'totals', 'push' )"><button type="button" class="sort" (click)="sortBy( 'totals', 'push' )">Push<span class="arrow" aria-hidden="true">{{sortArrow( 'totals', 'push' )}}</span></button></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -258,10 +258,10 @@
                         <table class="grid">
                             <thead>
                                 <tr>
-                                    <th>Player</th>
-                                    <th *ngFor="let spell of gridSpells" class="num">{{spellHeader( spell )}}</th>
-                                    <th class="num">Hits</th>
-                                    <th class="num">Push</th>
+                                    <th [attr.aria-sort]="sortAria( 'grid', 'name' )"><button type="button" class="sort" (click)="sortBy( 'grid', 'name' )">Player<span class="arrow" aria-hidden="true">{{sortArrow( 'grid', 'name' )}}</span></button></th>
+                                    <th *ngFor="let spell of gridSpells" class="num" [attr.aria-sort]="sortAria( 'grid', 'spell:' + spell )"><button type="button" class="sort" (click)="sortBy( 'grid', 'spell:' + spell )">{{spellHeader( spell )}}<span class="arrow" aria-hidden="true">{{sortArrow( 'grid', 'spell:' + spell )}}</span></button></th>
+                                    <th class="num" [attr.aria-sort]="sortAria( 'grid', 'hits' )"><button type="button" class="sort" (click)="sortBy( 'grid', 'hits' )">Hits<span class="arrow" aria-hidden="true">{{sortArrow( 'grid', 'hits' )}}</span></button></th>
+                                    <th class="num" [attr.aria-sort]="sortAria( 'grid', 'push' )"><button type="button" class="sort" (click)="sortBy( 'grid', 'push' )">Push<span class="arrow" aria-hidden="true">{{sortArrow( 'grid', 'push' )}}</span></button></th>
                                 </tr>
                             </thead>
                             <tbody>

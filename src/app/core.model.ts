@@ -1858,6 +1858,26 @@ export class PushRecapPreferences {
     /** Landing messages (the text after the mob name) that the proc tables, the timeline and the
      * Procs column leave out. */
     hiddenProcTexts: string[] = [];
+    /** The damage sliders and table sorts the Push tab remembers; null until it has saved any. */
+    tabView: PushTabView | null = null;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * What the Push tab remembers between sessions.  A sort is stored per table, by column key.
+ */
+export interface PushTabView {
+    scanFloor: number;
+    minDamage: number;
+    sorts: { [ table: string ]: { key: string, direction: 'asc' | 'desc' } };
 }
 
 export class VersionNumber {

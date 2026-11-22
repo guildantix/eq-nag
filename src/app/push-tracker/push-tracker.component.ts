@@ -1,10 +1,13 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
+import { MatSliderChange } from '@angular/material/slider';
 import { forkJoin, of, Subscription } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
-import { CharacterModel, PushRecapPreferences, PushRecapProc, PushRecapSummary, PushScanStatus } from '../core.model';
+import { CharacterModel, PushRecapPreferences, PushRecapProc, PushRecapSummary, PushScanStatus, PushTabView } from '../core.model';
+import { nextSortState, parseSortState, sortAriaValue, sortArrow, sortRows, TableSortState } from '../utilities/table-sort';
+import { damageStepIndex, formatDamageStep, pushDamageSteps } from './push-damage-steps';
 import { aggregateFights, axisStep, describeTotals, nightKey, PushTotals } from './push-totals';
 
 /**
@@ -69,6 +72,139 @@ export interface PushGridRow {
 
 
 /**
+ * The Push tab tables that can be sorted: the fights list, and the player grids of several fights
+ * and of one fight.
+ */
+export type PushSortTable = 'fights' | 'totals' | 'grid';
+
+
+
+
+
+
+
+
+
+
+/**
+ * One labelled mark under a damage slider, placed along the slider track.
+ */
+export interface PushSliderTick {
+    label: string;
+    percent: number;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * The damage amounts that get a label under the sliders.
+ */
+const sliderTickAmounts: number[] = [ 1e3, 1e6, 1e9, 1e10 ];
+
+
+
+
+
+
+
+
+
+
+/**
+ * Places the slider labels along a track that starts at the given step.  Labels below that step
+ * are left out, so the marks match what the thumb can reach.
+ *
+ * @param firstIndex The first step the slider can reach.
+ */
+function buildSliderTicks( firstIndex: number ): PushSliderTick[] {
+    const lastIndex = pushDamageSteps.length - 1;
+    return sliderTickAmounts
+        .map( amount => ( { label: formatDamageStep( amount ), index: damageStepIndex( amount ) } ) )
+        .filter( tick => tick.index >= firstIndex )
+        .map( tick => {
+            const span = lastIndex - firstIndex;
+            return { label: tick.label, percent: span === 0 ? 0 : ( tick.index - firstIndex ) / span * 100 };
+        } );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * How each table is sorted until the user clicks a header: newest fight first, and the players who
+ * pushed most first.
+ */
+const defaultPushSorts: { [ table: string ]: TableSortState } = {
+    fights: { key: 'time', direction: 'desc' },
+    totals: { key: 'hits', direction: 'desc' },
+    grid: { key: 'hits', direction: 'desc' },
+};
+
+
+
+
+
+
+
+
+
+
+/**
+ * The column keys of the fights list.
+ */
+const fightSortKeys: string[] = [ 'time', 'character', 'mob', 'length', 'damage', 'hits', 'push', 'procs', 'top' ];
+
+
+
+
+
+
+
+
+
+
+/**
+ * The fixed column keys of the player grids.  A spell column has the key "spell:" plus its name.
+ */
+const playerSortKeys: string[] = [ 'name', 'fights', 'hits', 'push' ];
+
+
+
+
+
+
+
+
+
+
+/**
+ * The column keys that hold text, which sort A to Z first.
+ */
+const textSortKeys: string[] = [ 'character', 'mob', 'top', 'name' ];
+
+
+
+
+
+
+
+
+
+
+/**
  * The Push tab: saved Push Recaps listed with their details and a player by spell grid.
  */
 @Component( {
@@ -81,12 +217,9 @@ export interface PushGridRow {
 } )
 export class PushTrackerComponent implements OnInit, OnDestroy {
 
-    public readonly minDamageOptions: { label: string, value: number }[] = [
-        { label: 'Any', value: 0 },
-        { label: '50M+', value: 50000000 },
-        { label: '250M+', value: 250000000 },
-        { label: '1B+', value: 1000000000 },
-    ];
+    public readonly lastDamageStepIndex: number = pushDamageSteps.length - 1;
+    public readonly scanSliderTicks: PushSliderTick[] = buildSliderTicks( 0 );
+    public minDamageSliderTicks: PushSliderTick[] = buildSliderTicks( 0 );
 
     public source: 'saved' | 'scan' = 'saved';
     public characters: CharacterModel[] = [];
@@ -96,16 +229,13 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     public scanStartMessage: string = '';
     public savedKeys: Set<string> = new Set<string>();
 
-    public readonly scanFloorOptions: { label: string, value: number }[] = [
-        { label: '10K', value: 10000 },
-        { label: '100K', value: 100000 },
-        { label: '1M', value: 1000000 },
-        { label: '10M', value: 10000000 },
-        { label: '100M', value: 100000000 },
-    ];
-
     public scanFloor: number = 1000000;
-    public minDamage: number = 0;
+    public minDamage: number = 1000;
+    public sorts: { [ table: string ]: TableSortState } = {
+        fights: { ...defaultPushSorts.fights },
+        totals: { ...defaultPushSorts.totals },
+        grid: { ...defaultPushSorts.grid },
+    };
     public namedOnly: boolean = false;
     public mobFilter: string = '';
 
@@ -125,6 +255,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     public totalsTitle: string = '';
     public totalsMeasure: 'hits' | 'push' = 'hits';
     public totalsRows: PushTotalsRow[] = [];
+    public totalsRowsUnsorted: PushTotalsRow[] = [];
     public fightBars: PushFightBar[] = [];
     public fightGrid: number[] = [];
     public fightYTicks: PushChartTick[] = [];
@@ -134,6 +265,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     public gridSpells: string[] = [];
     public gridSpellPush: Map<string, number | null> = new Map<string, number | null>();
     public gridRows: PushGridRow[] = [];
+    public gridRowsUnsorted: PushGridRow[] = [];
     public hiddenTexts: Set<string> = new Set<string>();
     public procRows: PushRecapProc[] = [];
     public possibleRows: PushRecapProc[] = [];
@@ -146,6 +278,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     private detailCache: Map<string, PushRecapSummary> = new Map<string, PushRecapSummary>();
     private detailStale = false;
     private anchorId: string | null = null;
+    private saveViewTimer: ReturnType<typeof setTimeout> | null = null;
 
     constructor(
         private readonly ipcService: IpcService,
@@ -176,7 +309,10 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             this.loadScanResults();
         } ) );
         this.subscription.add( this.ipcService.onPushRecapPreferencesChanged().subscribe( prefs => this.setHiddenTexts( prefs ) ) );
-        this.ipcService.getPushRecapPreferences().subscribe( prefs => this.setHiddenTexts( prefs ) );
+        this.ipcService.getPushRecapPreferences().subscribe( prefs => {
+            this.setHiddenTexts( prefs );
+            this.restoreView( prefs?.tabView );
+        } );
         this.load();
         this.ipcService.getCharacters().subscribe( characters => {
             this.characters = characters.filter( c => c.logFile );
@@ -187,7 +323,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             this.scanStatus = status;
             if ( status.status !== 'idle' ) {
                 this.scanCharacterId = status.characterId;
-                if ( this.scanFloorOptions.some( o => o.value === status.minDamage ) ) {
+                if ( pushDamageSteps.indexOf( status.minDamage ) > -1 ) {
                     this.scanFloor = status.minDamage;
                 }
                 this.source = status.status === 'running' ? 'scan' : this.source;
@@ -206,6 +342,11 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
 
 
     ngOnDestroy(): void {
+        if ( this.saveViewTimer !== null ) {
+            clearTimeout( this.saveViewTimer );
+            this.saveViewTimer = null;
+            this.writeView();
+        }
         this.subscription.unsubscribe();
         this.detailSubscription?.unsubscribe();
         this.totalsSubscription?.unsubscribe();
@@ -328,7 +469,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             return status.message;
         }
         const seconds = Math.max( 1, Math.round( status.elapsedMs / 1000 ) );
-        return `${status.kills} ${status.kills === 1 ? 'kill' : 'kills'} found in ${this.formatLength( seconds )}${status.resumed ? ', continuing the last scan of this log' : ''}.  Fights with ${this.formatDamage( status.minDamage )} or more damage taken are listed.${status.capped ? '  Only the most recent 300 are kept.' : ''}`;
+        return `${status.kills} ${status.kills === 1 ? 'kill' : 'kills'} found in ${this.formatLength( seconds )}${status.resumed ? ', continuing the last scan of this log' : ''}.  Fights where the mob took at least ${formatDamageStep( status.minDamage )} are listed.${status.capped ? '  Only the most recent 300 are kept.' : ''}`;
     }
 
 
@@ -595,6 +736,227 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      */
     public onFilterChange(): void {
         this.applyFilters();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Follows the Analyze slider.  While scanning, the Show slider can't be lower than it, so it is
+     * raised with it.
+     *
+     * @param event The slider change, whose value is the position in the damage steps.
+     */
+    public onScanFloorSlide( event: MatSliderChange ): void {
+        this.scanFloor = pushDamageSteps[ event.value ?? 0 ];
+        this.applyFilters();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Follows the Show slider and filters the list right away.
+     *
+     * @param event The slider change, whose value is the position in the damage steps.
+     */
+    public onMinDamageSlide( event: MatSliderChange ): void {
+        this.minDamage = pushDamageSteps[ event.value ?? 0 ];
+        this.applyFilters();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Gives the slider position of a damage amount.
+     *
+     * @param damage The damage amount.
+     */
+    public stepIndex( damage: number ): number {
+        return damageStepIndex( damage );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Writes a damage amount the short way for the slider readout, for example 2.5M.
+     *
+     * @param damage The damage amount.
+     */
+    public stepLabel( damage: number ): string {
+        return formatDamageStep( damage );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * The lowest position of the Show slider: the scan setting while scanning, because the list
+     * only holds fights that big, and the first step for saved recaps.
+     */
+    public get minDamageSliderMinimum(): number {
+        return this.source === 'scan' ? damageStepIndex( this.scanFloor ) : 0;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the sort a table uses now.  A sort on a spell column that the table does not show
+     * goes back to the default, so the order never depends on a column the user can't see.
+     *
+     * @param table The table.
+     */
+    public activeSort( table: PushSortTable ): TableSortState {
+        const state = this.sorts[ table ];
+        if ( table === 'fights' || state.key.indexOf( 'spell:' ) !== 0 ) {
+            return state;
+        }
+        const spells = table === 'totals' ? ( this.totals?.spells ?? [] ) : this.gridSpells;
+        return spells.indexOf( state.key.substring( 'spell:'.length ) ) > -1 ? state : defaultPushSorts[ table ];
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sorts a table by the clicked header, or reverses it when that column is already sorted, and
+     * remembers the choice.  The selected fights stay selected.
+     *
+     * @param table The table whose header was clicked.
+     * @param key The column key.
+     */
+    public sortBy( table: PushSortTable, key: string ): void {
+        this.sorts[ table ] = nextSortState( this.activeSort( table ), key, textSortKeys.indexOf( key ) > -1 );
+        this.sortTable( table );
+        this.saveView();
+        this.changeDetector.markForCheck();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the aria-sort value of a column header.
+     *
+     * @param table The table.
+     * @param key The column key.
+     */
+    public sortAria( table: PushSortTable, key: string ): 'ascending' | 'descending' | 'none' {
+        return sortAriaValue( this.activeSort( table ), key );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the arrow of a column header: empty unless the table is sorted by that column.
+     *
+     * @param table The table.
+     * @param key The column key.
+     */
+    public sortArrow( table: PushSortTable, key: string ): string {
+        return sortArrow( this.activeSort( table ), key );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Remembers the two damage sliders and the table sorts for the next session.  Saves are
+     * batched, because each keyboard step on a slider would otherwise rewrite the settings file.
+     */
+    public saveView(): void {
+        if ( this.saveViewTimer !== null ) {
+            clearTimeout( this.saveViewTimer );
+        }
+        this.saveViewTimer = setTimeout( () => {
+            this.saveViewTimer = null;
+            this.writeView();
+        }, 500 );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends the two damage sliders and the table sorts to the settings file.
+     */
+    public writeView(): void {
+        const view: PushTabView = {
+            scanFloor: this.scanFloor,
+            minDamage: this.minDamage,
+            sorts: { fights: this.sorts.fights, totals: this.sorts.totals, grid: this.sorts.grid },
+        };
+        this.ipcService.setPushTabView( view );
     }
 
 
@@ -1040,6 +1402,175 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
 
 
     /**
+     * Takes the remembered sliders and sorts, dropping any that are no longer valid.
+     *
+     * @param view The stored view, or null when nothing was saved yet.
+     */
+    private restoreView( view: PushTabView | null | undefined ): void {
+        if ( view === null || view === undefined ) {
+            return;
+        }
+        // A hand-edited settings file can hold anything; non-numbers keep the defaults.
+        const scanIdle = this.scanStatus === null || this.scanStatus === undefined || this.scanStatus.status === 'idle';
+        if ( scanIdle && typeof view.scanFloor === 'number' && Number.isFinite( view.scanFloor ) ) {
+            this.scanFloor = pushDamageSteps[ damageStepIndex( view.scanFloor ) ];
+        }
+        if ( typeof view.minDamage === 'number' && Number.isFinite( view.minDamage ) ) {
+            this.minDamage = pushDamageSteps[ damageStepIndex( view.minDamage ) ];
+        }
+        const isPlayerKey = ( key: string ) => playerSortKeys.indexOf( key ) > -1 || key.indexOf( 'spell:' ) === 0;
+        this.sorts.fights = parseSortState( view.sorts?.fights, key => fightSortKeys.indexOf( key ) > -1, defaultPushSorts.fights );
+        this.sorts.totals = parseSortState( view.sorts?.totals, isPlayerKey, defaultPushSorts.totals );
+        this.sorts.grid = parseSortState( view.sorts?.grid, key => key !== 'fights' && isPlayerKey( key ), defaultPushSorts.grid );
+        this.applyFilters();
+        this.sortTable( 'totals' );
+        this.sortTable( 'grid' );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Puts a table's rows in the order of its sort.
+     *
+     * @param table The table.
+     */
+    private sortTable( table: PushSortTable ): void {
+        if ( table === 'fights' ) {
+            this.rows = this.sortFights( this.rows );
+        } else if ( table === 'totals' ) {
+            this.totalsRows = this.sortPlayers( this.totalsRowsUnsorted, table, this.totals?.spells ?? [] );
+        } else {
+            this.gridRows = this.sortPlayers( this.gridRowsUnsorted, table, this.gridSpells );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sorts fights by the sort of the fights list.
+     *
+     * @param fights The fights to sort.
+     */
+    private sortFights( fights: PushRecapSummary[] ): PushRecapSummary[] {
+        return sortRows( fights, this.activeSort( 'fights' ), ( recap, key ) => this.fightSortValue( recap, key ) );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Reads the value of a fights list column.
+     *
+     * @param recap The fight.
+     * @param key The column key.
+     */
+    private fightSortValue( recap: PushRecapSummary, key: string ): string | number {
+        if ( key === 'time' ) {
+            return recap.killTime;
+        } else if ( key === 'character' ) {
+            return recap.characterName ?? '';
+        } else if ( key === 'mob' ) {
+            return recap.mob;
+        } else if ( key === 'length' ) {
+            return recap.fightSeconds;
+        } else if ( key === 'damage' ) {
+            return recap.damageTaken;
+        } else if ( key === 'hits' ) {
+            return recap.events;
+        } else if ( key === 'push' ) {
+            return recap.pushValue;
+        } else if ( key === 'procs' ) {
+            return this.procCount( recap );
+        } else if ( key === 'top' ) {
+            return recap.topPusher ?? '';
+        }
+        return 0;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sorts the player rows of a grid by the sort of that grid.  Players with equal values stay in
+     * name order.
+     *
+     * @param rows The rows to sort.
+     * @param table The grid the rows belong to.
+     * @param spells The spell columns of the grid, to find the cell of a spell column.
+     */
+    private sortPlayers<T extends PushGridRow>( rows: T[], table: PushSortTable, spells: string[] ): T[] {
+        const valueOf = ( row: PushGridRow, key: string ) => this.playerSortValue( row, key, spells );
+        return sortRows<T>( rows, this.activeSort( table ), valueOf, ( a, b ) => a.name.localeCompare( b.name ) );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Reads the value of a player grid column.
+     *
+     * @param row The player row.
+     * @param key The column key.
+     * @param spells The spell columns of the grid.
+     */
+    private playerSortValue( row: PushGridRow, key: string, spells: string[] ): string | number {
+        if ( key === 'name' ) {
+            return row.name;
+        } else if ( key === 'fights' ) {
+            return ( row as PushTotalsRow ).fights ?? 0;
+        } else if ( key === 'hits' ) {
+            return row.events;
+        } else if ( key === 'push' ) {
+            return row.pushValue;
+        } else if ( key.indexOf( 'spell:' ) === 0 ) {
+            const index = spells.indexOf( key.substring( 'spell:'.length ) );
+            return index > -1 ? ( row.cells[ index ]?.events ?? 0 ) : 0;
+        }
+        return 0;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Takes the hidden messages from the preferences and rebuilds the proc tables.
      *
      * @param prefs The Push Recap preferences, or null when they are not loaded yet.
@@ -1132,7 +1663,12 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         if ( this.dateFilter !== '' && this.dateOptions.indexOf( this.dateFilter ) === -1 ) {
             this.dateFilter = '';
         }
-        this.rows = items.filter( r => r.damageTaken >= this.minDamage && ( !this.namedOnly || r.named ) && ( mob === '' || r.mob.toLowerCase().indexOf( mob ) > -1 ) && ( this.dateFilter === '' || nightKey( r.killTime ) === this.dateFilter ) );
+        if ( this.source === 'scan' && this.minDamage < this.scanFloor ) {
+            this.minDamage = this.scanFloor;
+        }
+        this.minDamageSliderTicks = buildSliderTicks( this.minDamageSliderMinimum );
+        const filtered = items.filter( r => r.damageTaken >= this.minDamage && ( !this.namedOnly || r.named ) && ( mob === '' || r.mob.toLowerCase().indexOf( mob ) > -1 ) && ( this.dateFilter === '' || nightKey( r.killTime ) === this.dateFilter ) );
+        this.rows = this.sortFights( filtered );
         this.applySelection();
     }
 
@@ -1259,7 +1795,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
 
         let max = 0;
         totals.players.forEach( p => p.spells.forEach( s => max = Math.max( max, s.events ) ) );
-        this.totalsRows = totals.players.map( p => ( {
+        this.totalsRowsUnsorted = totals.players.map( p => ( {
             name: p.name,
             fights: p.fights,
             events: p.events,
@@ -1277,6 +1813,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
                     };
             } ),
         } ) );
+        this.totalsRows = this.sortPlayers( this.totalsRowsUnsorted, 'totals', totals.spells );
         this.buildFightChart();
         this.changeDetector.markForCheck();
     }
@@ -1376,6 +1913,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         this.gridSpells = [];
         this.gridSpellPush = new Map<string, number | null>();
         this.gridRows = [];
+        this.gridRowsUnsorted = [];
         this.buildProcs();
 
         if ( recap !== null && recap !== undefined ) {
@@ -1390,7 +1928,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             } ) );
             this.gridSpells = Array.from( totals.keys() ).sort( ( a, b ) => totals.get( b ) - totals.get( a ) || a.localeCompare( b ) );
 
-            this.gridRows = recap.players.slice().sort( ( a, b ) => b.events - a.events || a.name.localeCompare( b.name ) ).map( p => ( {
+            this.gridRowsUnsorted = recap.players.map( p => ( {
                 name: p.name,
                 events: p.events,
                 assumed: p.assumed,
@@ -1407,6 +1945,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
                         };
                 } ),
             } ) );
+            this.gridRows = this.sortPlayers( this.gridRowsUnsorted, 'grid', this.gridSpells );
         }
 
         this.changeDetector.markForCheck();
