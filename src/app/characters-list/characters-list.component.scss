@@ -26,6 +26,10 @@ div.character-tab-content {
     flex: 1 1 0px;
 }
 
+.log-file-path {
+    word-break: break-all;
+}
+
 :host ::ng-deep .mat-content {
     overflow: visible;
 
