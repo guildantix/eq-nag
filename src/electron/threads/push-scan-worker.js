@@ -85,7 +85,7 @@ async function hashHead( handle, length ) {
 async function scanLog( params ) {
 
     const startedAt = Date.now();
-    const table = await loadPushSpells( params.eqFolder, params.userData );
+    const table = await loadPushSpells( params.logFilePath, params.eqFolder, params.userData );
     const landing = buildLandingIndex( table );
 
     const handle = await fs.promises.open( params.logFilePath, 'r' );
