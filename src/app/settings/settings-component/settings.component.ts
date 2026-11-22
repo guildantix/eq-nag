@@ -38,6 +38,20 @@ interface ISettingsSection {
 
 const advancedStorageKey = 'nagSettingsAdvanced';
 
+/** Readable names for the message ids a dialog can hide; the raw ids mean nothing to a user. */
+const hiddenMessageNames: { [ modalId: string ]: string } = {
+    'triggers-component:copy-hotkey:success-modal': 'Hotkey help (after copying a hotkey)',
+};
+
+
+
+
+
+
+
+
+
+
 /**
  * The Settings tab: a list of sections, each with an everyday part and an Advanced part.
  */
@@ -107,6 +121,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     public updatedSettings: string[] = [];
     public rollSettings: RollTrackerSettings | null = null;
     public rollDefaults: RollTrackerSettings | null = null;
+    public hiddenMessages: { id: string, name: string }[] = [];
     private fileReadDelays: FileReadDelays | null = null;
     private rollAdvancedChecked: boolean = false;
     private hasStoredAdvanced: boolean = false;
@@ -183,6 +198,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
         } );
         window.api.ipc.send( 'rolls:get', null );
 
+        this.loadHiddenMessages();
         this.loadSettings();
     }
 
@@ -623,6 +639,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
      */
     selectSection( id: string ): void {
         this.section = id;
+        if ( id === 'advanced' ) {
+            this.loadHiddenMessages();
+        }
         this.updateStatusTimer();
     }
 
@@ -1227,11 +1246,59 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
 
     /**
-     * Resets all hidden modals, allowing them to appear again.
+     * Reads the hidden messages again; a dialog can hide one while this page is open.
+     */
+    loadHiddenMessages(): void {
+        this.ipcService.getHiddenModalIds().subscribe( hiddenModalIds => {
+            // An older or hand-edited file may hold anything; only an array counts.
+            const storedIds = Array.isArray( hiddenModalIds ) ? hiddenModalIds : [];
+            this.hiddenMessages = storedIds.map( hiddenModalId => {
+                const known = typeof hiddenModalId === 'string' && Object.prototype.hasOwnProperty.call( hiddenMessageNames, hiddenModalId );
+                return { id: hiddenModalId, name: known ? hiddenMessageNames[ hiddenModalId ] : 'Other message' };
+            } );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows one hidden message again and keeps the others hidden.
+     *
+     * @param hiddenModalId The id of the message to show again.
+     */
+    showHiddenMessageAgain( hiddenModalId: string ): void {
+        // Re-read first, so a message hidden in another window meanwhile isn't lost.
+        this.ipcService.getHiddenModalIds().subscribe( hiddenModalIds => {
+            const storedIds = Array.isArray( hiddenModalIds ) ? hiddenModalIds : [];
+            this.ipcService.saveHiddenModalIds( storedIds.filter( storedId => storedId !== hiddenModalId ) );
+            this.hiddenMessages = this.hiddenMessages.filter( hiddenMessage => hiddenMessage.id !== hiddenModalId );
+            this.snackBar.open( 'That message will now appear again.', 'dismiss', { duration: 5000 } );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows every hidden message again.
      */
     resetHiddenModals() {
+        this.hiddenMessages = [];
         this.ipcService.resetHiddenModalIds();
-        this.snackBar.open( 'All hidden modals will now appear again.', 'dismiss', { duration: 5000 } );
+        this.snackBar.open( 'All hidden messages will now appear again.', 'dismiss', { duration: 5000 } );
     }
 
 
