@@ -1733,7 +1733,7 @@ export class IpcMessage<T> {
 
 export class DeathRecapPreferences {
     triggerId: string;
-    engageMode: 'hotkey' | 'automatic';
+    engageMode: 'off' | 'hotkey' | 'automatic';
     hotkeyPhrase: string;
 }
 

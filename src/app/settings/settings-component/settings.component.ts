@@ -105,6 +105,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     public deathRecapPreferences: DeathRecapPreferences = new DeathRecapPreferences();
     public pushRecapPreferences: PushRecapPreferences = new PushRecapPreferences();
     public pushRecapHotkeyCommand: string = pushRecapHotkeyCommand;
+    /** The last saved death recap choice, so a failed change can restore the radio buttons. */
+    private savedDeathRecapPreferences: DeathRecapPreferences = new DeathRecapPreferences();
     public minimizeToTrayOnLoad: boolean = false;
     public glowOnStartup: boolean = true;
     public quickShareAuthorListTypes: typeof QuickShareAuthorListTypes = QuickShareAuthorListTypes;
@@ -377,7 +379,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.ipcService.getAlertOverlayId().subscribe( id => this.alertOverlayId = id );
         this.ipcService.getEnableQuickShareImports().subscribe( enabled => this.enableQuickShareImports = enabled );
         this.ipcService.getMinimizeToTrayOnLoad().subscribe( enabled => this.minimizeToTrayOnLoad = enabled );
-        this.ipcService.getDeathRecapPreferences().subscribe( recapPrefs => this.deathRecapPreferences = recapPrefs ?? new DeathRecapPreferences() );
+        this.ipcService.getDeathRecapPreferences().subscribe( recapPrefs => {
+            this.deathRecapPreferences = recapPrefs ?? new DeathRecapPreferences();
+            this.savedDeathRecapPreferences = Object.assign( new DeathRecapPreferences(), this.deathRecapPreferences );
+        } );
         this.ipcService.getPushRecapPreferences().subscribe( recapPrefs => {
             // Fills in defaults for fields an older saved file doesn't have yet.
             this.pushRecapPreferences = Object.assign( new PushRecapPreferences(), recapPrefs );
@@ -526,90 +531,223 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
 
     /**
-     * Saves changes to the death recap preferences.
+     * Applies the chosen death recap mode: Off disables the trigger, the others enable it with
+     * the matching capture phrase. The radio buttons only keep the new choice once it is saved.
      */
     onDeathRecapPrefsChange(): void {
-        
-        let capturePhrase = new CapturePhrase();
+        const chosenMode = this.deathRecapPreferences.engageMode;
+        if ( chosenMode !== 'off' && chosenMode !== 'hotkey' && chosenMode !== 'automatic' ) {
+            return;
+        }
+
+        const newPreferences = new DeathRecapPreferences();
+        newPreferences.triggerId = this.savedDeathRecapPreferences.triggerId;
+        newPreferences.engageMode = chosenMode;
+        newPreferences.hotkeyPhrase = chosenMode === 'hotkey' ? '/hot "Death Recap" /em wonders how they died.' : null;
+
+        const hasStoredTrigger = newPreferences.triggerId !== null && newPreferences.triggerId !== undefined;
+        if ( !hasStoredTrigger ) {
+            this.setUpDeathRecapTriggerForMode( newPreferences );
+            return;
+        }
+
+        this.ipcService.getTrigger( newPreferences.triggerId ).subscribe( {
+            next: trigger => {
+                try {
+                    if ( trigger === null || trigger === undefined ) {
+
+                        // The trigger was deleted since the choice was saved.
+                        newPreferences.triggerId = null;
+                        this.setUpDeathRecapTriggerForMode( newPreferences );
+                        return;
+                    }
+
+                    trigger.enabled = chosenMode !== 'off';
+                    if ( chosenMode !== 'off' ) {
+                        const capturePhrase = this.buildDeathRecapCapturePhrase( chosenMode );
+                        trigger.name = this.getDeathRecapTriggerName( chosenMode );
+                        trigger.capturePhrases = [ capturePhrase ];
+                        trigger.actions = [ this.buildDeathRecapAction( capturePhrase ) ];
+                    }
+
+                    this.ipcService.updateTrigger( trigger ).subscribe( success => {
+                        if ( success !== true ) {
+                            this.revertDeathRecapChange( 'The death recap trigger could not be saved, so the setting was not changed.' );
+                            return;
+                        }
+                        this.commitDeathRecapPreferences( newPreferences, chosenMode === 'off' ? 'The death recap trigger has been turned off.' : 'The death recap trigger has been updated!' );
+                    } );
+                } catch ( error ) {
+                    this.revertDeathRecapChange( `The death recap setting could not be changed: ${error?.message ?? error}` );
+                }
+            },
+            error: error => this.revertDeathRecapChange( `The death recap setting could not be changed: ${error?.message ?? error}` ),
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Handles a mode change when there is no trigger to update: Off just saves the choice,
+     * the other modes create the trigger.
+     *
+     * @param newPreferences The preferences to save once the trigger exists.
+     */
+    private setUpDeathRecapTriggerForMode( newPreferences: DeathRecapPreferences ): void {
+        if ( newPreferences.engageMode === 'off' ) {
+            this.commitDeathRecapPreferences( newPreferences, 'Death recap is off.' );
+            return;
+        }
+
+        this.dialogService.showSelectTriggerFolderDialog( null, 'Choose a folder', 'Select the folder that will contain the generated trigger.' ).subscribe( folderId => {
+            if ( !folderId ) {
+
+                // Nothing was saved, so show the saved choice again instead of an unsaved one.
+                this.revertDeathRecapChange( null );
+                return;
+            }
+
+            const capturePhrase = this.buildDeathRecapCapturePhrase( newPreferences.engageMode );
+            const trigger = new TriggerModel();
+            trigger.name = this.getDeathRecapTriggerName( newPreferences.engageMode );
+            trigger.folderId = folderId;
+            trigger.capturePhrases = [ capturePhrase ];
+            trigger.actions = [ this.buildDeathRecapAction( capturePhrase ) ];
+
+            this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => {
+                if ( triggerId === null || triggerId === undefined || triggerId === '' ) {
+                    this.revertDeathRecapChange( 'The death recap trigger could not be created, so the setting was not changed.' );
+                    return;
+                }
+                newPreferences.triggerId = triggerId;
+                this.commitDeathRecapPreferences( newPreferences, 'The death recap trigger has been created!' );
+            } );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Builds the capture phrase that starts the death recap for a mode.
+     *
+     * @param mode The chosen mode, hotkey or automatic.
+     */
+    private buildDeathRecapCapturePhrase( mode: 'off' | 'hotkey' | 'automatic' ): CapturePhrase {
+        const capturePhrase = new CapturePhrase();
         capturePhrase.phraseId = nagId();
         capturePhrase.requirePreviousPhrase = false;
         capturePhrase.useRegEx = true;
         capturePhrase.duration = null;
 
-        if ( this.deathRecapPreferences.engageMode === 'hotkey' ) {
-            this.deathRecapPreferences.hotkeyPhrase = '/hot "Death Recap" /em wonders how they died.';
+        if ( mode === 'hotkey' ) {
+
             // Live servers prefix /emote messages with "~ "; emulators don't.
+            // Sample line: "~ Soandso wonders how they died."
             capturePhrase.phrase = '^(?:~ )?${Character} wonders how they died\\.$';
+        } else {
 
-        } else if ( this.deathRecapPreferences.engageMode === 'automatic' ) {
+            // Sample line: "You have been slain by a gnoll pup!"
             capturePhrase.phrase = '^You have been slain by (?<slayer>[^!]*)!$';
-            this.deathRecapPreferences.hotkeyPhrase = null;
-
-        } else {
-            return;
         }
 
-        if ( this.deathRecapPreferences.triggerId != null ) {
+        return capturePhrase;
+    }
 
-            this.ipcService.getTrigger( this.deathRecapPreferences.triggerId ).subscribe( trigger => {
-                
-                // Rename the trigger.
-                trigger.name = `Death Recap [${this.deathRecapPreferences.engageMode === 'hotkey' ? 'Hotkey' : 'Auto'}]`;
-                
-                // Assign the built capture phrase.
-                trigger.capturePhrases = [ capturePhrase ];
 
-                // Build the trigger action and assign to existing trigger.
-                let action = new TriggerAction();
-                action.phrases = [ capturePhrase.phraseId ];
-                action.actionType = ActionTypes.DisplayDeathRecap;
-                action.actionId = nagId();
-                trigger.actions = [ action ];
-                
-                this.ipcService.updateTrigger( trigger ).subscribe( success => {
-                    this.ipcService.updateDeathRecapPreferences( this.deathRecapPreferences );
-                    this.snackBar.open( 'The death recap trigger has been updated!', 'Dismiss', { duration: 5000 } );
-                } );
-            } );
-            
-        } else {
 
-            this.dialogService.showSelectTriggerFolderDialog( null, 'Choose a folder', 'Select the folder that will contain the generated trigger.' ).subscribe( folderId => {
-                if ( folderId ) {
-                    
-                    // Initialize a new trigger model.
-                    let trigger = new TriggerModel();
-                    trigger.name = `Death Recap [${this.deathRecapPreferences.engageMode === 'hotkey' ? 'Hotkey' : 'Auto'}]`;
-                    trigger.folderId = folderId;
-            
-                    // Assign the built capture phrase.
-                    trigger.capturePhrases = [ capturePhrase ];
 
-                    // Build the trigger action.
-                    let action = new TriggerAction();
-                    action.phrases = [ capturePhrase.phraseId ];
-                    action.actionType = ActionTypes.DisplayDeathRecap;
-                    action.actionId = nagId();
-                    trigger.actions = [ action ];
 
-                    this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => {
 
-                        // Save the death recap preferences.
-                        this.deathRecapPreferences.triggerId = triggerId;
 
-                        this.ipcService.updateDeathRecapPreferences( this.deathRecapPreferences );
-                        this.snackBar.open( 'The death recap trigger has been created!', 'Dismiss', { duration: 5000 } );
-                    } );
-                } else {
 
-                    // Nothing was saved, so show the saved choice again instead of an unsaved one.
-                    this.ipcService.getDeathRecapPreferences().subscribe( savedPrefs => {
-                        this.deathRecapPreferences = savedPrefs ?? new DeathRecapPreferences();
-                    } );
-                }
-            } );
+
+
+    /**
+     * Builds the trigger action that opens the death recap window.
+     *
+     * @param capturePhrase The capture phrase that fires the action.
+     */
+    private buildDeathRecapAction( capturePhrase: CapturePhrase ): TriggerAction {
+        const action = new TriggerAction();
+        action.phrases = [ capturePhrase.phraseId ];
+        action.actionType = ActionTypes.DisplayDeathRecap;
+        action.actionId = nagId();
+        return action;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Gets the name of the death recap trigger for a mode.
+     *
+     * @param mode The chosen mode, hotkey or automatic.
+     */
+    private getDeathRecapTriggerName( mode: 'off' | 'hotkey' | 'automatic' ): string {
+        return `Death Recap [${mode === 'hotkey' ? 'Hotkey' : 'Auto'}]`;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Saves the new death recap choice and remembers it as the last saved one.
+     *
+     * @param newPreferences The preferences that were applied to the trigger.
+     * @param message What to tell the user.
+     */
+    private commitDeathRecapPreferences( newPreferences: DeathRecapPreferences, message: string ): void {
+        this.deathRecapPreferences = newPreferences;
+        this.savedDeathRecapPreferences = Object.assign( new DeathRecapPreferences(), newPreferences );
+        this.ipcService.updateDeathRecapPreferences( newPreferences );
+        this.snackBar.open( message, 'Dismiss', { duration: 5000 } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Puts the radio buttons back to the last saved choice and optionally explains why.
+     *
+     * @param message What to tell the user, or null to stay silent (the user cancelled).
+     */
+    private revertDeathRecapChange( message: string | null ): void {
+        this.deathRecapPreferences = Object.assign( new DeathRecapPreferences(), this.savedDeathRecapPreferences );
+        if ( message !== null ) {
+            this.snackBar.open( message, 'Dismiss', { duration: 8000 } );
         }
-
     }
 
 

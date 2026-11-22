@@ -451,18 +451,16 @@
     </section>
 
     <section class="pane" [class.pane-hidden]="section !== 'death'">
-        <h2 class="pane-title">Death recap
-            <span class="spacer"></span>
-            <span class="custom-dot" *ngIf="!advancedOpen && customised( 'death' )" matTooltip="Some advanced settings are changed"></span>
-            <mat-slide-toggle [checked]="advancedOpen" (change)="toggleAdvanced()">Advanced</mat-slide-toggle>
-        </h2>
+        <h2 class="pane-title">Death recap</h2>
 
         <p>The death recap window can give you a "bird's eye view" of what happened leading up to a character's demise.</p>
-        <p>To enable the death recap window, select how you would like the window to be loaded.
-        <br/>Loading with <span class="color-blue" style="font-weight: 400;">Hotkey</span> will create an EQ hotkey that when pressed, will display your last death.
-        <br/>Loading with <span class="color-blue" style="font-weight: 400;">Automatic</span> will automatically display the death recap window when you are slain.</p>
+        <p>Select how you would like the death recap window to be loaded.</p>
 
         <mat-radio-group [(ngModel)]="deathRecapPreferences.engageMode" name="deathRecapEngageMode" (change)="onDeathRecapPrefsChange()">
+            <mat-radio-button value="off">
+                <div>Off</div>
+            </mat-radio-button>
+
             <mat-radio-button value="hotkey">
                 <div>Hotkey</div>
             </mat-radio-button>
@@ -471,6 +469,7 @@
                 <div>Automatic</div>
             </mat-radio-button>
         </mat-radio-group>
+        <p class="pane-note">Off disables the Death Recap trigger. Hotkey opens the window when your EQ hotkey says “wonders how they died”. Automatic opens it when you're slain.</p>
 
         <ng-template [ngIf]="deathRecapPreferences.engageMode === 'hotkey'">
             <p>To create a hotkey, copy the command below and paste it into EverQuest and hit enter.</p>
@@ -478,7 +477,7 @@
             <button type="button" style="margin-left: 10px; color: #69b2f0;" mat-button (click)="onCopyDeathRecapHotkeyCommand()">Copy</button>
         </ng-template>
 
-        <div class="advanced-block" *ngIf="advancedOpen">
+        <div>
             <h3 class="group-title">What the window shows</h3>
             <p>The <span class="color-orange-dark" style="font-weight: 400;">Damage Log</span> section will display what happened to your character, including damage taken and healing received.
             <br />The <span class="color-orange-dark" style="font-weight: 400;">Damage Sources</span> section will show a list of all NPC damage done to the raid, and all healing received by the raid.

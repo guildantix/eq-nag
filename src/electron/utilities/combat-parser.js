@@ -28,7 +28,28 @@ const {
 const { FctModel } = require( '../data/models/fct' );
 const { CharacterModel } = require( '../data/models/character' );
 const { nagLog, nagException } = require( './nag-console' );
+const electronLog = require( 'electron-log' );
 const { getEverQuestClassName, getEverQuestClassFromTitle, getEverQuestClassAbbreviation } = require( './everquest' );
+
+/**
+ * Receives the death recap data, or null and the reason it could not be built.
+ * Exactly one call is made, so a window waiting on it never spins forever.
+ * 
+ * @callback DeathRecapCallback
+ * @param {any} data The death recap model, or null on failure.
+ * @param {{ kind: 'no-death' | 'open-failed' | 'failed', message: string }} [error] Why it failed.
+ * @returns {void}
+ */
+
+/**
+ * Receives the deaths found in a log file. When the file cannot be read it gets an empty list
+ * and the error, so callers never wait forever.
+ * 
+ * @callback DeathSearchCallback
+ * @param {LogFileLocation[]} found The deaths found.
+ * @param {{ kind: 'open-failed' | 'failed', message: string }} [error] Why it could not be read.
+ * @returns {void}
+ */
 
 const playerNpcInteractionTimeoutMs = 2000;
 const npcTimeoutMs = 8000;
@@ -985,8 +1006,8 @@ class CombatParser {
      * 
      * @param {string} logFilePath The full path to the log file to process.
      * @param {number?} lineNo The line number at which death occurred, if no value is provided loads the last death found in the log file.
-     * @param {( data: any ) => void} callback Executed when the death recap data is ready.
      * @param {string} myCharacterName The character name of the log file owner.
+     * @param {DeathRecapCallback} callback Executed once with the data, or null and why.
      */
     loadDeathRecap( logFilePath, lineNo, myCharacterName, callback ) {
 
@@ -997,12 +1018,14 @@ class CombatParser {
         if ( lineNo > 0 ) {
             act();
         } else {
-            this.findAllDeaths( logFilePath, found => {
-                if ( found?.length > 0 ) {
+            this.findAllDeaths( logFilePath, ( found, error ) => {
+                if ( error !== null && error !== undefined ) {
+                    callback( null, error );
+                } else if ( found?.length > 0 ) {
                     lineNo = found[ found.length - 1 ].lineNo;
                     act();
                 } else {
-                    // TODO: Display a message for No Deaths Found!
+                    callback( null, { kind: 'no-death', message: 'No death was found in the log file.' } );
                 }
             } );
         }
@@ -1025,14 +1048,33 @@ class CombatParser {
      * 
      * @param {string} logFilePath The full path to the log file to process.
      * @param {number} lineNo The line number at which death occurred.
-     * @param {( data: any ) => void} callback Executed when the death recap data is ready.
+     * @param {DeathRecapCallback} callback Executed once with the data, or null and the reason.
      */
     _doLoadDeathRecap( logFilePath, lineNo, callback ) {
         fs.open( logFilePath, 'r', ( err, fd ) => {
-            
+
+            if ( err !== null && err !== undefined ) {
+                electronLog.error( `Death recap: could not open the log file: ${err.message}` );
+                callback( null, { kind: 'open-failed', message: err.message } );
+                return;
+            }
+
             if ( fd ) {
                 let file = fd;
-                let fstats = fs.fstatSync( file );
+
+                // Closes the file before reporting, so no read path leaks the handle.
+                const finish = ( data, error ) => {
+                    fs.close( file, () => callback( data, error ) );
+                };
+
+                let fstats = null;
+                try {
+                    fstats = fs.fstatSync( file );
+                } catch ( statError ) {
+                    electronLog.error( `Death recap: could not read the log file size: ${statError.message}` );
+                    finish( null, { kind: 'failed', message: statError.message } );
+                    return;
+                }
 
                 let position = 0;
                 let logLineNo = 0;
@@ -1048,6 +1090,12 @@ class CombatParser {
     
                     fs.read( file, Buffer.alloc( rsize ), 0, rsize, position, ( err, bytecount, buff ) => {
 
+                        if ( err !== null && err !== undefined ) {
+                            electronLog.error( `Death recap: could not read the log file: ${err.message}` );
+                            finish( null, { kind: 'failed', message: err.message } );
+                            return;
+                        }
+
                         position += bytecount;
     
                         let lineFound = false;
@@ -1060,7 +1108,16 @@ class CombatParser {
                             logLineNo++;
                             currentLines.push( lines[ i ] );
                             if ( logLineNo === lineNo ) {
-                                setTimeout( () => this._processDeathRecapLines( Array.prototype.concat( [], prevLines, currentLines ), callback ) );
+                                setTimeout( () => {
+                                    try {
+                                        // prevLines is null for a death in the first chunk.
+                                        const recapLines = Array.prototype.concat( [], prevLines ?? [], currentLines );
+                                        finish( this._processDeathRecapLines( recapLines ) );
+                                    } catch ( processError ) {
+                                        electronLog.error( `Death recap: processing failed: ${processError?.stack ?? processError}` );
+                                        finish( null, { kind: 'failed', message: processError?.message ?? String( processError ) } );
+                                    }
+                                } );
                                 return;
                             }
                         }
@@ -1070,11 +1127,11 @@ class CombatParser {
                         if ( lineFound ) {
                             return;
                         } else if ( bytecount <= 0 ) {
-                            callback( null );
+                            finish( null, { kind: 'failed', message: 'The log file ended before the death line was reached' } );
                         } else if ( position < fstats.size ) {
                             setTimeout( () => readFile(), 50 );
                         } else {
-                            callback( null );
+                            finish( null, { kind: 'failed', message: 'The log file ended before the death line was reached' } );
                         }
                     } );
                     
@@ -1100,9 +1157,10 @@ class CombatParser {
      * @private
      * 
      * @param {string[]} lines The two-block size of log file entries ending with the death.
-     * @param {( data: any ) => void} callback Executed when the death recap data is ready.
+     * @returns {any} The death recap model. Returned, not passed to a callback, so an exception
+     * reaches the caller instead of being lost inside a timer.
      */
-    _processDeathRecapLines( lines, callback ) {
+    _processDeathRecapLines( lines ) {
 
         let medianLogsPerSecond = 0;
         let allBlocksLps = [];
@@ -1251,7 +1309,7 @@ class CombatParser {
 
         this._updateEntityVerifications( lines );
 
-        callback( this._getDeathRecapModel( defensiveTimers ) );
+        return this._getDeathRecapModel( defensiveTimers );
 
     }
 
@@ -1596,6 +1654,10 @@ class CombatParser {
         let damageToRaid = {};
         /** @type {Record<string, number>} */
         let healingToRaid = {};
+        // No earlier events when death is on the first lines.
+        if ( this.encounterEvents.length === 0 ) {
+            return model;
+        }
         let encounterDuration = DateUtilities.timeSince( this.encounterEvents[ 0 ].timestamp, this.encounterEvents[ this.encounterEvents.length - 1 ].timestamp ).totalSeconds;
         let totalRaidHealing = 0;
         let totalRaidHealingReceived = 0;
@@ -1848,7 +1910,7 @@ class CombatParser {
      * Queries the specified log file for all player deaths.
      * 
      * @param {string} logFilePath The full path to the log file to query.
-     * @param {(found: LogFileLocation[]) => void} callback After the file has been parsed, callback will be executed with the results.
+     * @param {DeathSearchCallback} callback Executed with the results once parsed.
      */
     findAllDeaths( logFilePath, callback ) {
         /** @type {LogFileLocation[]} */
@@ -1856,6 +1918,12 @@ class CombatParser {
         
         fs.open( logFilePath, 'r', ( err, fd ) => {
             // let read = 0;
+
+            if ( err !== null && err !== undefined ) {
+                electronLog.error( `Death search: could not open the log file: ${err.message}` );
+                callback( deathsFound, { kind: 'open-failed', message: err.message } );
+                return;
+            }
             
             if ( fd ) {
                 let file = fd;
@@ -1870,6 +1938,12 @@ class CombatParser {
                     let rsize = position + ( this.chunkSize * this.chunks ) > fstats.size ? fstats.size - position : ( this.chunkSize * this.chunks );
     
                     fs.read( file, Buffer.alloc( rsize ), 0, rsize, position, ( err, bytecount, buff ) => {
+
+                        if ( err !== null && err !== undefined ) {
+                            electronLog.error( `Death search: could not read the log file: ${err.message}` );
+                            fs.close( file, () => callback( deathsFound, { kind: 'failed', message: err.message } ) );
+                            return;
+                        }
 
                         // read += bytecount;
                         position += bytecount;
@@ -1896,11 +1970,11 @@ class CombatParser {
                         }
 
                         if ( bytecount <= 0 ) {
-                            callback( deathsFound );
+                            fs.close( file, () => callback( deathsFound ) );
                         } else if ( position < fstats.size ) {
                             setTimeout( () => readFile(), 50 );
                         } else {
-                            callback( deathsFound );
+                            fs.close( file, () => callback( deathsFound ) );
                         }
                     } );
                     

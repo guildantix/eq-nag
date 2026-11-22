@@ -88,7 +88,7 @@ class DeathRecapModel {
 class DeathRecapPreferences {
     /** @type {string} */
     triggerId;
-    /** @type {'hotkey' | 'automatic'} */
+    /** @type {'off' | 'hotkey' | 'automatic'} */
     engageMode;
     /** @type {string} */
     hotkeyPhrase;
