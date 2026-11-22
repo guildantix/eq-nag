@@ -2,7 +2,8 @@ const { parentPort, workerData } = require( 'worker_threads' );
 const fs = require( 'fs' );
 const crypto = require( 'crypto' );
 const { loadPushSpells } = require( '../data/push-spells' );
-const { summarize, analyzeKill, buildLandingIndex, parseTimestamp, isRelevantLine, matchCombat, isPlayerName, isPetName, textOffset, lookbackMs } = require( '../utilities/push-recap-parser' );
+const { analyzeKill, findFightStart, formatClock, buildLandingIndex, parseTimestamp, isRelevantLine, matchCombat, isPlayerName, isPetName, textOffset, lookbackMs } = require( '../utilities/push-recap-parser' );
+const { PushWindowState } = require( '../utilities/push-window-state' );
 const { buildSavedSummary } = require( '../utilities/push-recap-summary' );
 
 const chunkSize = 1024 * 1024;
@@ -112,6 +113,9 @@ async function scanLog( params ) {
         const lines = [];
         const times = [];
         const offsets = [];
+        const records = [];
+        const windowState = new PushWindowState();
+        let lineNumber = 0;
         let head = 0;
         let trimmed = false;
         const damage = new Map();
@@ -124,21 +128,33 @@ async function scanLog( params ) {
             parentPort.postMessage( { type: 'progress', bytes: bytes - startOffset, total: size - startOffset, kills: results.length } );
         };
 
-        const analyze = ( time ) => {
+        const analyze = ( time, record ) => {
             analyzed++;
+            if ( record.amount < params.minDamage ) {
+                return;
+            }
+            const resolution = windowState.resolveKill( record );
+            if ( !resolution.isKill ) {
+                return;
+            }
+
+            // Only the fight is replayed.  The line before it stays, so a fight that starts
+            // at the start of the window is told apart from one that only starts there.
+            const lastIndex = lines.length - 1;
+            const fightStart = findFightStart( lines, times, lastIndex, time, record.target, landing, params.quietGapSeconds * 1000, head );
+            const sliceStart = Math.max( head, fightStart - 1 );
             const session = {
                 characterName: params.characterName,
                 anchorTime: time,
-                lines: lines.slice( head ),
-                times: times.slice( head ),
+                lines: lines.slice( sliceStart ),
+                times: times.slice( sliceStart ),
                 oldestTime: times[ head ],
                 reachedStart: startOffset === 0 && !trimmed,
             };
-            const summary = summarize( session );
-            const kill = summary.kills[ 0 ];
-            if ( ( kill === null || kill === undefined ) || kill.index !== session.lines.length - 1 || kill.damage < params.minDamage ) {
-                return;
-            }
+            const kill = {
+                index: lastIndex - sliceStart, time: time, clock: formatClock( time ), name: record.target, damage: record.amount,
+            };
+            const summary = { npcNames: resolution.npcNames, othersSeen: windowState.othersSeen };
             const analysis = analyzeKill( session, summary, table, landing, kill, params.quietGapSeconds );
             const saved = buildSavedSummary( analysis, params.characterName );
             const key = `${saved.mob}|${saved.killTime}`;
@@ -167,10 +183,22 @@ async function scanLog( params ) {
                 return;
             }
 
+            const text = line.substring( textOffset );
+            const m = matchCombat( text );
+            const record = m === null || m === undefined ? null : windowState.createRecord( m, text, lineNumber );
+            lineNumber++;
+
             lines.push( line );
             times.push( time );
             offsets.push( offset );
+            records.push( record );
             while ( head < lines.length && times[ head ] < time - lookbackMs ) {
+                if ( records[ head ] !== null ) {
+                    windowState.remove( records[ head ] );
+                }
+                // The arrays are only compacted now and then, so let go of what left the window.
+                lines[ head ] = '';
+                records[ head ] = null;
                 head++;
                 trimmed = true;
             }
@@ -178,13 +206,14 @@ async function scanLog( params ) {
                 lines.splice( 0, head );
                 times.splice( 0, head );
                 offsets.splice( 0, head );
+                records.splice( 0, head );
                 head = 0;
             }
 
-            const m = matchCombat( line.substring( textOffset ) );
-            if ( m === null || m === undefined ) {
+            if ( record === null ) {
                 return;
             }
+            windowState.add( record );
             const target = m.groups.target;
             if ( m.groups.damage !== undefined ) {
                 damage.set( target, ( damage.get( target ) ?? 0 ) + +m.groups.damage );
@@ -212,7 +241,7 @@ async function scanLog( params ) {
                     npcSeen.add( target );
                 }
                 if ( taken >= params.minDamage && possible ) {
-                    analyze( time );
+                    analyze( time, record );
                 }
             }
         };
