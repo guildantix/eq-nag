@@ -5,7 +5,7 @@ import { forkJoin, of, Subscription } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
-import { CharacterModel, PushRecapPreferences, PushRecapProc, PushRecapSummary, PushScanStatus, PushTabView } from '../core.model';
+import { CharacterModel, PushRecapPreferences, PushRecapProc, PushRecapSummary, PushScanPickedFile, PushScanStatus, PushTabView } from '../core.model';
 import { nextSortState, parseSortState, sortAriaValue, sortArrow, sortRows, TableSortState } from '../utilities/table-sort';
 import { damageStepIndex, formatDamageStep, pushDamageSteps } from './push-damage-steps';
 import { aggregateFights, axisStep, describeTotals, nightKey, PushTotals } from './push-totals';
@@ -218,18 +218,20 @@ const textSortKeys: string[] = [ 'character', 'mob', 'top', 'name' ];
 export class PushTrackerComponent implements OnInit, OnDestroy {
 
     public readonly lastDamageStepIndex: number = pushDamageSteps.length - 1;
-    public readonly scanSliderTicks: PushSliderTick[] = buildSliderTicks( 0 );
-    public minDamageSliderTicks: PushSliderTick[] = buildSliderTicks( 0 );
+    public readonly minDamageSliderTicks: PushSliderTick[] = buildSliderTicks( 0 );
 
-    public source: 'saved' | 'scan' = 'saved';
+    public source: 'saved' | 'scan' | 'file' = 'saved';
     public characters: CharacterModel[] = [];
     public scanCharacterId: string | null = null;
     public scanStatus: PushScanStatus | null = null;
     public scanResults: PushRecapSummary[] = [];
     public scanStartMessage: string = '';
+    public pickedFileName: string = '';
+    public pickedFileReady: boolean = false;
+    public pickedFileId: number | null = null;
+    public pickedFileMessage: string = '';
     public savedKeys: Set<string> = new Set<string>();
 
-    public scanFloor: number = 1000000;
     public minDamage: number = 1000;
     public sorts: { [ table: string ]: TableSortState } = {
         fights: { ...defaultPushSorts.fights },
@@ -322,11 +324,16 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         this.ipcService.getPushScanStatus().subscribe( status => {
             this.scanStatus = status;
             if ( status.status !== 'idle' ) {
-                this.scanCharacterId = status.characterId;
-                if ( pushDamageSteps.indexOf( status.minDamage ) > -1 ) {
-                    this.scanFloor = status.minDamage;
+                // A file scan has no character; keep the selected one for "Scan a log".
+                if ( status.characterId !== null && status.characterId !== undefined ) {
+                    this.scanCharacterId = status.characterId;
                 }
-                this.source = status.status === 'running' ? 'scan' : this.source;
+                if ( status.logFileName !== null && status.logFileName !== undefined ) {
+                    this.pickedFileName = status.logFileName;
+                    this.pickedFileId = status.pickId ?? null;
+                    this.pickedFileReady = true;
+                }
+                this.source = status.status === 'running' ? ( ( status.logFileName !== null && status.logFileName !== undefined ) ? 'file' : 'scan' ) : this.source;
                 this.loadScanResults();
             }
         } );
@@ -459,17 +466,20 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      */
     public get scanNotice(): string {
         const status = this.scanStatus;
+        if ( this.source === 'file' && this.pickedFileMessage !== '' ) {
+            return this.pickedFileMessage;
+        }
         if ( this.scanStartMessage !== '' ) {
             return this.scanStartMessage;
         }
-        if ( ( status === null || status === undefined ) || status.status === 'idle' || status.status === 'running' ) {
+        if ( ( status === null || status === undefined ) || status.status === 'idle' || status.status === 'running' || !this.scanMatchesSource ) {
             return '';
         }
         if ( status.status !== 'done' || status.message !== '' ) {
             return status.message;
         }
         const seconds = Math.max( 1, Math.round( status.elapsedMs / 1000 ) );
-        return `${status.kills} ${status.kills === 1 ? 'kill' : 'kills'} found in ${this.formatLength( seconds )}${status.resumed ? ', continuing the last scan of this log' : ''}.  Fights where the mob took at least ${formatDamageStep( status.minDamage )} are listed.${status.capped ? '  Only the most recent 300 are kept.' : ''}`;
+        return `${status.kills} ${status.kills === 1 ? 'fight' : 'fights'} \u00b7 ${this.formatLength( seconds )}${status.resumed ? ' \u00b7 continued the last scan of this log' : ''}${status.capped ? '.  Only the newest 1,000 are listed.' : ''}`;
     }
 
 
@@ -485,7 +495,34 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * True when the scan notice is a problem, so it can be shown in the error color.
      */
     public get scanFailed(): boolean {
-        return this.scanStartMessage !== '' || this.scanStatus?.status === 'error';
+        return this.scanStartMessage !== '' || ( this.source === 'file' && this.pickedFileMessage !== '' )
+            || ( this.scanMatchesSource && this.scanStatus?.status === 'error' );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * True when the last scan belongs to the chosen Source: the same character's log for "Scan a
+     * log", or the same picked file for "Scan another log file".  Otherwise its fights and status
+     * are not shown, so one source never lists another's results.
+     */
+    public get scanMatchesSource(): boolean {
+        const status = this.scanStatus;
+        if ( status === null || status === undefined || status.status === 'idle' ) {
+            return false;
+        }
+        const scannedFile = status.logFileName !== null && status.logFileName !== undefined;
+        if ( this.source === 'file' ) {
+            return scannedFile && status.pickId === this.pickedFileId;
+        }
+        return !scannedFile && status.characterId === this.scanCharacterId;
     }
 
 
@@ -717,6 +754,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * Switches between the saved recaps and the scan results, dropping the other list selection.
      */
     public onSourceChange(): void {
+        this.scanStartMessage = '';
         this.selectedIds = new Set<string>();
         this.anchorId = null;
         this.applyFilters();
@@ -735,26 +773,6 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * Re-applies the filters after the damage, named or mob filter changed.
      */
     public onFilterChange(): void {
-        this.applyFilters();
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Follows the Analyze slider.  While scanning, the Show slider can't be lower than it, so it is
-     * raised with it.
-     *
-     * @param event The slider change, whose value is the position in the damage steps.
-     */
-    public onScanFloorSlide( event: MatSliderChange ): void {
-        this.scanFloor = pushDamageSteps[ event.value ?? 0 ];
         this.applyFilters();
     }
 
@@ -823,11 +841,32 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
 
 
     /**
-     * The lowest position of the Show slider: the scan setting while scanning, because the list
-     * only holds fights that big, and the first step for saved recaps.
+     * True when the list shows the fights of a scan, of a character's log or of a picked file.
      */
-    public get minDamageSliderMinimum(): number {
-        return this.source === 'scan' ? damageStepIndex( this.scanFloor ) : 0;
+    public get isScanSource(): boolean {
+        return this.source !== 'saved';
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * True when the Scan button can start: a character is chosen, or a valid log file is picked.
+     */
+    public get canScan(): boolean {
+        if ( this.scanRunning ) {
+            return false;
+        }
+        if ( this.source === 'file' ) {
+            return this.pickedFileReady;
+        }
+        return this.scanCharacterId !== null && this.scanCharacterId !== undefined;
     }
 
 
@@ -948,11 +987,10 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
 
 
     /**
-     * Sends the two damage sliders and the table sorts to the settings file.
+     * Sends the Show slider and the table sorts to the settings file.
      */
     public writeView(): void {
         const view: PushTabView = {
-            scanFloor: this.scanFloor,
             minDamage: this.minDamage,
             sorts: { fights: this.sorts.fights, totals: this.sorts.totals, grid: this.sorts.grid },
         };
@@ -972,11 +1010,12 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * Starts scanning the chosen character's log for boss kills, and shows why it could not start.
      */
     public startScan(): void {
-        if ( ( this.scanCharacterId === null || this.scanCharacterId === undefined ) || this.scanRunning ) {
+        if ( !this.canScan ) {
             return;
         }
         this.scanStartMessage = '';
-        this.ipcService.startPushScan( this.scanCharacterId, this.scanFloor ).subscribe( reply => {
+        // Every fight is analysed; the Show slider narrows the list, so no rescan is needed.
+        this.ipcService.startPushScan( this.scanCharacterId, 1, this.source === 'file' ).subscribe( reply => {
             if ( reply.started ) {
                 this.ipcService.getPushScanStatus().subscribe( status => {
                     this.scanStatus = status;
@@ -986,6 +1025,33 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
                 this.scanStartMessage = reply.message;
                 this.changeDetector.markForCheck();
             }
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the file dialog of the main process.  The window only learns the file name and whether
+     * the file can be scanned, never its path.
+     */
+    public pickLogFile(): void {
+        this.ipcService.pickPushScanFile().subscribe( ( picked: PushScanPickedFile ) => {
+            if ( !picked.cancelled ) {
+                this.pickedFileReady = picked.picked;
+                this.pickedFileName = picked.picked ? picked.fileName : '';
+                this.pickedFileId = picked.picked ? picked.pickId : null;
+                this.pickedFileMessage = picked.message;
+                this.scanStartMessage = '';
+            }
+            this.applyFilters();
+            this.changeDetector.markForCheck();
         } );
     }
 
@@ -1341,6 +1407,10 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * @param seconds The length in seconds.
      */
     public formatLength( seconds: number ): string {
+        // A scanned fight can lack its length, and a blank dash reads better than "undefineds".
+        if ( !Number.isFinite( seconds ) ) {
+            return '\u2013';
+        }
         return seconds >= 60 ? `${Math.floor( seconds / 60 )}m ${Math.round( seconds % 60 )}s` : `${seconds}s`;
     }
 
@@ -1359,6 +1429,9 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * @param value The damage.
      */
     public formatDamage( value: number ): string {
+        if ( !Number.isFinite( value ) ) {
+            return '\u2013';
+        }
         if ( value >= 1000000000 ) {
             return `${( value / 1000000000 ).toFixed( 2 )}B`;
         } else if ( value >= 1000000 ) {
@@ -1411,10 +1484,6 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             return;
         }
         // A hand-edited settings file can hold anything; non-numbers keep the defaults.
-        const scanIdle = this.scanStatus === null || this.scanStatus === undefined || this.scanStatus.status === 'idle';
-        if ( scanIdle && typeof view.scanFloor === 'number' && Number.isFinite( view.scanFloor ) ) {
-            this.scanFloor = pushDamageSteps[ damageStepIndex( view.scanFloor ) ];
-        }
         if ( typeof view.minDamage === 'number' && Number.isFinite( view.minDamage ) ) {
             this.minDamage = pushDamageSteps[ damageStepIndex( view.minDamage ) ];
         }
@@ -1657,16 +1726,12 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      */
     private applyFilters(): void {
         const mob = this.mobFilter.trim().toLowerCase();
-        const items = this.source === 'scan' ? this.scanResults : this.recaps;
+        const items = this.isScanSource ? ( this.scanMatchesSource ? this.scanResults : [] ) : this.recaps;
         this.showCharacter = this.source === 'saved' && new Set( this.recaps.map( r => r.characterName ) ).size > 1;
         this.dateOptions = Array.from( new Set( items.map( r => nightKey( r.killTime ) ) ) ).sort().reverse();
         if ( this.dateFilter !== '' && this.dateOptions.indexOf( this.dateFilter ) === -1 ) {
             this.dateFilter = '';
         }
-        if ( this.source === 'scan' && this.minDamage < this.scanFloor ) {
-            this.minDamage = this.scanFloor;
-        }
-        this.minDamageSliderTicks = buildSliderTicks( this.minDamageSliderMinimum );
         const filtered = items.filter( r => r.damageTaken >= this.minDamage && ( !this.namedOnly || r.named ) && ( mob === '' || r.mob.toLowerCase().indexOf( mob ) > -1 ) && ( this.dateFilter === '' || nightKey( r.killTime ) === this.dateFilter ) );
         this.rows = this.sortFights( filtered );
         this.applySelection();
@@ -1753,7 +1818,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         this.totalsLoading = true;
         this.changeDetector.markForCheck();
         const requests = missing.map( r => {
-            const request = this.source === 'scan' ? this.ipcService.getPushScanResult( r.id ) : this.ipcService.getPushRecap( r.id );
+            const request = this.isScanSource ? this.ipcService.getPushScanResult( r.id ) : this.ipcService.getPushRecap( r.id );
             return request.pipe( catchError( () => of( null ) ) );
         } );
         this.totalsSubscription = forkJoin( requests ).subscribe( results => {
@@ -1888,7 +1953,9 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         this.detail = null;
         this.buildGrid();
         if ( this.selected !== null && this.selected !== undefined ) {
-            const request = this.source === 'scan' ? this.ipcService.getPushScanResult( this.selected.id ) : this.ipcService.getPushRecap( this.selected.id );
+            const request = this.isScanSource
+                ? this.ipcService.getPushScanResult( this.selected.id )
+                : this.ipcService.getPushRecap( this.selected.id );
             this.detailSubscription = request.subscribe( recap => {
                 this.detail = recap;
                 this.buildGrid();

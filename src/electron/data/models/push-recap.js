@@ -3,14 +3,12 @@ const maxHiddenTextLength = 200;
 
 /**
  * @typedef {Object} PushTabView What the Push tab remembers between sessions.
- * @property {number} scanFloor The damage step of the Analyze slider.
  * @property {number} minDamage The damage step of the Show slider.
  * @property {Object<string, { key: string, direction: string }>} sorts The sort of each table.
  */
 
 const maxSortKeyLength = 120;
 const sortTables = [ 'fights', 'totals', 'grid' ];
-const defaultScanFloor = 1000000;
 const defaultMinDamage = 1000;
 
 /**
@@ -121,7 +119,6 @@ function sanitizePushTabView( value ) {
         }
     } );
     return {
-        scanFloor: snapDamageStep( value?.scanFloor, defaultScanFloor ),
         minDamage: snapDamageStep( value?.minDamage, defaultMinDamage ),
         sorts: sorts,
     };

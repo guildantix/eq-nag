@@ -14,62 +14,53 @@
 </mat-toolbar>
 <div class="tab-content nag-scrollbar">
 
-    <div class="list-area nag-scrollbar">
+    <div class="list-area show-scrollbar">
 
-        <div class="filters" *ngIf="loaded">
-            <mat-form-field>
-                <mat-label>Source</mat-label>
-                <mat-select [(ngModel)]="source" name="source" (selectionChange)="onSourceChange()">
-                    <mat-option value="saved">Saved recaps</mat-option>
-                    <mat-option value="scan">Scan a log</mat-option>
-                </mat-select>
-            </mat-form-field>
-        </div>
-
-        <ng-template [ngIf]="loaded && source === 'saved' && recaps.length === 0">
-            <p class="empty">No push recaps are saved yet.  Turn on the Push Recap hotkey in Settings, then press it in EverQuest after a kill.  Each recap you view is saved here.</p>
-        </ng-template>
-
-        <ng-template [ngIf]="loaded && source === 'scan'">
+        <div class="filter-rows" *ngIf="loaded">
             <div class="filters">
                 <mat-form-field>
-                    <mat-label>Character</mat-label>
-                    <mat-select [(ngModel)]="scanCharacterId" name="scanCharacter" [disabled]="scanRunning">
-                        <mat-option *ngFor="let character of characters" [value]="character.characterId">{{characterLabel( character )}}</mat-option>
+                    <mat-label>Source</mat-label>
+                    <mat-select [(ngModel)]="source" name="source" (selectionChange)="onSourceChange()">
+                        <mat-option value="saved">Saved recaps</mat-option>
+                        <mat-option value="scan">Scan a log</mat-option>
+                        <mat-option value="file">Scan another log file&hellip;</mat-option>
                     </mat-select>
                 </mat-form-field>
-                <div class="slider-field">
-                    <div class="slider-head"><label id="scanFloorLabel">Analyze fights where the mob took at least</label><span class="readout">{{stepLabel( scanFloor )}}</span></div>
-                    <mat-slider min="0" [max]="lastDamageStepIndex" step="1" [value]="stepIndex( scanFloor )" [disabled]="scanRunning" aria-labelledby="scanFloorLabel" (input)="onScanFloorSlide( $event )" (change)="saveView()"></mat-slider>
-                    <div class="ticks"><span *ngFor="let tick of scanSliderTicks" [style.left.%]="tick.percent" [class.start]="tick.percent === 0" [class.end]="tick.percent === 100">{{tick.label}}</span></div>
-                    <span class="hint">Smaller fights are skipped while scanning. Lower finds more fights but scans slower.</span>
-                </div>
-                <button mat-flat-button color="primary" (click)="startScan()" [disabled]="scanRunning || ( scanCharacterId === null || scanCharacterId === undefined )">Scan</button>
-                <button mat-button *ngIf="scanRunning" (click)="cancelScan()">Cancel</button>
+                <ng-template [ngIf]="isScanSource">
+                    <mat-form-field *ngIf="source === 'scan'">
+                        <mat-label>Character</mat-label>
+                        <mat-select [(ngModel)]="scanCharacterId" name="scanCharacter" [disabled]="scanRunning" (selectionChange)="onFilterChange()">
+                            <mat-option *ngFor="let character of characters" [value]="character.characterId">{{characterLabel( character )}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                    <div class="file-field" *ngIf="source === 'file'">
+                        <button mat-stroked-button (click)="pickLogFile()" [disabled]="scanRunning">Choose file&hellip;</button>
+                        <span class="file-name" *ngIf="pickedFileName !== ''" [matTooltip]="pickedFileName">{{pickedFileName}}</span>
+                    </div>
+                    <button mat-flat-button color="primary" (click)="startScan()" [disabled]="!canScan">Scan</button>
+                    <mat-icon class="info material-icons-outlined" matTooltip="Reads the whole log and lists every boss fight, newest first.  Only the newest 1,000 are kept.">info</mat-icon>
+                    <button mat-button *ngIf="scanRunning" (click)="cancelScan()">Cancel</button>
+                    <div class="scan-status" *ngIf="scanRunning">
+                        <mat-progress-bar mode="determinate" [value]="scanPercent"></mat-progress-bar>
+                        <span>{{scanPercent}}% &middot; {{scanStatus.kills}} {{scanStatus.kills === 1 ? 'fight' : 'fights'}} found</span>
+                    </div>
+                    <span class="scan-status note" [class.error]="scanFailed" *ngIf="!scanRunning && scanNotice !== ''">{{scanNotice}}</span>
+                </ng-template>
             </div>
-            <div class="scan-progress" *ngIf="scanRunning">
-                <mat-progress-bar mode="determinate" [value]="scanPercent"></mat-progress-bar>
-                <span>{{scanPercent}}% &middot; {{scanStatus.kills}} {{scanStatus.kills === 1 ? 'kill' : 'kills'}} found</span>
-            </div>
-            <p class="note" [class.error]="scanFailed" *ngIf="scanNotice !== ''">{{scanNotice}}</p>
-            <p class="empty" *ngIf="characters.length === 0">No characters with a log file were found.</p>
-        </ng-template>
 
-        <ng-template [ngIf]="loaded && ( source === 'scan' || recaps.length > 0 )">
-
-            <div class="filters">
+            <div class="filters" *ngIf="isScanSource || recaps.length > 0">
                 <div class="slider-field">
-                    <div class="slider-head"><label id="minDamageLabel">Show fights where the mob took at least</label><span class="readout">{{stepLabel( minDamage )}}</span></div>
-                    <mat-slider [min]="minDamageSliderMinimum" [max]="lastDamageStepIndex" step="1" [value]="stepIndex( minDamage )" aria-labelledby="minDamageLabel" (input)="onMinDamageSlide( $event )" (change)="saveView()"></mat-slider>
+                    <div class="slider-head"><label id="minDamageLabel">Show fights where the mob took at least<mat-icon class="info material-icons-outlined" matTooltip="Filters the list right away.">info</mat-icon></label><span class="readout">{{stepLabel( minDamage )}}</span></div>
+                    <mat-slider min="0" [max]="lastDamageStepIndex" step="1" [value]="stepIndex( minDamage )" aria-labelledby="minDamageLabel" (input)="onMinDamageSlide( $event )" (change)="saveView()"></mat-slider>
                     <div class="ticks"><span *ngFor="let tick of minDamageSliderTicks" [style.left.%]="tick.percent" [class.start]="tick.percent === 0" [class.end]="tick.percent === 100">{{tick.label}}</span></div>
-                    <span class="hint">{{source === 'scan' ? 'Filters the scanned list right away. It can\'t go lower than the scan setting.' : 'Filters the list right away.'}}</span>
                 </div>
                 <mat-form-field>
                     <mat-label>Date</mat-label>
-                    <mat-select [(ngModel)]="dateFilter" name="dateFilter" (selectionChange)="onFilterChange()" matTooltip="A night runs from 06:00 to 06:00">
+                    <mat-select [(ngModel)]="dateFilter" name="dateFilter" (selectionChange)="onFilterChange()">
                         <mat-option value="">Any</mat-option>
                         <mat-option *ngFor="let date of dateOptions" [value]="date">{{date}}</mat-option>
                     </mat-select>
+                    <mat-icon matSuffix class="info material-icons-outlined" matTooltip="A night runs from 06:00 to 06:00">info</mat-icon>
                 </mat-form-field>
                 <mat-checkbox [(ngModel)]="namedOnly" name="namedOnly" (change)="onFilterChange()">Named only</mat-checkbox>
                 <mat-form-field>
@@ -77,6 +68,15 @@
                     <input matInput type="text" [(ngModel)]="mobFilter" name="mobFilter" (input)="onFilterChange()" />
                 </mat-form-field>
             </div>
+        </div>
+
+        <ng-template [ngIf]="loaded && source === 'saved' && recaps.length === 0">
+            <p class="empty">No push recaps are saved yet.  Turn on the Push Recap hotkey in Settings, then press it in EverQuest after a kill.  Each recap you view is saved here.</p>
+        </ng-template>
+
+        <p class="empty" *ngIf="loaded && source === 'scan' && characters.length === 0">No characters with a log file were found.</p>
+
+        <ng-template [ngIf]="loaded && ( isScanSource || recaps.length > 0 )">
 
             <table class="fights">
                 <thead>
@@ -106,13 +106,13 @@
                         <td>{{recap.topPusher || '-'}}</td>
                         <td class="actions">
                             <button mat-icon-button *ngIf="source === 'saved'" (click)="remove( recap, $event )" matTooltip="Delete this recap"><mat-icon class="material-icons-outlined">delete</mat-icon></button>
-                            <ng-template [ngIf]="source === 'scan'">
+                            <ng-template [ngIf]="isScanSource">
                                 <span class="saved" *ngIf="isSaved( recap )">Saved</span>
                                 <button mat-button *ngIf="!isSaved( recap )" (click)="saveScanned( recap, $event )" matTooltip="Keep this fight in the saved recaps">Save</button>
                             </ng-template>
                         </td>
                     </tr>
-                    <tr *ngIf="rows.length === 0"><td [attr.colspan]="showCharacter ? 10 : 9" class="empty">{{source === 'scan' && scanResults.length === 0 ? 'No scanned fights to show.' : 'No fights match the filter.'}}</td></tr>
+                    <tr *ngIf="rows.length === 0"><td [attr.colspan]="showCharacter ? 10 : 9" class="empty">{{isScanSource && ( !scanMatchesSource || scanResults.length === 0 ) ? 'No scanned fights to show.' : 'No fights match the filter.'}}</td></tr>
                 </tbody>
             </table>
         </ng-template>
@@ -125,7 +125,7 @@
             <button mat-button (click)="copySummary()" [disabled]="( totals === null || totals === undefined )">Copy summary</button>
             <button mat-icon-button (click)="closeDetails()" matTooltip="Close the details"><mat-icon class="material-icons-outlined">close</mat-icon></button>
         </div>
-        <div class="panel-body nag-scrollbar">
+        <div class="panel-body show-scrollbar">
             <p class="note" *ngIf="totalsLoading">Loading the selected fights...</p>
             <ng-template [ngIf]="( totals !== null && totals !== undefined )">
                 <p class="note" *ngIf="totalsNote !== ''">{{totalsNote}}</p>
@@ -250,7 +250,7 @@
             <span class="spacer"></span>
             <button mat-icon-button (click)="closeDetails()" matTooltip="Close the details"><mat-icon class="material-icons-outlined">close</mat-icon></button>
         </div>
-        <div class="panel-body nag-scrollbar">
+        <div class="panel-body show-scrollbar">
             <app-push-timeline [recap]="detail" [hiddenTexts]="hiddenTexts"></app-push-timeline>
             <div class="detail-layout">
                 <div class="detail-grid">

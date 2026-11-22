@@ -94,22 +94,64 @@ p.empty, td.empty {
     opacity: 0.75;
 }
 
+// Two compact rows of controls; each wraps on its own when the window is narrow.
+.filter-rows {
+    margin-bottom: 0.5em;
+
+    .filters + .filters {
+        margin-top: 6px;
+    }
+}
+
 .filters {
     display: flex;
     flex-flow: row wrap;
     align-items: center;
-    gap: 2em;
-    margin-bottom: 1em;
+    gap: 4px 1.25em;
+    min-height: 56px;
 
     mat-form-field {
+        width: 10em;
+    }
+
+    mat-form-field:first-child {
         width: 14em;
+    }
+}
+
+mat-icon.info {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    opacity: 0.6;
+    cursor: help;
+    vertical-align: middle;
+}
+
+.slider-head mat-icon.info {
+    margin-left: 6px;
+}
+
+.file-field {
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+    min-width: 0;
+
+    .file-name {
+        max-width: 16em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 300;
     }
 }
 
 .slider-field {
     display: flex;
     flex-direction: column;
-    width: 22em;
+    width: 20em;
     max-width: 100%;
 
     .slider-head {
@@ -117,6 +159,7 @@ p.empty, td.empty {
         justify-content: space-between;
         align-items: baseline;
         gap: 10px;
+        font-size: 13px;
     }
 
     .readout {
@@ -131,6 +174,7 @@ p.empty, td.empty {
         width: 100%;
         min-width: 0;
         margin: 0;
+        height: 28px;
     }
 
     .ticks {
@@ -152,25 +196,26 @@ p.empty, td.empty {
         }
     }
 
-    .hint {
-        font-size: 12px;
-        opacity: 0.7;
-        margin-top: 2px;
-    }
 }
 
-.scan-progress {
+.scan-status {
     display: flex;
     align-items: center;
     gap: 1em;
-    margin-bottom: 1em;
+    flex: 1 1 14em;
+    min-width: 0;
 
     mat-progress-bar {
-        width: 20em;
+        width: 12em;
     }
 }
 
-p.note.error {
+.scan-status.note {
+    font-weight: 300;
+    opacity: 0.85;
+}
+
+.scan-status.note.error {
     color: #ff5252;
     opacity: 1;
 }
@@ -228,6 +273,8 @@ table.procs {
 }
 
 table.fights {
+    max-width: 1400px;
+
     tbody tr {
         user-select: none;
         cursor: pointer;

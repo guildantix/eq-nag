@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer, Subject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare, PushRecapPreferences, ShareFilePayload, ShareFileReadResult, ShareFileSaveResult, PushRecapSummary, PushScanProgress, PushScanStatus, PushTabView } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare, PushRecapPreferences, ShareFilePayload, ShareFileReadResult, ShareFileSaveResult, PushRecapSummary, PushScanProgress, PushScanStatus, PushTabView, PushScanPickedFile } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
@@ -3108,9 +3108,30 @@ export class IpcService {
      *
      * @param characterId The character whose log is scanned.
      * @param minDamage The smallest damage taken that a listed fight has.
+     * @param useLogFile True to scan the log file that was picked, not a character's log.
      */
-    public startPushScan( characterId: string, minDamage: number ): Observable<{ started: boolean, message: string }> {
-        return this.requestPushScan<{ started: boolean, message: string }>( 'push-scan:start', { characterId: characterId, minDamage: minDamage } );
+    public startPushScan(
+        characterId: string | null, minDamage: number, useLogFile: boolean
+    ): Observable<{ started: boolean, message: string }> {
+        const request = { characterId: characterId ?? undefined, minDamage: minDamage, useLogFile: useLogFile };
+        return this.requestPushScan<{ started: boolean, message: string }>( 'push-scan:start', request );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the file dialog of the main process to pick a log file to scan.  The main process keeps
+     * the path, so the window can only ask to scan the file it picked.
+     */
+    public pickPushScanFile(): Observable<PushScanPickedFile> {
+        return this.requestPushScan<PushScanPickedFile>( 'push-scan:pick-file', {} );
     }
 
 
@@ -3196,8 +3217,11 @@ export class IpcService {
      * @param request.id The scanned fight to fetch, for a request of one fight.
      * @param request.characterId The character to scan, for a request to start a scan.
      * @param request.minDamage The smallest damage taken that a listed fight has, to start a scan.
+     * @param request.useLogFile True to scan the picked log file, to start a scan.
      */
-    private requestPushScan<T>( channel: string, request: { id?: string, characterId?: string, minDamage?: number } ): Observable<T> {
+    private requestPushScan<T>(
+        channel: string, request: { id?: string, characterId?: string, minDamage?: number, useLogFile?: boolean }
+    ): Observable<T> {
         return new Observable<T>( ( observer: Observer<T> ) => {
 
             const requestId = ++this._pushScanRequestId;

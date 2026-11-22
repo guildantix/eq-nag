@@ -1875,7 +1875,6 @@ export class PushRecapPreferences {
  * What the Push tab remembers between sessions.  A sort is stored per table, by column key.
  */
 export interface PushTabView {
-    scanFloor: number;
     minDamage: number;
     sorts: { [ table: string ]: { key: string, direction: 'asc' | 'desc' } };
 }
@@ -2477,10 +2476,43 @@ export interface PushScanProgress {
     kills: number;
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * What the file dialog of the scan gave back.  It never holds the path,
+ * because the main process keeps that.
+ */
+export interface PushScanPickedFile {
+    picked: boolean;
+    cancelled: boolean;
+    fileName: string;
+    characterName: string;
+    pickId: number | null;
+    message: string;
+}
+
+
+
+
+
+
+
+
+
+
 export interface PushScanStatus extends PushScanProgress {
     status: 'idle' | 'running' | 'done' | 'cancelled' | 'error';
     characterId: string | null;
     characterName: string | null;
+    logFileName: string | null;
+    pickId: number | null;
     minDamage: number;
     capped: boolean;
     resumed: boolean;
