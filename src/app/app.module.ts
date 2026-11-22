@@ -12,6 +12,7 @@ import { appRoutes } from './ng.routes';
 import { HttpClientModule } from '@angular/common/http';
 import { ScraperService } from './scraper.service';
 import { CharactersListComponent } from './characters-list/characters-list.component';
+import { ClassSuggestionSnackbarComponent } from './characters-list/class-suggestion-snackbar/class-suggestion-snackbar.component';
 import { ContextMenuModule } from './context-menu/context-menu.module';
 import { TriggersComponent } from './triggers/triggers.component';
 import { ClassNamePipe } from './pipes/class-name.pipe';
@@ -72,6 +73,7 @@ import { QuickActionsComponent } from './quick-actions/quick-actions.component';
         QuickActionsComponent,
         MainComponent,
         CharactersListComponent,
+        ClassSuggestionSnackbarComponent,
         SetupWizardComponent,
         FloatingCombatTextComponent,
         CombatStatisticsComponent,

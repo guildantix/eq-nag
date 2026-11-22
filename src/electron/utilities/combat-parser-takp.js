@@ -1,6 +1,7 @@
 const _ = require( 'lodash' );
 const { CombatParser } = require( './combat-parser' );
 const { nagLog } = require( './nag-console' );
+const { whoLineRegex } = require( './everquest' );
 
 const renderDebugMessages = false;
 
@@ -112,9 +113,7 @@ const combatRgx = {
 
 }
 
-// https://regex101.com/r/cqfoUU/2
-// This won't capture anon people.
-const playerWhoRgx = /^(OFFLINEMODE)?\[(?<level>\d+)\s(?<classTitleOrName>Savage Lord|Arch Arcanist|Arch Animist|Arch Mage|High Priest|Grave Lord|Feral Lord|Storm Warden|Arch Convoker|Arch Lich|Lord Protector|Forest Stalker|Dread Lord|Arch Magus|Stone Fist|Scourge Knight|Grand Archanist|Storm Caller|Grand Summoner|Holy Defender|.+?)\]?\s(:?\((?<classRealName>.*?)\)\])?\s?(?<player>.*?)\s\((?<raceName>.+?)\)\s/i;
+const playerWhoRgx = whoLineRegex;
 
 class TakpCombatParser extends CombatParser {
 

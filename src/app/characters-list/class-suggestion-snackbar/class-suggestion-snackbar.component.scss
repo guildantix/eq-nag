@@ -1,0 +1,16 @@
+.class-suggestion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.buttons {
+    display: flex;
+    flex-shrink: 0;
+    gap: 4px;
+}
+
+.update-button {
+    color: #8ab4f8;
+}

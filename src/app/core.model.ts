@@ -2237,6 +2237,33 @@ export function generateRenderToken(triggerId: string, action: TriggerAction): R
     return token;
 }
 
+
+
+
+
+
+
+
+
+
+/** A request from the main process to ask whether a character's class should change. */
+export class ClassSuggestionModel {
+
+    public characterId: string;
+    public characterName: string;
+    public classCode: string;
+    public className: string;
+
+}
+
+
+
+
+
+
+
+
+
 export class TokenChangeModel {
 
     public actionId: string;

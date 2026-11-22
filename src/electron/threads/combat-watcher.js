@@ -627,6 +627,9 @@ function parseLogEntries( raw, simulating, padTime, prevLog, nextLog ) {
         let output = [];
 
         simulating = simulating === true ? true : false;
+        if ( myCombatParser !== null && myCombatParser !== undefined ) {
+            myCombatParser.reportClassChanges = !simulating;
+        }
 
         // This could be optimized better.
         // TODO: This should be checked in the bootstrap.

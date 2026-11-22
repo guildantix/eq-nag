@@ -20,6 +20,7 @@ const FileMonitor = require( '../utilities/file-monitor' );
 const { parseConditionValues } = require( '../utilities/condition-values' );
 const perf = require( '../utilities/perf' );
 const TriggerPrefilter = require( '../utilities/trigger-prefilter' );
+const { detectPersonaClassCode, detectOwnWhoClassCode } = require( '../utilities/persona-class' );
 // Triggers are timed on one log line in ten (perf-taps.js scales them up), so
 // the per-trigger timing doesn't slow the log watcher down much.
 let perfTriggerSample = 0;
@@ -230,7 +231,7 @@ function startParsingLogFile( logPath, startLogPosition ) {
         lines.forEach( line => {
             if ( line && line.length > 0 ) {
                 const perfStart = perf.enabled ? perf.now() : 0;
-                parseLogEntries( line );
+                parseLogEntries( line, false, undefined, true );
                 perf.enabled && perf.record( 'log-watcher: line', perfStart );
             }
         } );
@@ -1895,13 +1896,33 @@ function generateTriggerFns() {
 
 
 /**
+ * Tells the main process which class this character just showed, from a persona swap or its own
+ * /who line, so it can offer to update the character.
+ *
+ * @param {string} personaClassCode The class code the log line showed.
+ */
+function reportPersonaSwap( personaClassCode ) {
+    ipcRenderer.send( 'character:persona-detected', { characterId: characterId, classCode: personaClassCode } );
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Parses the given log entry.
  * 
  * @param {string} raw The raw log entry.
  * @param {boolean} simulating If true, only simulates executing triggers via a consol.log call.
  * @param {number|undefined} padTime The amount of time to add to the timestamps of log entries.
+ * @param {boolean} isLiveLine True only for a line the watcher just read from the log file.
  */
-function parseLogEntries( raw, simulating, padTime ) {
+function parseLogEntries( raw, simulating, padTime, isLiveLine ) {
 
     try {
         // let startp = performance.now(); //p
@@ -1955,6 +1976,15 @@ function parseLogEntries( raw, simulating, padTime ) {
             }
         }
         
+        // Only lines written while playing can mean a real class change; simulations and raw
+        // parses replay old lines.
+        if ( isLiveLine === true && !simulating && padTime === undefined ) {
+            const personaClassCode = detectPersonaClassCode( log ) ?? detectOwnWhoClassCode( log, characterName, charModel?.thj === true );
+            if ( personaClassCode !== null ) {
+                reportPersonaSwap( personaClassCode );
+            }
+        }
+
         // https://regex101.com/r/FvGiGC/2
         // {NAG:(?<quickShareId>.+?)}
         // TODO: Remove the negative lookahead for package after a few versions.

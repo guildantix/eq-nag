@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer, Subject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare, ClassSuggestionModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
@@ -74,6 +74,7 @@ export class IpcService {
     private _consoleErrorObservers: Observer<ConsoleMessageModel>[] = [];
     private _consoleProgressObservers: Observer<ProgressModel>[] = [];
     private _onCombatGroupMigrationRequestObservers: Observer<boolean>[] = [];
+    private _onClassSuggestionObservers: Observer<ClassSuggestionModel>[] = [];
     private _settingsObservableCache: Record<string, Observable<any>> = {};
     private _settingsCacheObservers: Record<string, Observer<any>[]> = {};
     private _watchedSettings: string[] = [];
@@ -105,6 +106,14 @@ export class IpcService {
                 window.api.ipc.on( 'ask_combat_group_migration', ( event: any, data: boolean ) => {
                     ngZone.run( () => {
                         this._onCombatGroupMigrationRequestObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'character:class-suggestion', ( event: any, data: ClassSuggestionModel ) => {
+                    ngZone.run( () => {
+                        this._onClassSuggestionObservers?.forEach( f => {
                             f.next( data );
                         } );
                     } );
@@ -425,6 +434,73 @@ export class IpcService {
 
         return obs;
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns an observable that will emit when the main process asks whether a character's class
+     * should change, after the log showed the character swapped persona.
+     */
+    public onClassSuggestion(): Observable<ClassSuggestionModel> {
+        return new Observable<ClassSuggestionModel>( ( observer: Observer<ClassSuggestionModel> ) => {
+            this._onClassSuggestionObservers.push( observer );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Changes the class of a character.
+     *
+     * @param characterId The character to change.
+     * @param classCode The new class code, such as SHM.
+     */
+    public updateCharacterClass( characterId: string, classCode: string ): void {
+        window.api.ipc.send( 'character:update:class', { characterId: characterId, class: classCode } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Tells the main process what happened to a class suggestion.
+     *
+     * @param characterId The character the suggestion was about.
+     * @param classCode The class the suggestion offered.
+     * @param answer What happened: updated or declined by the player, or dismissed unanswered.
+     */
+    public answerClassSuggestion( characterId: string, classCode: string, answer: 'updated' | 'declined' | 'dismissed' ): void {
+        window.api.ipc.send( 'character:class-suggestion:answer', { characterId: characterId, classCode: classCode, answer: answer } );
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Returns the list of successful parses.

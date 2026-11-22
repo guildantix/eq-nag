@@ -1,8 +1,9 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ClassSuggestionSnackbarComponent } from './characters-list/class-suggestion-snackbar/class-suggestion-snackbar.component';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerPackageMetaModel, VersionNumber, AuthorModel, SettingsKeys, ShareInstallResult } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerPackageMetaModel, VersionNumber, AuthorModel, SettingsKeys, ShareInstallResult, ClassSuggestionModel } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { customAlphabet } from 'nanoid';
 import { SetupService } from './setup/setup.service';
@@ -130,6 +131,7 @@ export class MainComponent implements OnInit {
 
         } );
 
+        this.ipcService.onClassSuggestion().subscribe( suggestion => this.showClassSuggestion( suggestion ) );
         this.ipcService.logFileChanged().subscribe( data => this.logFile = data );
         this.ipcService.consoleLogRequested().subscribe( data => console.log( 'from main', data ) );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
@@ -686,6 +688,44 @@ export class MainComponent implements OnInit {
         //     // }, 1000 );
         // }
         
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Asks whether to update a character's class. The class only changes on "Update"; closing the
+     * snackbar any other way (another snackbar replacing it) is reported as dismissed.
+     *
+     * @param suggestion The character and class detected from the log.
+     */
+    private showClassSuggestion( suggestion: ClassSuggestionModel ): void {
+        let wasAnswered = false;
+
+        const snackBarRef = this.snackBar.openFromComponent( ClassSuggestionSnackbarComponent, {
+            data: {
+                suggestion: suggestion,
+                onAnswer: ( answer: 'updated' | 'declined' ) => {
+                    wasAnswered = true;
+                    if ( answer === 'updated' ) {
+                        this.ipcService.updateCharacterClass( suggestion.characterId, suggestion.classCode );
+                    }
+                    this.ipcService.answerClassSuggestion( suggestion.characterId, suggestion.classCode, answer );
+                },
+            },
+        } );
+
+        snackBarRef.afterDismissed().subscribe( () => {
+            if ( !wasAnswered ) {
+                this.ipcService.answerClassSuggestion( suggestion.characterId, suggestion.classCode, 'dismissed' );
+            }
+        } );
     }
 
 }
