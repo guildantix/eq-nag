@@ -144,6 +144,14 @@ function buildSliderTicks( firstIndex: number ): PushSliderTick[] {
 
 
 /**
+ * How many fights the list draws at first, and how many more each "Show more" click adds.  The
+ * browser spends about 0.2 ms laying out each row, so drawing every one of up to 1,000 fights made
+ * a sort or a filter change take a fifth of a second.
+ */
+const fightsPageSize = 100;
+
+
+/**
  * How each table is sorted until the user clicks a header: newest fight first, and the players who
  * pushed most first.
  */
@@ -244,6 +252,8 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     public loaded: boolean = false;
     public recaps: PushRecapSummary[] = [];
     public rows: PushRecapSummary[] = [];
+    public shownRows: PushRecapSummary[] = [];
+    public shownLimit: number = fightsPageSize;
     public showCharacter: boolean = false;
     public selected: PushRecapSummary | null = null;
     public selection: PushRecapSummary[] = [];
@@ -450,6 +460,22 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             return 0;
         }
         return Math.min( 100, Math.floor( status.bytes * 100 / status.total ) );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * How many more fights the "Show more" button adds: a full page, or what is left of the list.
+     */
+    public get nextPageCount(): number {
+        return Math.min( fightsPageSize, this.rows.length - this.shownRows.length );
     }
 
 
@@ -1050,7 +1076,8 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
                 this.pickedFileMessage = picked.message;
                 this.scanStartMessage = '';
             }
-            this.applyFilters();
+            // A cancelled pick changes nothing, so the drawn rows stay as they were.
+            this.applyFilters( picked.cancelled );
             this.changeDetector.markForCheck();
         } );
     }
@@ -1166,6 +1193,24 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         this.selectedIds = new Set( this.rows.map( r => r.id ) );
         this.anchorId = this.rows[ 0 ]?.id ?? null;
         this.applySelection();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Draws the next page of fights under the ones already in the table.
+     */
+    public showMoreFights(): void {
+        this.shownLimit += fightsPageSize;
+        this.updateShownRows();
+        this.changeDetector.markForCheck();
     }
 
 
@@ -1461,7 +1506,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             this.savedKeys = new Set( this.recaps.map( r => this.recapKey( r ) ) );
             this.detailStale = this.detailStale || this.source === 'saved';
             this.loaded = true;
-            this.applyFilters();
+            this.applyFilters( true );
         } );
     }
 
@@ -1513,6 +1558,8 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     private sortTable( table: PushSortTable ): void {
         if ( table === 'fights' ) {
             this.rows = this.sortFights( this.rows );
+            this.shownLimit = fightsPageSize;
+            this.updateShownRows();
         } else if ( table === 'totals' ) {
             this.totalsRows = this.sortPlayers( this.totalsRowsUnsorted, table, this.totals?.spells ?? [] );
         } else {
@@ -1723,8 +1770,11 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
 
     /**
      * Filters the list of the chosen source and keeps the selection only if it is still shown.
+     *
+     * @param keepShownLimit True when only the saved recaps were refreshed, so a list the user has
+     *     already extended is not cut back to the first page.
      */
-    private applyFilters(): void {
+    private applyFilters( keepShownLimit: boolean = false ): void {
         const mob = this.mobFilter.trim().toLowerCase();
         const items = this.isScanSource ? ( this.scanMatchesSource ? this.scanResults : [] ) : this.recaps;
         this.showCharacter = this.source === 'saved' && new Set( this.recaps.map( r => r.characterName ) ).size > 1;
@@ -1734,7 +1784,28 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         }
         const filtered = items.filter( r => r.damageTaken >= this.minDamage && ( !this.namedOnly || r.named ) && ( mob === '' || r.mob.toLowerCase().indexOf( mob ) > -1 ) && ( this.dateFilter === '' || nightKey( r.killTime ) === this.dateFilter ) );
         this.rows = this.sortFights( filtered );
+        if ( !keepShownLimit ) {
+            this.shownLimit = fightsPageSize;
+        }
+        this.updateShownRows();
         this.applySelection();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Cuts the filtered and sorted fights down to the ones the table draws.  The selection, the
+     * totals and "Select all shown" still use every fight that passes the filters.
+     */
+    private updateShownRows(): void {
+        this.shownRows = this.rows.length > this.shownLimit ? this.rows.slice( 0, this.shownLimit ) : this.rows;
     }
 
 

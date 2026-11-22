@@ -299,6 +299,15 @@ table.fights {
     }
 }
 
+.show-more {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    max-width: 1400px;
+    padding: 8px 0 16px;
+    opacity: 0.85;
+}
+
 .totals-tiles {
     display: flex;
     flex-flow: row wrap;

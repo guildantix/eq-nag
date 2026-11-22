@@ -94,7 +94,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let recap of rows; trackBy: trackById" [class.selected]="selectedIds.has( recap.id )" (click)="select( recap, $event )">
+                    <tr *ngFor="let recap of shownRows; trackBy: trackById" [class.selected]="selectedIds.has( recap.id )" (click)="select( recap, $event )">
                         <td>{{formatTime( recap )}}</td>
                         <td *ngIf="showCharacter">{{recap.characterName}}</td>
                         <td>{{recap.mob}}</td>
@@ -115,6 +115,10 @@
                     <tr *ngIf="rows.length === 0"><td [attr.colspan]="showCharacter ? 10 : 9" class="empty">{{isScanSource && ( !scanMatchesSource || scanResults.length === 0 ) ? 'No scanned fights to show.' : 'No fights match the filter.'}}</td></tr>
                 </tbody>
             </table>
+            <div class="show-more" *ngIf="rows.length > shownRows.length">
+                <span aria-live="polite">Showing {{shownRows.length}} of {{rows.length}} fights</span>
+                <button mat-button (click)="showMoreFights()">Show {{nextPageCount}} more</button>
+            </div>
         </ng-template>
     </div>
 
