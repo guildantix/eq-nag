@@ -1786,6 +1786,37 @@ export class IpcService {
         return obs;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens a folder dialog for the user to pick the EverQuest folder.
+     *
+     * @returns The picked folder, and whether it looks like an install.  Nothing is saved.
+     */
+    public chooseEqInstallFolder(): Observable<{ canceled: boolean, folder: string | null, valid: boolean }> {
+        return new Observable<{ canceled: boolean, folder: string | null, valid: boolean }>( observer => {
+
+            window.api.ipc.invoke<{ canceled: boolean, folder: string | null, valid: boolean }>( 'settings:choose:everquest-folder' )
+                .then( result => {
+                    this.ngZone.run( () => {
+                        observer.next( result );
+                        observer.complete();
+                    } );
+                } )
+                .catch( error => {
+                    this.ngZone.run( () => observer.error( error ) );
+                } );
+
+        } );
+    }
+
     public clearEqSpellIcons(): void {
         window.api.ipc.send( 'game-resources:clear:eq:icons' );
     }

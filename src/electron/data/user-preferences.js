@@ -990,6 +990,20 @@ class UserPreferencesStore extends Store {
             this.storeDataFile( this.#data );
         } );
 
+        // The folder is validated here, where the file system is reachable; the renderer saves it.
+        ipcMain.handle( 'settings:choose:everquest-folder', async () => {
+            const result = await dialog.showOpenDialog( BrowserWindow.getFocusedWindow(), {
+                title: 'Select your EverQuest folder',
+                properties: [ 'openDirectory' ]
+            } );
+            if ( result.canceled || result.filePaths.length === 0 ) {
+                return { canceled: true, folder: null, valid: false };
+            }
+            const folder = result.filePaths[ 0 ];
+            const valid = fs.existsSync( path.join( folder, 'eqgame.exe' ) ) || fs.existsSync( path.join( folder, 'spells_us.txt' ) );
+            return { canceled: false, folder: folder, valid: valid };
+        } );
+
         ipcMain.on( 'settings:get:everquest-folder', ( event, arg ) => {
             if ( this.#data.everquestInstallFolder != null && fs.existsSync( this.#data.everquestInstallFolder ) ) {
                 event.sender.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );

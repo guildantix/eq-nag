@@ -125,6 +125,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     public rollSettings: RollTrackerSettings | null = null;
     public rollDefaults: RollTrackerSettings | null = null;
     public hiddenMessages: { id: string, name: string }[] = [];
+    public eqInstallFolder: string | null = null;
+    public eqInstallFolderError: string | null = null;
     private fileReadDelays: FileReadDelays | null = null;
     private rollAdvancedChecked: boolean = false;
     private hasStoredAdvanced: boolean = false;
@@ -382,6 +384,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
             // Fills in defaults for fields an older saved file doesn't have yet.
             this.pushRecapPreferences = Object.assign( new PushRecapPreferences(), recapPrefs );
         } );
+        this.ipcService.getEqInstallFolder().subscribe( folder => this.eqInstallFolder = folder ?? null );
         this.ipcService.getEnableGlowOnStartup().subscribe( f => this.glowOnStartup = f );
         this.ipcService.getQuickShareAuthorsListType().subscribe( f => this.quickShareAuthorListType = f );
         this.ipcService.getQuickShareAuthorsList().subscribe( f => {
@@ -1049,6 +1052,36 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.ipcService.downloadDataFilesZip();
     }
     
+
+
+
+
+
+
+
+
+    
+    /**
+     * Lets the user pick the EverQuest folder, and saves it when it holds an install.
+     * An unrelated folder is refused with an inline message so a wrong pick cannot replace it.
+     */
+    chooseEqInstallFolder() {
+        this.ipcService.chooseEqInstallFolder().subscribe( result => {
+            if ( result.canceled ) {
+                return;
+            }
+            if ( !result.valid ) {
+                this.eqInstallFolderError = 'That folder does not contain eqgame.exe or spells_us.txt.  Pick the folder you start EverQuest from.';
+                return;
+            }
+            this.eqInstallFolderError = null;
+            this.eqInstallFolder = result.folder;
+            this.ipcService.setEqInstallFolder( result.folder );
+        }, () => {
+            this.eqInstallFolderError = 'The folder dialog could not be opened.  Please try again.';
+        } );
+    }
+
 
 
 

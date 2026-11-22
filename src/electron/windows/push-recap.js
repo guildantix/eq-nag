@@ -352,7 +352,7 @@ async function PushRecap( params ) {
 
     try {
         showMessage( 'Loading spell data...', false );
-        const table = await loadPushSpells( params.eqFolder, params.userData );
+        const table = await loadPushSpells( params.logFilePath, params.eqFolder, params.userData );
         const landing = buildLandingIndex( table );
 
         showMessage( 'Reading the log...', false );
