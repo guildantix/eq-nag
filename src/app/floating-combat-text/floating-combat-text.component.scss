@@ -4,8 +4,8 @@ div.tab-content {
     left: 0;
     right: 0;
     bottom: 0;
-    top: 176px;
-    top: 226px;
+    // Main tab bar, the 32px sub-tab row (dark.theme.scss, .sub-tabs) and the toolbar.
+    top: 210px;
 
     > fieldset:not(:first-child) {
         margin-top: 50px;
