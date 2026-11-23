@@ -1,5 +1,6 @@
 import { AfterViewInit, ChangeDetectorRef, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { CharacterClassNames, DpsMeterSettings, PlayerInfo, ServerCombatModel, SettingsKeys } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
@@ -28,6 +29,8 @@ const pageSize = 10;
     selector: 'combat-statistics',
     templateUrl: 'combat-statistics.component.html',
     styleUrls: [ '../settings-component/settings.component.scss', '../../core.scss', './combat-statistics.component.scss' ],
+    // This pane also opens in its own window, outside the Settings tab, so it carries its own copy.
+    providers: [ { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { floatLabel: 'always' } } ],
 } )
 export class CombatStatisticsComponent implements OnInit {
 

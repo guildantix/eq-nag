@@ -91,11 +91,14 @@ export class IpcService {
     private _ginaConfigCache: GinaConfiguration = null;
 
     private _timeoutIds: Record<string, number> = {};
+    private _pendingSettings: Record<string, { value: any, onExecuted: () => void }> = {};
 
     constructor(
         private readonly ngZone: NgZone,
         private readonly dialogService: DialogService,
     ) {
+        window.addEventListener( 'beforeunload', () => this.flushPendingSettings() );
+
         if ( window.api ) {
             try {
 
@@ -792,6 +795,7 @@ export class IpcService {
     }
 
     public quitApp( forceQuit: boolean = false ): void {
+        this.flushPendingSettings();
         window.api.ipc.send( 'app:quit', forceQuit === true ? true : false );
     }
 
@@ -848,7 +852,9 @@ export class IpcService {
             }
 
             // Start a new timer.
+            this._pendingSettings[ key ] = { value: value, onExecuted: onExecuted };
             this._timeoutIds[ key ] = window.setTimeout( () => {
+                delete this._pendingSettings[ key ];
                 window.api.ipc.send( 'settings:set', { key: key, value: value } );
                 this._timeoutIds[ key ] = 0;
                 if ( onExecuted ) {
@@ -857,6 +863,10 @@ export class IpcService {
             }, delay );
             
         } else {
+            // A delayed change for this key must not fire or flush later and overwrite this newer
+            // value.
+            window.clearTimeout( this._timeoutIds[ key ] );
+            delete this._pendingSettings[ key ];
             window.api.ipc.send( 'settings:set', { key: key, value: value } );
             this._timeoutIds[ key ] = 0;
             if ( onExecuted ) {
@@ -866,6 +876,38 @@ export class IpcService {
         }
 
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends every setting that is still waiting on its delay, so a quit or reload does not lose it.
+     */
+    public flushPendingSettings(): void {
+        for ( const key of Object.keys( this._pendingSettings ) ) {
+            const pending = this._pendingSettings[ key ];
+            delete this._pendingSettings[ key ];
+            window.clearTimeout( this._timeoutIds[ key ] );
+            this._timeoutIds[ key ] = 0;
+            window.api?.ipc.send( 'settings:set', { key: key, value: pending.value } );
+            pending.onExecuted?.();
+        }
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Returns an observable that continually updates when the specified setting changess.
