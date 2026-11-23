@@ -3,7 +3,7 @@
 <mat-dialog-content>
 
     <p *ngFor="let msg of messages" [innerHtml]="msg | coloredString"></p>
-    <div class="btn-info">
+    <div class="btn-info" *ngIf="hasQuestions">
         <table>
             <tr *ngFor="let q of data.questions">
                 <td><strong>{{q.buttonText}}</strong></td>
