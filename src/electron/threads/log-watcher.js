@@ -17,6 +17,7 @@ const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
 const ArrayUtilities = require( '../utilities/arrays' );
 const FileMonitor = require( '../utilities/file-monitor' );
+const { parseConditionValues } = require( '../utilities/condition-values' );
 const perf = require( '../utilities/perf' );
 // Triggers are timed on one log line in ten (perf-taps.js scales them up), so
 // the per-trigger timing doesn't slow the log watcher down much.
@@ -1329,24 +1330,18 @@ function generateTriggerFns() {
                     }
                 } );
     
-                /** @type {Record<string, string[]>} This object stores values converted from user input for condition checks.  Ex: Knowledge|Tranquility => ['Knowledge', 'Tranquility'] */
-                let _conditionValues = {};
+                /**
+                 * The values converted from user input for condition checks, per condition.
+                 * Ex: Knowledge|Tranquility => ['Knowledge', 'Tranquility']
+                 *
+                 * @type {Map<any, string[]|null>}
+                 */
+                const _conditionValues = new Map();
                 trigger.conditions?.forEach( condition => {
-                    if ( condition.variableValue ) {
-                        _conditionValues[ condition.variableName ] = condition.variableValue.split( /\|/gi ) ?? [];
-                        _conditionValues[ condition.variableName ].forEach( v => v = v?.trim() );
-                    } else {
-                        _conditionValues[ condition.variableName ] = null;
-                    }
+                    _conditionValues.set( condition, parseConditionValues( condition.variableValue ) );
                 } );
-    
                 trigger._folderConditions?.forEach( condition => {
-                    if ( condition.variableValue ) {
-                        _conditionValues[ condition.variableName ] = condition.variableValue.split( /\|/gi ) ?? [];
-                        _conditionValues[ condition.variableName ].forEach( v => v = v?.trim() );
-                    } else {
-                        _conditionValues[ condition.variableName ] = null;
-                    }
+                    _conditionValues.set( condition, parseConditionValues( condition.variableValue ) );
                 } );
     
                 /**
@@ -1403,7 +1398,7 @@ function generateTriggerFns() {
                         if ( condition.conditionType === TriggerConditionTypes.VariableValue ) {
                             if ( condition.operatorType === OperatorTypes.Equals ) {
 
-                                let storedValue = storeHasValue( variableName, _conditionValues[ variableName ] );
+                                const storedValue = storeHasValue( variableName, _conditionValues.get( condition ) );
 
                                 if ( !storedValue.exists ) {
                                     conditionsPassed = false;
@@ -1423,12 +1418,17 @@ function generateTriggerFns() {
     
                             } else if ( condition.operatorType === OperatorTypes.DoesNotEqual ) {
     
-                                let storedValue = storeHasValue( variableName, _conditionValues[ variableName ] );
+                                const storedValue = storeHasValue( variableName, _conditionValues.get( condition ) );
+                                const conditionValues = _conditionValues.get( condition );
+                                const hasNoConditionValues = conditionValues === null || conditionValues === undefined;
+                                const hasNoStoredValues = storedVariables[ variableName ] === null ||
+                                    storedVariables[ variableName ] === undefined ||
+                                    storedVariables[ variableName ]?.length === 0;
                                 
-                                if ( _conditionValues[ variableName ] && storedValue.exists ) {
+                                if ( conditionValues && storedValue.exists ) {
                                     // If the condition value is not null, then check if the store has that value.
                                     conditionsPassed = false;
-                                } else if ( _conditionValues[ variableName ] == null && ( storedVariables[ variableName ] == null || storedVariables[ variableName ]?.length == 0 ) ) {
+                                } else if ( hasNoConditionValues && hasNoStoredValues ) {
                                     // If the condition value is null, then check to make sure that the stored value(s) have at least 1 value;
                                     //  ex: If CurrentZone == null and the condition requires that CurrentZone DoesNotEqual Null
                                     conditionsPassed = false;
@@ -1439,7 +1439,7 @@ function generateTriggerFns() {
     
                             } else if ( condition.operatorType === OperatorTypes.Contains ) {
                                 
-                                let storedValue = storeContainsValue( variableName, _conditionValues[ variableName ] );
+                                const storedValue = storeContainsValue( variableName, _conditionValues.get( condition ) );
     
                                 if ( !storedValue.exists ) {
                                     conditionsPassed = false;
@@ -1487,10 +1487,10 @@ function generateTriggerFns() {
     
                 // Grab condition values and store them
                 trigger.conditions.forEach( condition => {
-                    if ( !StringUtilities.isNullOrWhitespace( condition.variableValue ) ) {
-                        let values = condition.variableValue.split( /\|/gi ) ?? [];
+                    const values = parseConditionValues( condition.variableValue );
+                    if ( values ) {
                         usedConditionValues[ condition.variableName ] = usedConditionValues[ condition.variableName ] ? usedConditionValues[ condition.variableName ] : [];
-                        for ( let i = 0; i < values?.length; i++ ) {
+                        for ( let i = 0; i < values.length; i++ ) {
                             if ( usedConditionValues[ condition.variableName ].indexOf( values[ i ] ) == -1 ) {
                                 usedConditionValues[ condition.variableName ].push( values[ i ] );
                             }
@@ -1500,10 +1500,10 @@ function generateTriggerFns() {
                 
                 // Store folder condition values as well
                 trigger._folderConditions?.forEach( condition => {
-                    if ( !StringUtilities.isNullOrWhitespace( condition.variableValue ) ) {
-                        let values = condition.variableValue.split( /\|/gi ) ?? [];
+                    const values = parseConditionValues( condition.variableValue );
+                    if ( values ) {
                         usedConditionValues[ condition.variableName ] = usedConditionValues[ condition.variableName ] ? usedConditionValues[ condition.variableName ] : [];
-                        for ( let i = 0; i < values?.length; i++ ) {
+                        for ( let i = 0; i < values.length; i++ ) {
                             if ( usedConditionValues[ condition.variableName ].indexOf( values[ i ] ) == -1 ) {
                                 usedConditionValues[ condition.variableName ].push( values[ i ] );
                             }
