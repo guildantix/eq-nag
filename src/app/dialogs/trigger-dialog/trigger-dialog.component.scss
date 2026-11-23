@@ -18,6 +18,19 @@ mat-form-field {
     }
 }
 
+// The tab header is pinned with position: fixed and z-index: 2 (modal.scss), which paints over a
+// non-fixed button. The button is pinned the same way, one layer above, so it stays level with the
+// tab labels while the content scrolls. With no top set, a fixed box starts where it would sit in
+// the flow: the top edge of the tab row.
+// 48px is the Material tab header height; the button is 36px, so it stays clear of the 2px ink bar.
+// The right offset clears the 8px dialog scrollbar.
+.new-action-button {
+    position: fixed;
+    margin-top: 6px;
+    right: 16px;
+    z-index: 3;
+}
+
 legend.full-width {
     min-width: 100%;
 }

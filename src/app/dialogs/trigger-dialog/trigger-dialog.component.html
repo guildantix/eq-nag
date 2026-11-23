@@ -14,7 +14,8 @@
     </header>
     <section class="show-scrollbar">
         <form #triggerForm="ngForm">
-            <mat-tab-group class="modal-menu" animationDuration="0ms" (selectedIndexChange)="onChangeTabs($event)" [selectedIndex]="0">
+            <button mat-button color="accent" type="button" class="new-action-button" *ngIf="isActionsTabSelected" (click)="addNewAction()"><mat-icon>add</mat-icon>New</button>
+            <mat-tab-group class="modal-menu" animationDuration="0ms" (selectedTabChange)="onChangeTabs($event)" [selectedIndex]="0">
                 <mat-tab label="Capture">
                     <div class="tab-content">
                         
@@ -69,7 +70,7 @@
                     <ng-template matTabContent>
                         <div class="tab-content">
 
-                            <app-trigger-actions [(actions)]="model.actions" [isDev]="isDev" [predefined]="model.predefined" [capturePhrases]="model.capturePhrases"></app-trigger-actions>
+                            <app-trigger-actions [(actions)]="model.actions" [isDev]="isDev" [predefined]="model.predefined" [capturePhrases]="model.capturePhrases" [showNewButton]="false"></app-trigger-actions>
                             
                         </div>
                     </ng-template>
