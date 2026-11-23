@@ -188,34 +188,40 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    // Older or hand-edited profiles may have no saved window size, so the
+    // bounds object is created on the first write of any of the four values.
     get windowHeight() {
-        return this.#data.windowBounds.height;
+        return this.#data.windowBounds?.height;
     }
     set windowHeight( val ) {
+        this.#data.windowBounds ??= {};
         this.#data.windowBounds.height = val;
         this.storeDataFile( this.#data );
     }
 
     get windowWidth() {
-        return this.#data.windowBounds.width;
+        return this.#data.windowBounds?.width;
     }
     set windowWidth( val ) {
+        this.#data.windowBounds ??= {};
         this.#data.windowBounds.width = val;
         this.storeDataFile( this.#data );
     }
 
     get windowX() {
-        return this.#data.windowBounds.x;
+        return this.#data.windowBounds?.x;
     }
     set windowX( val ) {
+        this.#data.windowBounds ??= {};
         this.#data.windowBounds.x = val;
         this.storeDataFile( this.#data );
     }
 
     get windowY() {
-        return this.#data.windowBounds.y;
+        return this.#data.windowBounds?.y;
     }
     set windowY( val ) {
+        this.#data.windowBounds ??= {};
         this.#data.windowBounds.y = val;
         this.storeDataFile( this.#data );
     }
