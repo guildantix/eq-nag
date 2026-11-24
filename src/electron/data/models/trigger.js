@@ -34,6 +34,7 @@ var ActionTypes = {
     '13': 'ClearAll',
     '14': 'Stopwatch',
     '15': 'List',
+    '16': 'DisplayPushRecap',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -50,6 +51,7 @@ var ActionTypes = {
     ClearAll: 13,
     Stopwatch: 14,
     List: 15,
+    DisplayPushRecap: 16,
 
 }
 
@@ -99,6 +101,8 @@ var getActionLabel = ( actionType ) => {
             return 'Beneficial Timer';
         case ActionTypes.DisplayDeathRecap:
             return 'Display Death Recap';
+        case ActionTypes.DisplayPushRecap:
+            return 'Display Push Recap';
         case ActionTypes.ScreenGlow:
             return 'Screen Glow';
         case ActionTypes.ClearAll:

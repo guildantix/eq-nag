@@ -4,7 +4,7 @@ import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { customAlphabet } from 'nanoid';
-import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys, SharedTriggerPermissions, DpsMeterSettings, FileReadDelays } from 'src/app/core.model';
+import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, PushRecapPreferences, pushRecapHotkeyCommand, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys, SharedTriggerPermissions, DpsMeterSettings, FileReadDelays } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SetupService } from 'src/app/setup/setup.service';
@@ -72,6 +72,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
         { id: 'sharing', label: 'Sharing' },
         { id: 'rolls', label: 'Roll tracker' },
         { id: 'death', label: 'Death recap' },
+        { id: 'push', label: 'Push recap' },
         { id: 'combat', label: 'Combat' },
         { id: 'advanced', label: 'Advanced' },
         { id: 'diagnostics', label: 'Diagnostics' },
@@ -102,6 +103,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     public enableQuickShareImports: boolean = false;
     public sharedTriggerPermissions: SharedTriggerPermissions = new SharedTriggerPermissions();
     public deathRecapPreferences: DeathRecapPreferences = new DeathRecapPreferences();
+    public pushRecapPreferences: PushRecapPreferences = new PushRecapPreferences();
+    public pushRecapHotkeyCommand: string = pushRecapHotkeyCommand;
     public minimizeToTrayOnLoad: boolean = false;
     public glowOnStartup: boolean = true;
     public quickShareAuthorListTypes: typeof QuickShareAuthorListTypes = QuickShareAuthorListTypes;
@@ -375,6 +378,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.ipcService.getEnableQuickShareImports().subscribe( enabled => this.enableQuickShareImports = enabled );
         this.ipcService.getMinimizeToTrayOnLoad().subscribe( enabled => this.minimizeToTrayOnLoad = enabled );
         this.ipcService.getDeathRecapPreferences().subscribe( recapPrefs => this.deathRecapPreferences = recapPrefs ?? new DeathRecapPreferences() );
+        this.ipcService.getPushRecapPreferences().subscribe( recapPrefs => {
+            // Fills in defaults for fields an older saved file doesn't have yet.
+            this.pushRecapPreferences = Object.assign( new PushRecapPreferences(), recapPrefs );
+        } );
         this.ipcService.getEnableGlowOnStartup().subscribe( f => this.glowOnStartup = f );
         this.ipcService.getQuickShareAuthorsListType().subscribe( f => this.quickShareAuthorListType = f );
         this.ipcService.getQuickShareAuthorsList().subscribe( f => {
@@ -615,6 +622,42 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
 
     /**
+     * Saves changes to the push recap quiet gap.
+     */
+    onPushRecapGapChange(): void {
+        const gap = Math.round( +this.pushRecapPreferences.quietGapSeconds );
+        this.pushRecapPreferences.quietGapSeconds = isNaN( gap ) ? 30 : Math.min( 300, Math.max( 5, gap ) );
+        this.ipcService.updatePushRecapPreferences( this.pushRecapPreferences );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Copies the push recap hotbutton to the user's clipboard.
+     */
+    onCopyPushRecapHotkeyCommand(): void {
+        this.ipcService.sendTextToClipboard( pushRecapHotkeyCommand );
+
+        this.snackBar.open( 'The command has been copied to your clipboard!', 'Dismiss', { duration: 5000 } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Copies the death recap command to the user's clipboard.
      */
     onCopyDeathRecapHotkeyCommand(): void {
@@ -828,6 +871,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
                 'pasteTemplate', 'speakWinnerPhrase', 'speakTiePhrase',
             ] as ( keyof RollTrackerSettings )[];
             return advancedKeys.some( key => roll[ key ] !== defaults[ key ] );
+        }
+        if ( id === 'push' ) {
+            return this.pushRecapPreferences.quietGapSeconds !== 30;
         }
         return false;
     }

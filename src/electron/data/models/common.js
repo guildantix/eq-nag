@@ -256,6 +256,8 @@ class UserPreferencesStoreModel {
     fctStyles;
     /** @type {DeathRecapPreferences} */
     deathRecap;
+    /** @type {PushRecapPreferences} */
+    pushRecap;
     /** @type {boolean} */
     minimizeToTrayOnLoad;
     /** @type {string} */

@@ -2,7 +2,7 @@ import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, ElementRef, HostListener, NgZone, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { DeathRecapPreferences, ExternalDataSources, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerAction, TriggerFolder, TriggerModel, ShareInstallResult } from '../core.model';
+import { DeathRecapPreferences, ExternalDataSources, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerAction, TriggerFolder, TriggerModel, ShareInstallResult, pushRecapHotkeyCommand } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash-es';
@@ -347,6 +347,22 @@ export class TriggersComponent implements OnInit {
 
 
     
+    /**
+     * Copies the push recap hotbutton to the clipboard.
+     */
+    public copyPushRecapHotkey(): void {
+        this.copyHotkey( pushRecapHotkeyCommand );
+    }
+
+
+
+
+
+
+
+
+
+
     /**
      * Copies the clear all hotbutton to the clipboard.
      */

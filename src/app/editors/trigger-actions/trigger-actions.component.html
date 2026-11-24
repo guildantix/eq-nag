@@ -19,6 +19,7 @@
                     <span class="material-icons" *ngIf="action.actionType === actionTypes.Clipboard">{{actionTypeIcons(actionTypes.Clipboard)}}</span>
                     <span class="material-icons" *ngIf="action.actionType === actionTypes.BeneficialTimer">{{actionTypeIcons(actionTypes.BeneficialTimer)}}</span>
                     <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayDeathRecap">{{actionTypeIcons(actionTypes.DisplayDeathRecap)}}</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayPushRecap">{{actionTypeIcons(actionTypes.DisplayPushRecap)}}</span>
                     <span class="material-icons" *ngIf="action.actionType === actionTypes.ScreenGlow">{{actionTypeIcons(actionTypes.ScreenGlow)}}</span>
                     <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.ClearAll">{{actionTypeIcons(actionTypes.ClearAll)}}</span>
                     <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.Stopwatch">{{actionTypeIcons(actionTypes.Stopwatch)}}</span>
@@ -38,6 +39,7 @@
                     <span *ngIf="action.actionType === actionTypes.Clipboard">Put text into the clipboard.</span>
                     <span *ngIf="action.actionType === actionTypes.BeneficialTimer">Creates a countdown until the buff expires.</span>
                     <span *ngIf="action.actionType === actionTypes.DisplayDeathRecap">Displays the Death Recap window.</span>
+                    <span *ngIf="action.actionType === actionTypes.DisplayPushRecap">Displays the Push Recap window.</span>
                     <span *ngIf="action.actionType === actionTypes.ScreenGlow">Renders a glow around the main display.</span>
                     <span *ngIf="action.actionType === actionTypes.ClearAll">Stops all active components.</span>
                     <span *ngIf="action.actionType === actionTypes.Stopwatch">Starts a stopwatch.</span>
@@ -116,6 +118,9 @@
                                     </button>
                                     <button mat-menu-item (click)="selectActionType(action, actionTypes.DisplayDeathRecap, menuTrigger)">
                                         <mat-icon>{{actionTypeIcons(actionTypes.DisplayDeathRecap)}}</mat-icon>{{ actionTypeLabels(actionTypes.DisplayDeathRecap) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.DisplayPushRecap, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.DisplayPushRecap)}}</mat-icon>{{ actionTypeLabels(actionTypes.DisplayPushRecap) }}
                                     </button>
                                 </div>
                             </div>
@@ -215,6 +220,10 @@
     
                 </div>
     
+                <div *ngIf="action.actionType === actionTypes.DisplayPushRecap">
+                    <p>This action will load the Push Recap window for the last boss kill in the log.</p>
+                </div>
+
                 <div *ngIf="action.actionType === actionTypes.ScreenGlow">
     
                     <app-trigger-action-screen-glow [action]="action"></app-trigger-action-screen-glow>
