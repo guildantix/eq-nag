@@ -393,8 +393,9 @@ class CombatParser {
     _updateServerStatistics = false;
 
     /**
-     * True only while the live combat watcher feeds lines as they are written.  Simulations and
-     * the death recap replay old lines, and an old /who must not ask to change a class.
+     * True for the combat watcher's parser, which saves the class a /who line shows, live or
+     * simulated. The death recap window builds its own parser to re-read old log lines, and those
+     * must not change a character's class, so it keeps this false.
      *
      * @type {boolean}
      */
@@ -1470,15 +1471,14 @@ class CombatParser {
                 }
 
                 // If the player is in the character list and their class doesn't match their
-                // profile, the main process asks them whether to update it. It also hears the
-                // same /who line from the log watcher and shows one prompt for both.
+                // profile, save the class that the /who line shows.
                 const myCharacter = this._myCharacters.find( f => f.name === playerName && f.server === this._serverName );
                 if ( myCharacter !== null && myCharacter !== undefined && this.reportClassChanges === true ) {
                     const playerClassAbbr = getEverQuestClassAbbreviation( this._playerInfos[ playerName ].className );
                     if ( myCharacter.class !== playerClassAbbr ) {
-                        ipcRenderer.send( 'character:persona-detected', {
+                        ipcRenderer.send( 'character:update:class', {
                             characterId: myCharacter.characterId,
-                            classCode: playerClassAbbr,
+                            class: playerClassAbbr,
                         } );
                     }
                 }

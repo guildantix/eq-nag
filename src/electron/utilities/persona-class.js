@@ -1,4 +1,4 @@
-const { whoLineRegex, heroesJourneyWhoLineRegex, getEverQuestClassName, getEverQuestClassFromTitle,
+const { whoLineRegex, heroesJourneyWhoLineRegex, eqClassTitleMap, getEverQuestClassName, getEverQuestClassFromTitle,
     getEverQuestClassAbbreviation } = require( './everquest' );
 
 
@@ -11,59 +11,13 @@ const { whoLineRegex, heroesJourneyWhoLineRegex, getEverQuestClassName, getEverQ
 
 
 /**
- * Maps the class names EverQuest writes in an equipment set line to Nag's class codes. Only a
- * set named exactly after a class counts, so a player's own set names (e.g. "Raid gear") are
- * ignored. The regex allows the space and a lowercase k, which the class name is spelled with in
- * some places, and the space is removed before the lookup.
+ * The plain class names, taken from the title map entries whose title is the class name itself
+ * (the map also holds the rank titles, which an equipment set message never uses). Reusing the
+ * map keeps one list of class names, spelled "Shadow Knight" as the game writes it.
  */
-const personaClassCodesByName = {
-    Bard: 'BRD',
-    Beastlord: 'BST',
-    Berserker: 'BER',
-    Cleric: 'CLR',
-    Druid: 'DRU',
-    Enchanter: 'ENC',
-    Magician: 'MAG',
-    Monk: 'MNK',
-    Necromancer: 'NEC',
-    Paladin: 'PAL',
-    Ranger: 'RNG',
-    Rogue: 'ROG',
-    ShadowKnight: 'SHD',
-    Shadowknight: 'SHD',
-    Shaman: 'SHM',
-    Warrior: 'WAR',
-    Wizard: 'WIZ',
-};
-
-
-
-
-
-
-
-
-
-
-/** The display name of each class code, for the prompt shown to the player. */
-const personaClassNamesByCode = {
-    BRD: 'Bard',
-    BST: 'Beastlord',
-    BER: 'Berserker',
-    CLR: 'Cleric',
-    DRU: 'Druid',
-    ENC: 'Enchanter',
-    MAG: 'Magician',
-    MNK: 'Monk',
-    NEC: 'Necromancer',
-    PAL: 'Paladin',
-    RNG: 'Ranger',
-    ROG: 'Rogue',
-    SHD: 'Shadow Knight',
-    SHM: 'Shaman',
-    WAR: 'Warrior',
-    WIZ: 'Wizard',
-};
+const classNameAlternation = Object.keys( eqClassTitleMap )
+    .filter( className => eqClassTitleMap[ className ] === className )
+    .join( '|' );
 
 
 
@@ -75,11 +29,20 @@ const personaClassNamesByCode = {
 
 
 // Anchored at the start of the line (the timestamp is already removed) so chat that merely quotes
-// the phrase doesn't match.
-// Matches: You successfully loaded your Druid equipment set.
-// Matches: You loaded only part of your Shaman equipment set. At least one item was not found.
-// Ignored: Soandso tells you, 'You successfully loaded your Druid equipment set.'
-const personaEquipmentSetRegex = /^You (?:successfully loaded|loaded only part of) your (?<className>Bard|Beastlord|Berserker|Cleric|Druid|Enchanter|Magician|Monk|Necromancer|Paladin|Ranger|Rogue|Shadow ?[Kk]night|Shaman|Warrior|Wizard) equipment set\./;
+// the phrase doesn't match.  The class name is the character's current class.
+// Matches: You successfully loaded your Monk equipment set.
+// Matches: You loaded only part of your Monk equipment set. At least one item was not found.
+const equipmentSetLoadedRegex = new RegExp( `^You (?:successfully loaded|loaded only part of) your (?<className>${classNameAlternation}) equipment set\.` );
+
+// Matches: Your Shadow Knight equipment set has been saved.
+const equipmentSetSavedRegex = new RegExp( `^Your (?<className>${classNameAlternation}) equipment set has been saved\.` );
+
+// The set named in the message is the wrong one, the class after "currently" is the real one.
+// Matches: You cannot load your Cleric equipment set because you are currently a Monk.
+// Matches: You cannot load your Cleric equipment set because you are currently an Enchanter.
+const equipmentSetRefusedRegex = new RegExp( `^You cannot load your (?:${classNameAlternation}) equipment set because you are currently an? (?<className>${classNameAlternation})\.` );
+
+const equipmentSetRegexes = [ equipmentSetLoadedRegex, equipmentSetSavedRegex, equipmentSetRefusedRegex ];
 
 
 
@@ -93,24 +56,25 @@ const personaEquipmentSetRegex = /^You (?:successfully loaded|loaded only part o
 /**
  * Returns the class code of the persona the player just swapped to, or null when the line is
  * not an equipment set message for a class. Runs for every log line, so it checks two cheap
- * substrings before it tries the regex.
+ * substrings before it tries the regexes.
  *
  * @param {string} logLine The log line, without its timestamp.
  * @returns {string|null} The class code, such as 'SHM', or null.
  */
 function detectPersonaClassCode( logLine ) {
-    if ( !logLine.startsWith( 'You ' ) || !logLine.includes( ' equipment set' ) ) {
+    // "You" also covers "Your".
+    if ( !logLine.startsWith( 'You' ) || !logLine.includes( ' equipment set' ) ) {
         return null;
     }
 
-    const match = personaEquipmentSetRegex.exec( logLine );
-    if ( match === null ) {
-        return null;
+    for ( const equipmentSetRegex of equipmentSetRegexes ) {
+        const match = equipmentSetRegex.exec( logLine );
+        if ( match !== null ) {
+            return getEverQuestClassAbbreviation( match.groups.className );
+        }
     }
 
-    const normalizedClassName = match.groups.className.replace( ' ', '' );
-
-    return personaClassCodesByName[ normalizedClassName ] ?? null;
+    return null;
 }
 
 
@@ -151,9 +115,10 @@ function detectOwnWhoClassCode( logLine, characterName, isHeroesJourney ) {
         className = match.groups.classRealName ?? getEverQuestClassFromTitle( match.groups.classTitleOrName );
     }
 
+    // An unknown class comes back unchanged, which is longer than a class code.
     const classCode = getEverQuestClassAbbreviation( className );
 
-    return personaClassNamesByCode[ classCode ] ? classCode : null;
+    return getEverQuestClassName( classCode ) !== classCode ? classCode : null;
 }
 
 
@@ -168,5 +133,4 @@ function detectOwnWhoClassCode( logLine, characterName, isHeroesJourney ) {
 module.exports = {
     detectPersonaClassCode,
     detectOwnWhoClassCode,
-    personaClassNamesByCode,
 };

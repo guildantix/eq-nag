@@ -231,7 +231,7 @@ function startParsingLogFile( logPath, startLogPosition ) {
         lines.forEach( line => {
             if ( line && line.length > 0 ) {
                 const perfStart = perf.enabled ? perf.now() : 0;
-                parseLogEntries( line, false, undefined, true );
+                parseLogEntries( line );
                 perf.enabled && perf.record( 'log-watcher: line', perfStart );
             }
         } );
@@ -1896,13 +1896,14 @@ function generateTriggerFns() {
 
 
 /**
- * Tells the main process which class this character just showed, from a persona swap or its own
- * /who line, so it can offer to update the character.
+ * Saves the class this character just showed, from an equipment set message or its own /who
+ * line. It goes through the same handler as picking a class on the Characters page, which also
+ * refreshes that page.
  *
- * @param {string} personaClassCode The class code the log line showed.
+ * @param {string} detectedClassCode The class code the log line showed.
  */
-function reportPersonaSwap( personaClassCode ) {
-    ipcRenderer.send( 'character:persona-detected', { characterId: characterId, classCode: personaClassCode } );
+function saveDetectedClass( detectedClassCode ) {
+    ipcRenderer.send( 'character:update:class', { characterId: characterId, class: detectedClassCode } );
 }
 
 
@@ -1920,9 +1921,8 @@ function reportPersonaSwap( personaClassCode ) {
  * @param {string} raw The raw log entry.
  * @param {boolean} simulating If true, only simulates executing triggers via a consol.log call.
  * @param {number|undefined} padTime The amount of time to add to the timestamps of log entries.
- * @param {boolean} isLiveLine True only for a line the watcher just read from the log file.
  */
-function parseLogEntries( raw, simulating, padTime, isLiveLine ) {
+function parseLogEntries( raw, simulating, padTime ) {
 
     try {
         // let startp = performance.now(); //p
@@ -1976,13 +1976,10 @@ function parseLogEntries( raw, simulating, padTime, isLiveLine ) {
             }
         }
         
-        // Only lines written while playing can mean a real class change; simulations and raw
-        // parses replay old lines.
-        if ( isLiveLine === true && !simulating && padTime === undefined ) {
-            const personaClassCode = detectPersonaClassCode( log ) ?? detectOwnWhoClassCode( log, characterName, charModel?.thj === true );
-            if ( personaClassCode !== null ) {
-                reportPersonaSwap( personaClassCode );
-            }
+        // Simulated lines count as well, so a simulation shows the class the log was written with.
+        const detectedClassCode = detectPersonaClassCode( log ) ?? detectOwnWhoClassCode( log, characterName, charModel?.thj === true );
+        if ( detectedClassCode !== null ) {
+            saveDetectedClass( detectedClassCode );
         }
 
         // https://regex101.com/r/FvGiGC/2

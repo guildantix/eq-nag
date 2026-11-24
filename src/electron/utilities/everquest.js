@@ -185,6 +185,7 @@ const eqClassTitleMap = {
     'Frostblood': 'Beastlord',
 
     // Berserker
+    'Berserker': 'Berserker',
     'Brawler': 'Berserker',
     'Vehement': 'Berserker',
     'Rager': 'Berserker',

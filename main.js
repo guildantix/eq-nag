@@ -70,7 +70,6 @@ import GameResources from "./src/electron/data/game-resources.js";
 import FilesDatabaseStore from "./src/electron/data/files-database.js";
 import GinaImporter from "./src/electron/gina-importer.js";
 import RollTracker from "./src/electron/roll-tracker.js";
-import PersonaClassPrompt from './src/electron/persona-class-prompt.js';
 
 import {
   IpcMessage,
@@ -115,7 +114,6 @@ const gameResources = new GameResources();
 const fileDatabase = new FilesDatabaseStore();
 const ginaImporter = new GinaImporter();
 const rollTracker = new RollTracker();
-const personaClassPrompt = new PersonaClassPrompt();
 // const verifiedPlayersDatabase = new VerifiedPlayersStore();
 const combatDatabase = new CombatDatabase();
 /** @type {Tray} */
@@ -1108,7 +1106,6 @@ app.whenReady().then( () => {
     logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences, appLogException, combatDatabase );
     gameResources.attachIpcEvents( mainWindowRef, userPreferences );
     ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
-    personaClassPrompt.attachIpcEvents( mainWindowRef, characterDatabase );
     rollTracker.attachIpcEvents( mainWindowRef, userPreferences, ( channel, data ) => winManager.sendToRenderer( channel, data ), phrase => logBootstrap.speakPhrase( phrase ) );
 
     // TODO: Update this method with the new mouse.js implementation.
