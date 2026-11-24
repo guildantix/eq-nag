@@ -94,10 +94,8 @@ export class ResizeableDirective implements OnInit, OnDestroy {
     /**
      * Ends a drag when the window loses focus mid-drag (alt-tab), which sends no mouseup, so the
      * panel doesn't stay unselectable and keep following the mouse.
-     *
-     * @param event The blur event.
      */
-    @HostListener( 'window:blur', [ '$event' ] ) onWindowBlurHandler( event: FocusEvent ) {
+    @HostListener( 'window:blur' ) onWindowBlurHandler() {
         this.onMouseupHandler( null );
     }
 
@@ -136,10 +134,8 @@ export class ResizeableDirective implements OnInit, OnDestroy {
 
     /**
      * The handle is placed in viewport pixels, so it must follow the host when the window resizes.
-     *
-     * @param event The window resize event, unused.
      */
-    @HostListener( 'window:resize', [ '$event' ] ) onWindowResizeHandler( event: Event ) {
+    @HostListener( 'window:resize' ) onWindowResizeHandler() {
         this.setPosition();
     }
 
@@ -179,14 +175,50 @@ export class ResizeableDirective implements OnInit, OnDestroy {
     ) { }
 
     ngOnInit() {
+        this.makeHostPositioned();
+        this.createDragElement();
+        this.observeHostResize();
+    }
+
+    ngOnDestroy() {
+        this.stopObservingHostResize();
+        this.removeDragElement();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * The handle is positioned from the host's rectangle, which only works once the host is itself
+     * positioned, so make a static host relative.
+     */
+    private makeHostPositioned() {
         let computedStyle = this.document.defaultView.getComputedStyle( this.elementRef.nativeElement );
 
         if ( !computedStyle.position || computedStyle.position === 'static' ) {
             this.renderer.setStyle( this.elementRef.nativeElement, 'position', 'relative' );
         }
+    }
 
-        this.createDragElement();
 
+
+
+
+
+
+
+
+
+    /**
+     * Keeps the handle on the host's edge when the host resizes without a window resize.
+     */
+    private observeHostResize() {
         if ( typeof ResizeObserver !== 'undefined' ) {
             this._hostResizeObserver = new ResizeObserver( () => this.setPosition() );
             this._hostResizeObserver.observe( this.elementRef.nativeElement );
@@ -203,15 +235,14 @@ export class ResizeableDirective implements OnInit, OnDestroy {
 
 
     /**
-     * The handle lives on document.body, outside the host, so remove it here or it leaks.
+     * The handle lives on document.body, outside the host, so the observer must be released with
+     * the directive or it leaks.
      */
-    ngOnDestroy() {
+    private stopObservingHostResize() {
         if ( this._hostResizeObserver ) {
             this._hostResizeObserver.disconnect();
             this._hostResizeObserver = undefined;
         }
-
-        this.removeDragElement();
     }
 
 
