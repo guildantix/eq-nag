@@ -11,7 +11,7 @@ import { MatChipInputEvent } from '@angular/material/chips';
 import { getPackageImportProperties } from 'src/app/core.decorators';
 import { ColoredString } from 'src/app/dialogs/dialog.model';
 import { nagId } from 'src/app/core/nag-id.util';
-import { findUnshareableIconTriggers } from 'src/app/utilities/timer-icons';
+import { describeUnshareableIcons } from 'src/app/utilities/timer-icons';
 
 @Component( {
     selector: 'app-new-trigger-package',
@@ -951,9 +951,8 @@ export class NewTriggerPackageComponent implements OnInit {
                     this.package.model.textOverlayId = textOverlayId;
                     this.package.model.primaryDisplaySize = primaryDisplay.size;
 
-                    // The receiver drops timer icons that are not embedded images up to 256 KB.
-                    const iconTriggers = findUnshareableIconTriggers( this.package.model.triggers );
-                    this.iconWarning = iconTriggers.length > 0 ? `The timer icon of ${iconTriggers.slice( 0, 5 ).map( f => `"${f}"` ).join( ', ' )}${iconTriggers.length > 5 ? ' and more' : ''} is not an embedded image up to 256 KB, so the receiver will not get it.` : '';
+                    // The receiver drops timer icons that are not embedded images (server cap).
+                    this.iconWarning = describeUnshareableIcons( this.package.model.triggers );
 
                     this.savePackage();
 

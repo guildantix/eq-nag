@@ -4,6 +4,7 @@ const crypto = require( 'crypto' );
 const zlib = require( 'zlib' );
 const AdmZip = require( 'adm-zip' );
 const { sanitizeTriggerIcons } = require( './icons' );
+const { fileShareLimits } = require( './share-limits' );
 
 /** @type {string[]} The file extensions that can be imported. */
 const allowedExtensions = [ '.nag', '.zip', '.json' ];
@@ -252,7 +253,7 @@ function normalizePayload( payload ) {
 
         // A file is untrusted input like a server share, so icons are filtered before they are
         // hashed or installed.
-        quickShare.model.triggers.forEach( trigger => sanitizeTriggerIcons( trigger ) );
+        quickShare.model.triggers.forEach( trigger => sanitizeTriggerIcons( trigger, fileShareLimits.maxIconLength ) );
 
         const contentId = crypto
             .createHash( 'sha256' )

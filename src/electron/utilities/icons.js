@@ -1,3 +1,5 @@
+const { serverShareLimits } = require( './share-limits' );
+
 // A timer icon is an image data url: spell icons are png, and files the user
 // picks are png, jpeg, gif, webp or svg (an svg is only ever the source of an
 // img, which runs nothing and loads nothing).  Shared triggers carry the icon
@@ -8,7 +10,9 @@ const iconPattern = /^data:image\/(?:png|jpe?g|gif|webp|svg\+xml);base64,[A-Za-z
 // other image types (bmp, ico, avif).  Showing those is as harmless as showing a
 // png, so the display rule accepts any embedded image.
 const displayIconPattern = /^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]*$/i;
-const maxIconLength = 256 * 1024;
+// The size cap comes from the share limits, so the icon rule and the field cleaner cannot drift.
+// Without a cap given, the stricter server cap applies; shares read from a file pass the file cap.
+const maxIconLength = serverShareLimits.maxIconLength;
 
 
 
@@ -87,11 +91,12 @@ function sanitizeTimerIcon( icon, maxLength = maxIconLength ) {
  * Sanitizes the timer icon of every action of the given trigger.
  *
  * @param {{ actions?: { timerIcon?: string }[] }} trigger The trigger from a share or import.
+ * @param {number} [maxLength] The largest accepted length of an icon data url.
  */
-function sanitizeTriggerIcons( trigger ) {
+function sanitizeTriggerIcons( trigger, maxLength = maxIconLength ) {
     trigger?.actions?.forEach( action => {
         if ( action && action.timerIcon !== null && action.timerIcon !== undefined ) {
-            action.timerIcon = sanitizeTimerIcon( action.timerIcon );
+            action.timerIcon = sanitizeTimerIcon( action.timerIcon, maxLength );
         }
     } );
 }

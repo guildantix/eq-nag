@@ -1874,7 +1874,9 @@ class TriggerDatabaseStore extends Store {
                 // folder ids to existing folders. If a folder does not exist,  it is 
                 // created  using  the  folder  id  in  the trigger   package  folder.
                 let folderMap = this.installPackageFolders( quickShare.model?.folders );
-                quickShare.model?.triggers?.forEach( trigger => this.installPackageTrigger( quickShare.quickShareId, trigger, folderMap ) );
+                quickShare.model?.triggers?.forEach( trigger => this.installPackageTrigger(
+                    quickShare.quickShareId, trigger, folderMap, shareLimits.maxIconLength
+                ) );
     
                 // Save changes to the data.
                 this.processPredefinedTriggers();
@@ -2019,8 +2021,9 @@ class TriggerDatabaseStore extends Store {
      * @param {string} packageId The id of the package.
      * @param {PackageTrigger} packageTrigger The package trigger to install.
      * @param {Record<string, string>} folderMap The folder id map.
+     * @param {number} [maxIconLength] The largest accepted icon, the server cap when left out.
      */
-    installPackageTrigger( packageId, packageTrigger, folderMap ) {
+    installPackageTrigger( packageId, packageTrigger, folderMap, maxIconLength = serverShareLimits.maxIconLength ) {
         /** @type {Trigger} */
         let trigger;
 
@@ -2054,7 +2057,7 @@ class TriggerDatabaseStore extends Store {
 
         }
 
-        sanitizeTriggerIcons( packageTrigger );
+        sanitizeTriggerIcons( packageTrigger, maxIconLength );
 
         trigger.name = packageTrigger.name;
         trigger.capturePhrases = packageTrigger.capturePhrases;

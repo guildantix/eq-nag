@@ -5,7 +5,7 @@ import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dial
 import { MatTree, MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { combineLatest, EMPTY, forkJoin, Observable, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { findUnshareableIconTriggers } from 'src/app/utilities/timer-icons';
+import { describeUnshareableIcons, fileMaxIconLength, serverMaxIconLength } from 'src/app/utilities/timer-icons';
 import { AuthorModel, OverlayWindowModel, PackageFileModel, PackageFolder, PackageTrigger, QuickShareFileModel, QuickShareMetaModel, QuickShareModel, ShareFilePayload, ShareInstallResult, TriggerAction, TriggerFolder, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { PrepareQuickShareModel } from '../dialog.model';
@@ -585,9 +585,12 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                     } );
                 } );
 
-                // The receiver drops timer icons that are not embedded images up to 256 KB.
-                const iconTriggers = findUnshareableIconTriggers( quickShareTriggers );
-                const iconWarning = iconTriggers.length > 0 ? `  The timer icon of ${iconTriggers.slice( 0, 5 ).map( f => `"${f}"` ).join( ', ' )}${iconTriggers.length > 5 ? ' and more' : ''} is not an embedded image up to 256 KB, so the receiver will not get it.` : '';
+                // The receiver drops timer icons that are not embedded images within its cap, which
+                // differs for an upload and for a saved file, so each message names its own cap.
+                const serverIconText = describeUnshareableIcons( quickShareTriggers, serverMaxIconLength );
+                const serverIconWarning = serverIconText ? `  ${serverIconText}` : '';
+                const fileIconText = describeUnshareableIcons( quickShareTriggers, fileMaxIconLength );
+                const fileIconWarning = fileIconText ? `  ${fileIconText}` : '';
 
                 // Submits the final quickshare to the server to generate a
                 // quickShareId, when sharing to the server.
@@ -627,12 +630,12 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                         const code = `{NAG:quick-share/${quickShareId}}`;
                         this.ipcService.sendTextToClipboard( code );
                         const repairText = outgoingRepairNote ? `  ${outgoingRepairNote}` : '';
-                        this.snackBar.open( `Quickshare copied to clipboard.${repairText}${iconWarning}`, 'Dismiss', { duration: iconWarning ? 15000 : repairText ? 8000 : 5000 } );
+                        this.snackBar.open( `Quickshare copied to clipboard.${repairText}${serverIconWarning}`, 'Dismiss', { duration: serverIconWarning ? 15000 : repairText ? 8000 : 5000 } );
                     }
 
                     if ( this.saveAsFile ) {
                         this.saveShareFile(
-                            author, quickShare, quickShareFiles, quickShareFolders, quickShareTriggers, quickShareId, iconWarning
+                            author, quickShare, quickShareFiles, quickShareFolders, quickShareTriggers, quickShareId, fileIconWarning
                         );
                     } else {
                         this.dialogRef.close( quickShareId );
