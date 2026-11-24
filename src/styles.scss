@@ -5,7 +5,9 @@
 
 
 .resize-handle {
-    position: absolute;
+    // Coordinates come from getBoundingClientRect; fixed keeps the handle from enlarging the
+    // document when the window shrinks.
+    position: fixed;
     z-index: 10;
     background-color: white;
     
