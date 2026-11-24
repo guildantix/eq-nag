@@ -26,13 +26,15 @@
         <mat-tab label="Settings">
             <div class="character-tab-content">
 
-                <mat-card>
+                <mat-card class="log-file-card">
                     <mat-card-header>
                         <mat-card-title>
                             Log file
                         </mat-card-title>
                     </mat-card-header>
                     <mat-card-content>
+                        <button mat-button color="accent" (click)="showFileSelector(character.characterId)">Select Log File</button>
+                        <div class="log-file-path"><small>Current: {{character.logFile}}</small></div>
                     </mat-card-content>
                 </mat-card>
 
@@ -44,7 +46,7 @@
 
                         <div class="n-layout n-row">
                             <div>
-                                <mat-form-field style="width: 100%;">
+                                <mat-form-field class="character-class-field">
                                     <mat-label>Character Class</mat-label>
                                     <mat-select [(ngModel)]="character.class" name="ddlCharacterClass_{{i}}" (selectionChange)="updateCharacter(character)">
                                         <mat-option value="BRD">Bard</mat-option>
@@ -65,10 +67,6 @@
                                         <mat-option value="WIZ">Wizard</mat-option>
                                     </mat-select>
                                 </mat-form-field>
-                            </div>
-                            <div>
-                                <button mat-button color="accent" (click)="showFileSelector(character.characterId)">Select Log File</button>
-                                <div><small>Current: {{character.logFile}}</small></div>
                             </div>
                         </div>
                         <div class="n-layout n-row">

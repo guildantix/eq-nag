@@ -26,6 +26,20 @@ div.character-tab-content {
     flex: 1 1 0px;
 }
 
+/* rem scales with zoom and font size; max-width lets them shrink in narrow windows. */
+div.character-tab-content > mat-card.log-file-card {
+    max-width: 25rem;
+}
+
+.character-class-field {
+    width: 100%;
+    max-width: 18.75rem;
+}
+
+.log-file-path {
+    word-break: break-all;
+}
+
 :host ::ng-deep .mat-content {
     overflow: visible;
 
