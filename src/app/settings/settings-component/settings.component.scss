@@ -122,6 +122,23 @@ div.tab-content {
     color: #ffffff99;
 }
 
+.hidden-messages-empty {
+    margin: 0;
+    font-size: 13px;
+    color: #ffffff99;
+}
+
+.hidden-message-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 8px;
+
+    .hidden-message-name {
+        flex: 0 1 320px;
+    }
+}
+
 .group-title {
     display: flex;
     align-items: center;
