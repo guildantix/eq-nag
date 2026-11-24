@@ -89,7 +89,7 @@
             </div>
 
             <div class="card-property">
-                <div class="content-top">Timer Icon<div style="padding: 20px 15px;"><img *ngIf="action.timerIcon" [src]="action.timerIcon | iconSrc" (click)="openIconFileModal(action)" /></div></div>
+                <div class="content-top">Timer Icon<div style="padding: 20px 15px;"><img *ngIf="action.timerIcon | iconSrc as iconSource" [src]="iconSource" (click)="openIconFileModal(action)" /></div></div>
                 <div class="content-vertical content-right content-top">
                     
                     <div class="align-left"><button mat-button *ngIf="action.timerIcon == null" (click)="openIconFileModal(action)" color="accent">Select Icon File</button></div>

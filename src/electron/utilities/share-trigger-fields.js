@@ -14,6 +14,7 @@
 
 const { ActionTypes } = require( '../data/models/trigger' );
 const { nagId } = require( './nag-id' );
+const { serverShareLimits, fileShareLimits } = require( './share-limits' );
 
 /** The most folder levels a share may nest, matching the limit of a shared file. */
 const maxFolderDepth = 50;
@@ -32,19 +33,6 @@ const maxSharedOverlays = 200;
 const maxSkippedNamesReported = 3;
 /** The longest skipped trigger name that is reported back. */
 const maxSkippedNameLength = 60;
-/**
- * The size caps for shares that come from, or go to, the share server. The server hosts everything
- * that is uploaded and every user downloads it, so the caps stay tight. Text over maxTextLength is
- * cut. An icon is a data URL, so cutting it would leave something that still looks like an image
- * but never draws: an icon over maxIconLength is dropped whole.
- */
-const serverShareLimits = { maxTextLength: 100000, maxIconLength: 262144 };
-/**
- * The size caps for shares that come from a file. A file is a private hand-off between friends and
- * is not hosted anywhere, so it gets room for big content such as an animated gif icon. Only the
- * sizes differ: every type and field check still runs.
- */
-const fileShareLimits = { maxTextLength: 1000000, maxIconLength: 10000000 };
 /**
  * The highest action type number, read from the ActionTypes model so a new action type is
  * accepted by shares as soon as it is added there, with no second list to keep in step.

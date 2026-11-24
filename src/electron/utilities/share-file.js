@@ -3,6 +3,8 @@ const path = require( 'path' );
 const crypto = require( 'crypto' );
 const zlib = require( 'zlib' );
 const AdmZip = require( 'adm-zip' );
+const { sanitizeTriggerIcons } = require( './icons' );
+const { fileShareLimits } = require( './share-limits' );
 
 /** @type {string[]} The file extensions that can be imported. */
 const allowedExtensions = [ '.nag', '.zip', '.json' ];
@@ -236,7 +238,8 @@ function checkFolders( folders ) {
 /**
  * Fills in the fields the receive quick share dialog and installer expect, so a share
  * without a server record can be imported.
- * Shares from a file are never marked as trusted.
+ * Shares from a file are never marked as trusted, and timer icons that are not embedded
+ * images are dropped.
  *
  * @returns {SharePayload} Returns the same payload, normalized.
  *
@@ -247,6 +250,10 @@ function normalizePayload( payload ) {
     payload.files = payload.files ?? [];
 
     for ( const quickShare of payload.quickShares ) {
+
+        // A file is untrusted input like a server share, so icons are filtered before they are
+        // hashed or installed.
+        quickShare.model.triggers.forEach( trigger => sanitizeTriggerIcons( trigger, fileShareLimits.maxIconLength ) );
 
         const contentId = crypto
             .createHash( 'sha256' )

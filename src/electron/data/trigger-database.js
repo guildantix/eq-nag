@@ -24,6 +24,7 @@ const {
     TriggerParseHistoryModel,
 } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
+const { sanitizeTriggerIcons } = require( '../utilities/icons' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
@@ -499,6 +500,7 @@ class TriggerDatabaseStore extends Store {
             ( event, triggers ) => {
                 let triggerIds = [];
                 for ( let i = 0; i < triggers?.length; i++ ) {
+                    sanitizeTriggerIcons( triggers[ i ] );
                     triggerIds.push( this.add( triggers[ i ], i === triggers.length - 1 ) );
                 }
                 event.sender.send( 'trigger:mass-create', triggerIds );
@@ -1872,7 +1874,9 @@ class TriggerDatabaseStore extends Store {
                 // folder ids to existing folders. If a folder does not exist,  it is 
                 // created  using  the  folder  id  in  the trigger   package  folder.
                 let folderMap = this.installPackageFolders( quickShare.model?.folders );
-                quickShare.model?.triggers?.forEach( trigger => this.installPackageTrigger( quickShare.quickShareId, trigger, folderMap ) );
+                quickShare.model?.triggers?.forEach( trigger => this.installPackageTrigger(
+                    quickShare.quickShareId, trigger, folderMap, shareLimits.maxIconLength
+                ) );
     
                 // Save changes to the data.
                 this.processPredefinedTriggers();
@@ -2017,8 +2021,9 @@ class TriggerDatabaseStore extends Store {
      * @param {string} packageId The id of the package.
      * @param {PackageTrigger} packageTrigger The package trigger to install.
      * @param {Record<string, string>} folderMap The folder id map.
+     * @param {number} [maxIconLength] The largest accepted icon, the server cap when left out.
      */
-    installPackageTrigger( packageId, packageTrigger, folderMap ) {
+    installPackageTrigger( packageId, packageTrigger, folderMap, maxIconLength = serverShareLimits.maxIconLength ) {
         /** @type {Trigger} */
         let trigger;
 
@@ -2051,6 +2056,8 @@ class TriggerDatabaseStore extends Store {
             onCreatedHandlers.forEach( fn => fn( trigger ) );
 
         }
+
+        sanitizeTriggerIcons( packageTrigger, maxIconLength );
 
         trigger.name = packageTrigger.name;
         trigger.capturePhrases = packageTrigger.capturePhrases;

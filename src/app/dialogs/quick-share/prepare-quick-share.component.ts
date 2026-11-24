@@ -5,6 +5,7 @@ import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dial
 import { MatTree, MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { combineLatest, EMPTY, forkJoin, Observable, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+import { describeUnshareableIcons, fileMaxIconLength, serverMaxIconLength } from 'src/app/utilities/timer-icons';
 import { AuthorModel, OverlayWindowModel, PackageFileModel, PackageFolder, PackageTrigger, QuickShareFileModel, QuickShareMetaModel, QuickShareModel, ShareFilePayload, ShareInstallResult, TriggerAction, TriggerFolder, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { PrepareQuickShareModel } from '../dialog.model';
@@ -428,6 +429,7 @@ export class PrepareQuickShareDialogComponent implements OnInit {
      * @param folders The folders in the quickshare.
      * @param triggers The triggers in the quickshare.
      * @param quickShareId The server quickshare id, if the share was also uploaded.
+     * @param iconWarning Text appended to the confirmation when some timer icons are dropped.
      */
     private saveShareFile(
         author: AuthorModel,
@@ -435,7 +437,8 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         files: QuickShareFileModel[],
         folders: PackageFolder[],
         triggers: PackageTrigger[],
-        quickShareId: string
+        quickShareId: string,
+        iconWarning: string = ''
     ): void {
 
         const payload: ShareFilePayload = {
@@ -452,7 +455,7 @@ export class PrepareQuickShareDialogComponent implements OnInit {
             this.creatingQuickShare = false;
 
             if ( result.ok ) {
-                this.snackBar.open( 'Share saved to file', 'Dismiss', { duration: 5000 } );
+                this.snackBar.open( `Share saved to file${iconWarning}`, 'Dismiss', { duration: iconWarning ? 15000 : 5000 } );
                 this.dialogRef.close( quickShareId );
             } else if ( result.code !== 'cancelled' ) {
                 this.snackBar.open( result.code === 'tooLarge' ? 'The share is too large to save as a file' : 'Could not save the file', 'Dismiss', { duration: 5000 } );
@@ -582,6 +585,13 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                     } );
                 } );
 
+                // The receiver drops timer icons that are not embedded images within its cap, which
+                // differs for an upload and for a saved file, so each message names its own cap.
+                const serverIconText = describeUnshareableIcons( quickShareTriggers, serverMaxIconLength );
+                const serverIconWarning = serverIconText ? `  ${serverIconText}` : '';
+                const fileIconText = describeUnshareableIcons( quickShareTriggers, fileMaxIconLength );
+                const fileIconWarning = fileIconText ? `  ${fileIconText}` : '';
+
                 // Submits the final quickshare to the server to generate a
                 // quickShareId, when sharing to the server.
                 const alreadyUploaded = this.shareToServer && !!this._uploadedQuickShareId;
@@ -619,11 +629,14 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                         this._uploadedQuickShareId = quickShareId;
                         const code = `{NAG:quick-share/${quickShareId}}`;
                         this.ipcService.sendTextToClipboard( code );
-                        this.snackBar.open( outgoingRepairNote ? `Quickshare copied to clipboard. ${outgoingRepairNote}` : 'Quickshare copied to clipboard', 'Dismiss', { duration: outgoingRepairNote ? 8000 : 5000 } );
+                        const repairText = outgoingRepairNote ? `  ${outgoingRepairNote}` : '';
+                        this.snackBar.open( `Quickshare copied to clipboard.${repairText}${serverIconWarning}`, 'Dismiss', { duration: serverIconWarning ? 15000 : repairText ? 8000 : 5000 } );
                     }
 
                     if ( this.saveAsFile ) {
-                        this.saveShareFile( author, quickShare, quickShareFiles, quickShareFolders, quickShareTriggers, quickShareId );
+                        this.saveShareFile(
+                            author, quickShare, quickShareFiles, quickShareFolders, quickShareTriggers, quickShareId, fileIconWarning
+                        );
                     } else {
                         this.dialogRef.close( quickShareId );
                     }
