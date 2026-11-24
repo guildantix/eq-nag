@@ -1855,6 +1855,9 @@ export class PushRecapPreferences {
     quietGapSeconds: number = 30;
     showTab: boolean = false;
     saveRecaps: boolean = true;
+    /** Landing messages (the text after the mob name) that the proc tables, the timeline and the
+     * Procs column leave out. */
+    hiddenProcTexts: string[] = [];
 }
 
 export class VersionNumber {
@@ -2375,6 +2378,11 @@ export interface PushRecapSpellCount {
 }
 
 export interface PushRecapProc {
+    /**
+     * The landing message, after the name of the mob. Missing on recaps saved by older versions.
+     * In the list, only text and count are set.
+     */
+    text?: string;
     name: string;
     /** The spells the landing message can belong to. Missing on recaps saved by older versions. */
     names?: string[];
@@ -2383,6 +2391,10 @@ export interface PushRecapProc {
     pushMin: number | null;
     pushMax: number | null;
     count: number;
+    /** On a possible proc, the first spells with no push that use the same message. */
+    alsoNames?: string[];
+    /** On a possible proc, how many spells with no push use the same message. */
+    alsoCount?: number;
 }
 
 export interface PushRecapNpcAbility {
@@ -2416,10 +2428,10 @@ export interface PushRecapSummary {
     /** Only on a recap fetched by id, not in the list. */
     players?: PushRecapPlayerSummary[];
     /** The procs are only on a recap fetched by id, and not on recaps saved by older versions. */
-    unattributed: { events: number, pushValue: number, procs?: PushRecapProc[] };
+    unattributed: { events: number, pushValue: number, procs?: PushRecapProc[], possibleEvents?: number, possible?: PushRecapProc[] };
     /** The NPC abilities are only on a recap fetched by id, and not on older saved recaps. */
     npcAbilities?: PushRecapNpcAbility[];
-    /** False when no hits from other players were in the log. Missing on older saved recaps. */
+    /** False when no spell damage from other players was in the log. Missing on older recaps. */
     othersSeen?: boolean;
     /** True when the fight may have started before the part of the log that was read. */
     startsAtLogEdge?: boolean;

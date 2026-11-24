@@ -40,7 +40,21 @@ function buildSavedSummary( result, characterName ) {
             events: result.unattributed.events,
             pushValue: result.unattributed.pushValue,
             procs: result.unattributed.procs.map( p => {
-                return { name: p.name, names: p.names, push: p.push, pushMin: p.pushMin, pushMax: p.pushMax, count: p.count };
+                return { text: p.text, name: p.name, names: p.names, push: p.push, pushMin: p.pushMin, pushMax: p.pushMax, count: p.count };
+            } ),
+            possibleEvents: result.unattributed.possibleEvents,
+            possible: result.unattributed.possible.map( p => {
+                return {
+                    text: p.text,
+                    name: p.name,
+                    names: p.names,
+                    alsoNames: p.alsoNames,
+                    alsoCount: p.alsoCount,
+                    push: p.push,
+                    pushMin: p.pushMin,
+                    pushMax: p.pushMax,
+                    count: p.count,
+                };
             } ),
         },
         npcAbilities: result.npcAbilities.map( a => ( { actor: a.actor, name: a.name, count: a.count, push: a.push } ) ),
@@ -50,4 +64,29 @@ function buildSavedSummary( result, characterName ) {
     };
 }
 
-module.exports = { buildSavedSummary, notNamedNpcRgx };
+
+
+
+
+
+
+
+
+
+/**
+ * Builds the row of the recap list, which leaves out the players, the NPC abilities and the details
+ * of the procs.
+ * The procs keep their landing message and count, so the list can leave out the messages that are
+ * hidden.
+ *
+ * @returns {any} The list row.
+ *
+ * @param {any} recap The saved recap.
+ */
+function buildListRow( recap ) {
+    const { players, npcAbilities, unattributed, timeline, timelineTexts, ...row } = recap;
+    const procs = ( unattributed.procs ?? [] ).filter( p => typeof p.text === 'string' && p.text !== '' ).map( p => ( { text: p.text, count: p.count } ) );
+    return { ...row, unattributed: { events: unattributed.events, pushValue: unattributed.pushValue, procs: procs } };
+}
+
+module.exports = { buildSavedSummary, buildListRow, notNamedNpcRgx };

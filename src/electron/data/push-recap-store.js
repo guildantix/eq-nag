@@ -3,6 +3,7 @@ const fsp = fs.promises;
 const path = require( 'path' );
 const crypto = require( 'crypto' );
 const log = require( 'electron-log' );
+const { buildListRow } = require( '../utilities/push-recap-summary' );
 
 const fileName = 'push-recaps.json';
 const badFileName = 'push-recaps.json.bad';
@@ -11,6 +12,7 @@ const maxPlayers = 60;
 const maxSpells = 30;
 const maxProcs = 200;
 const maxProcNames = 40;
+const maxAlsoNames = 3;
 const maxNpcAbilities = 100;
 
 /**
@@ -31,12 +33,18 @@ const maxNpcAbilities = 100;
 
 /**
  * @typedef {Object} PushRecapProc
+ * @property {string} [text] The landing message, after the name of the mob.  Missing on recaps
+ *     saved by older versions.
  * @property {string} name The label of the proc.
  * @property {string[]} [names] The spells the landing message can belong to.
  * @property {number | null} push The push value of one hit, or null when the spell is ambiguous.
  * @property {number | null} pushMin The lowest push value the proc can have.
  * @property {number | null} pushMax The highest push value the proc can have.
  * @property {number} count The number of times the proc landed.
+ * @property {string[]} [alsoNames] For a possible proc, the first spells with no push that use the
+ *     same message.
+ * @property {number} [alsoCount] For a possible proc, how many spells with no push use the same
+ *     message.
  */
 
 /**
@@ -62,10 +70,10 @@ const maxNpcAbilities = 100;
  * @property {number} pushValue The total push value.
  * @property {string | null} topPusher The player with the most events.
  * @property {PushRecapPlayerSummary[]} players The players that pushed.
- * @property {{ events: number, pushValue: number, procs?: PushRecapProc[] }} unattributed
- *     The events with no player.
+ * @property {{ events: number, pushValue: number, procs?: PushRecapProc[], possibleEvents?: number,
+ *     possible?: PushRecapProc[] }} unattributed The events with no player.
  * @property {PushRecapNpcAbility[]} [npcAbilities] The push abilities the NPCs used.
- * @property {boolean} [othersSeen] True when hits from other players were in the log.
+ * @property {boolean} [othersSeen] True when spell damage from other players was in the log.
  * @property {boolean} [startsAtLogEdge] True when the fight may have begun before the part read.
  * @property {boolean} [reachedStart] True when the part read began at the start of the log.
  */
@@ -182,20 +190,32 @@ function sanitize( data ) {
     } );
 
     const unattributed = { events: toCount( data.unattributed?.events ), pushValue: toCount( data.unattributed?.pushValue ) };
+    const toProc = p => {
+        const proc = {
+            name: toText( p?.name ),
+            push: toOptionalCount( p?.push ),
+            pushMin: toOptionalCount( p?.pushMin ),
+            pushMax: toOptionalCount( p?.pushMax ),
+            count: toCount( p?.count ),
+        };
+        if ( Array.isArray( p?.names ) ) {
+            proc.names = p.names.slice( 0, maxProcNames ).map( toText );
+        }
+        if ( typeof p?.text === 'string' && p.text !== '' ) {
+            proc.text = toText( p.text );
+        }
+        if ( Array.isArray( p?.alsoNames ) ) {
+            proc.alsoNames = p.alsoNames.slice( 0, maxAlsoNames ).map( toText );
+            proc.alsoCount = toCount( p.alsoCount );
+        }
+        return proc;
+    };
     if ( Array.isArray( data.unattributed?.procs ) ) {
-        unattributed.procs = data.unattributed.procs.slice( 0, maxProcs ).map( p => {
-            const proc = {
-                name: toText( p?.name ),
-                push: toOptionalCount( p?.push ),
-                pushMin: toOptionalCount( p?.pushMin ),
-                pushMax: toOptionalCount( p?.pushMax ),
-                count: toCount( p?.count ),
-            };
-            if ( Array.isArray( p?.names ) ) {
-                proc.names = p.names.slice( 0, maxProcNames ).map( toText );
-            }
-            return proc;
-        } );
+        unattributed.procs = data.unattributed.procs.slice( 0, maxProcs ).map( toProc );
+    }
+    if ( Array.isArray( data.unattributed?.possible ) ) {
+        unattributed.possibleEvents = toCount( data.unattributed.possibleEvents );
+        unattributed.possible = data.unattributed.possible.slice( 0, maxProcs ).map( toProc );
     }
 
     const summary = {
@@ -384,9 +404,7 @@ class PushRecapStore {
         if ( !await this.#load() ) {
             return [];
         }
-        return this.#recaps.map( ( { players, npcAbilities, unattributed, ...row } ) => {
-            return { ...row, unattributed: { events: unattributed.events, pushValue: unattributed.pushValue } };
-        } );
+        return this.#recaps.map( buildListRow );
     }
 
 

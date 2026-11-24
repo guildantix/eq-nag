@@ -394,6 +394,34 @@ class WindowManager {
 
         ipcMain.handle( 'push-recap:snapshot', () => this.#pushRecapSnapshot );
 
+        ipcMain.handle( 'push-recaps:hidden:get', () => this.#userPrefDb.hiddenProcTexts );
+
+        ipcMain.on( 'push-recaps:hidden:set',
+            /**
+             * Hides or shows a push recap message, and tells the windows that show it.
+             *
+             * @param {any} event Event args.
+             * @param {{ text?: string, hidden?: boolean, clear?: boolean }} arg The change.
+             */
+            ( event, arg ) => {
+                if ( arg?.clear === true ) {
+                    arg = { clear: true };
+                } else if ( typeof arg?.text !== 'string' || typeof arg?.hidden !== 'boolean' ) {
+                    return;
+                }
+                const hidden = this.#userPrefDb.changeHiddenProcTexts( arg );
+                // The Push tab and Settings live in the main window.
+                // The overlay window shows no push recap settings.
+                const mainWindow = this.#mainWindow.reference;
+                if ( mainWindow !== null && mainWindow !== undefined && !mainWindow.isDestroyed() ) {
+                    mainWindow.webContents.send( 'settings:changed:pushRecap', this.#userPrefDb.pushRecap );
+                }
+                if ( this.#pushRecap !== null && this.#pushRecap !== undefined && !this.#pushRecap.isDestroyed() ) {
+                    this.#pushRecap.webContents.send( 'push-recap:hidden-changed', hidden );
+                }
+            }
+        );
+
         ipcMain.on( 'renderer:arrange-overlays', ( event ) => {
             this.#renderer.webContents.send( 'renderer:arrange-overlays' );
 

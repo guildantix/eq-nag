@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
@@ -107,6 +108,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     public pushRecapHotkeyCommand: string = pushRecapHotkeyCommand;
     /** The last saved death recap choice, so a failed change can restore the radio buttons. */
     private savedDeathRecapPreferences: DeathRecapPreferences = new DeathRecapPreferences();
+    private pushRecapSubscription: Subscription = new Subscription();
     public minimizeToTrayOnLoad: boolean = false;
     public glowOnStartup: boolean = true;
     public quickShareAuthorListTypes: typeof QuickShareAuthorListTypes = QuickShareAuthorListTypes;
@@ -204,7 +206,31 @@ export class SettingsComponent implements OnInit, OnDestroy {
         window.api.ipc.send( 'rolls:get', null );
 
         this.loadHiddenMessages();
+        // Subscribed once here, not in loadSettings, which runs on every visit to the tab.
+        this.pushRecapSubscription.add( this.ipcService.onPushRecapPreferencesChanged().subscribe( recapPrefs => {
+            this.pushRecapPreferences.hiddenProcTexts = recapPrefs?.hiddenProcTexts ?? [];
+        } ) );
+
         this.loadSettings();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Stops the Status card refresh and the Push Recap subscription when the page is destroyed.
+     */
+    ngOnDestroy(): void {
+        if ( this.statusTimerId !== null && this.statusTimerId !== undefined ) {
+            clearInterval( this.statusTimerId );
+        }
+        this.pushRecapSubscription.unsubscribe();
     }
 
 
@@ -812,6 +838,40 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
 
     /**
+     * Shows a hidden push recap message again.
+     *
+     * @param {string} text The landing message.
+     */
+    onRestorePushRecapText( text: string ): void {
+        this.ipcService.setPushProcHidden( text, false );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows all hidden push recap messages again.
+     */
+    onRestoreAllPushRecapTexts(): void {
+        this.ipcService.clearHiddenPushProcTexts();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Copies the death recap command to the user's clipboard.
      */
     onCopyDeathRecapHotkeyCommand(): void {
@@ -956,22 +1016,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
 
 
-    ngOnDestroy(): void {
-        // Stop the Status card refresh when the page is destroyed.
-        if ( this.statusTimerId !== null && this.statusTimerId !== undefined ) {
-            clearInterval( this.statusTimerId );
-        }
-    }
-
-
-
-
-
-
-
-
-
-
     /**
      * The characters whose log is being read now.
      */
@@ -1027,7 +1071,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
             return advancedKeys.some( key => roll[ key ] !== defaults[ key ] );
         }
         if ( id === 'push' ) {
-            return this.pushRecapPreferences.quietGapSeconds !== 30;
+            const hiddenTexts = this.pushRecapPreferences.hiddenProcTexts;
+            const hasHiddenTexts = hiddenTexts !== null && hiddenTexts !== undefined && hiddenTexts.length > 0;
+            return this.pushRecapPreferences.quietGapSeconds !== 30 || hasHiddenTexts;
         }
         return false;
     }

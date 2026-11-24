@@ -182,13 +182,59 @@ function formatProcTotal( proc ) {
 
 
 /**
+ * Formats the landing message of a proc, e.g. … is struck by the axe of Rallos.
+ *
+ * @returns {string} The text.
+ *
+ * @param {any} proc The proc.
+ */
+function formatMessage( proc ) {
+    return typeof proc.text === 'string' && proc.text !== '' ? `…${proc.text}` : '—';
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Lists the spells with no push that use the same message as a possible proc, e.g. A, B, C +5 more.
+ *
+ * @returns {string} The text.
+ *
+ * @param {any} proc The possible proc.
+ */
+function formatAlso( proc ) {
+    const names = proc.alsoNames ?? [];
+    if ( names.length === 0 ) {
+        return '—';
+    }
+    const more = ( proc.alsoCount ?? 0 ) - names.length;
+    return `${names.join( ', ' )}${more > 0 ? ` +${more} more` : ''}`;
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Builds a short plain text summary of the recap.
  *
  * @returns {string} The summary.
  *
  * @param {any} summary The saved summary.
+ * @param {Set<string>} hidden The landing messages that are hidden.
  */
-function buildSummaryText( summary ) {
+function buildSummaryText( summary, hidden ) {
     const players = summary.players ?? [];
     const lines = [
         `Push Recap - ${summary.mob}, killed ${formatKillClock( summary )}, fight ${formatDuration( summary.fightSeconds )}`,
@@ -198,9 +244,18 @@ function buildSummaryText( summary ) {
         const share = summary.events > 0 ? Math.round( p.events * 100 / summary.events ) : 0;
         lines.push( `${i + 1}. ${p.name} - ${p.events} (${share}%)${p.assumed > 0 ? ` ~${p.assumed} assumed` : ''}` );
     } );
-    if ( summary.unattributed.events > 0 ) {
-        const top = ( summary.unattributed.procs ?? [] ).slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
-        lines.push( `Procs with no player named: ${summary.unattributed.events}${top === '' ? '' : ` (${top})`}` );
+    const hiddenCount = list => ( list ?? [] ).filter( p => hidden.has( p.text ) ).reduce( ( sum, p ) => sum + p.count, 0 );
+    const procs = ( summary.unattributed.procs ?? [] ).filter( p => !hidden.has( p.text ) );
+    const procHits = summary.unattributed.events - hiddenCount( summary.unattributed.procs );
+    if ( procHits > 0 ) {
+        const top = procs.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+        lines.push( `Procs with no player named: ${procHits}${top === '' ? '' : ` (${top})`}` );
+    }
+    const possible = ( summary.unattributed.possible ?? [] ).filter( p => !hidden.has( p.text ) );
+    const possibleHits = ( summary.unattributed.possibleEvents ?? 0 ) - hiddenCount( summary.unattributed.possible );
+    if ( possibleHits > 0 ) {
+        const top = possible.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+        lines.push( `Possible procs: ${possibleHits}${top === '' ? '' : ` (${top})`}` );
     }
     return lines.join( '\n' );
 }
@@ -267,12 +322,68 @@ function showMessage( text, isError ) {
 
 
 /**
+ * Fills a proc table.  The procs with a hidden message are left out and counted in the hint.
+ *
+ * @param {string} bodyId The id of the table body.
+ * @param {string} hintId The id of the element that tells how many messages are hidden.
+ * @param {any[]} procs The procs.
+ * @param {Set<string>} hidden The landing messages that are hidden.
+ * @param {boolean} possible True for the table of possible procs.
+ */
+function renderProcRows( bodyId, hintId, procs, hidden, possible ) {
+    const body = document.getElementById( bodyId );
+    body.textContent = '';
+    const shown = procs.filter( p => !hidden.has( p.text ) );
+    shown.forEach( p => {
+        const tr = el( 'tr' );
+        tr.appendChild( el( 'td', 'hit-message', formatMessage( p ) ) );
+        const name = el( 'td', possible ? 'dimmed' : null, p.name );
+        if ( p.names?.length > 1 ) {
+            name.title = p.names.join( ', ' );
+        }
+        tr.appendChild( name );
+        if ( possible ) {
+            tr.appendChild( el( 'td', 'sources', formatAlso( p ) ) );
+        }
+        tr.appendChild( el( 'td', possible ? 'num dimmed' : 'num', formatProcPush( p ) ) );
+        tr.appendChild( el( 'td', 'num', `${p.count}` ) );
+        const total = formatProcTotal( p );
+        tr.appendChild( el( 'td', possible ? 'num dimmed' : 'num', possible && !total.startsWith( '~' ) && ( p.pushMin !== null && p.pushMin !== undefined ) ? `~${total}` : total ) );
+        const action = el( 'td', 'num' );
+        if ( typeof p.text === 'string' && p.text !== '' ) {
+            const button = el( 'button', 'hide-message', '×' );
+            button.type = 'button';
+            button.title = 'Hide this message from the proc tables';
+            button.addEventListener( 'click', () => ipcRenderer.send( 'push-recaps:hidden:set', { text: p.text, hidden: true } ) );
+            action.appendChild( button );
+        }
+        tr.appendChild( action );
+        body.appendChild( tr );
+    } );
+    body.parentElement.hidden = shown.length === 0;
+    const count = procs.length - shown.length;
+    const hint = document.getElementById( hintId );
+    hint.hidden = count === 0;
+    hint.textContent = ` ${count} ${count === 1 ? 'message' : 'messages'} hidden (Settings › Push Recap).`;
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Renders the given saved summary.  The pop-up only ever draws a summary, so a recap saved
  * by an older version, which lacks some fields, draws without those sections.
  *
  * @param {any} summary The saved summary.
+ * @param {Set<string>} hidden The landing messages that are hidden.
  */
-function render( summary ) {
+function render( summary, hidden ) {
     document.getElementById( 'message' ).hidden = true;
     document.getElementById( 'recap' ).hidden = false;
 
@@ -331,22 +442,11 @@ function render( summary ) {
 
     const hasProcs = Array.isArray( procs ) && procs.length > 0;
     document.getElementById( 'procs' ).hidden = !hasProcs;
-    const procRows = document.getElementById( 'procRows' );
-    procRows.textContent = '';
-    if ( hasProcs ) {
-        procs.forEach( p => {
-            const tr = el( 'tr' );
-            const name = el( 'td', null, p.name );
-            if ( p.names?.length > 1 ) {
-                name.title = p.names.join( ', ' );
-            }
-            tr.appendChild( name );
-            tr.appendChild( el( 'td', 'num', formatProcPush( p ) ) );
-            tr.appendChild( el( 'td', 'num', `${p.count}` ) );
-            tr.appendChild( el( 'td', 'num', formatProcTotal( p ) ) );
-            procRows.appendChild( tr );
-        } );
-    }
+    renderProcRows( 'procRows', 'procsHidden', hasProcs ? procs : [], hidden, false );
+    const possible = summary.unattributed?.possible;
+    const hasPossible = Array.isArray( possible ) && possible.length > 0;
+    document.getElementById( 'possible' ).hidden = !hasPossible;
+    renderProcRows( 'possibleRows', 'possibleHidden', hasPossible ? possible : [], hidden, true );
     const procsFallback = document.getElementById( 'procsFallback' );
     procsFallback.hidden = hasProcs || procHits <= 0;
     procsFallback.textContent = `${procHits} more ${procHits === 1 ? 'hit' : 'hits'} came from procs with no player named. Re-scan the log to see which procs they were.`;
@@ -408,8 +508,16 @@ async function PushRecap( params ) {
 
     document.getElementById( 'copyButton' ).addEventListener( 'click', () => {
         if ( shown !== null && shown !== undefined ) {
-            ipcRenderer.send( 'clipboard:writeText', buildSummaryText( shown ) );
+            ipcRenderer.send( 'clipboard:writeText', buildSummaryText( shown, hidden ) );
             document.getElementById( 'copyButton' ).textContent = 'Copied';
+        }
+    } );
+
+    let hidden = new Set();
+    ipcRenderer.on( 'push-recap:hidden-changed', ( event, texts ) => {
+        hidden = new Set( texts );
+        if ( shown !== null && shown !== undefined ) {
+            render( shown, hidden );
         }
     } );
 
@@ -442,10 +550,11 @@ async function PushRecap( params ) {
         state = saved ? 'saved' : 'unsaved';
         document.getElementById( 'copyButton' ).textContent = 'Copy summary';
         showSaveState();
-        render( summary );
+        render( summary, hidden );
     };
 
     try {
+        hidden = new Set( await ipcRenderer.invoke( 'push-recaps:hidden:get' ).catch( () => [] ) );
         if ( params.snapshot ) {
             const snapshot = await ipcRenderer.invoke( 'push-recap:snapshot' );
             if ( ( snapshot?.recap === null || snapshot?.recap === undefined ) || typeof snapshot.recap !== 'object' ) {

@@ -522,6 +522,21 @@
                     </mat-form-field>
                 </div>
             </div>
+
+            <h3 class="group-title">Hidden proc messages</h3>
+            <div class="group">
+                <div class="full-width">
+                    <div style="display: flex; align-items: center;">
+                        <button type="button" style="margin-left: 10px; color: #69b2f0;" mat-button *ngIf="pushRecapPreferences.hiddenProcTexts?.length > 0" (click)="onRestoreAllPushRecapTexts()">Restore all</button>
+                    </div>
+                    <p style="opacity: 0.75; margin: 4px 0;" *ngIf="!( pushRecapPreferences.hiddenProcTexts?.length > 0 )">No hidden proc messages.</p>
+                    <div *ngFor="let text of pushRecapPreferences.hiddenProcTexts" style="display: flex; align-items: center;">
+                        <code>&hellip;{{ text }}</code>
+                        <button type="button" style="margin-left: 10px; color: #69b2f0;" mat-button (click)="onRestorePushRecapText( text )">Restore</button>
+                    </div>
+                    <mat-hint>Messages you hid with the &times; in the proc tables of the Push tab and the Push Recap window.</mat-hint>
+                </div>
+            </div>
         </div>
     </section>
 

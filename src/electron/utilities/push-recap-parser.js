@@ -9,6 +9,8 @@ const maxFightList = 60;
 const bigFightRatio = 0.2;
 const interruptGraceMs = 1000;
 const landingGraceMs = 3000;
+const strictLandingGraceMs = 2000;
+const claimGraceMs = 1000;
 const monthIndex = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
 
 // Lines that can matter are kept, e.g. "Soandso hit a gnoll for 5 points of magic damage by
@@ -203,8 +205,8 @@ function formatClock( ms ) {
 /**
  * Builds the lookup used to recognize spell landing messages.
  *
- * @returns {{ map: Map<string, string[]>, suffixes: Set<string>,
- *     suffixLength: number }} The landing index.
+ * @returns {{ map: Map<string, string[]>, noPush: Map<string, { names: string[], count: number }>,
+ *     suffixes: Set<string>, suffixLength: number }} The landing index.
  *
  * @param {import('../data/push-spells').PushSpellTable} table The push spell table.
  */
@@ -230,7 +232,13 @@ function buildLandingIndex( table ) {
     const suffixes = new Set();
     map.forEach( ( names, text ) => suffixes.add( text.slice( -minLength ) ) );
 
-    return { map: map, suffixes: suffixes, suffixLength: minLength };
+    // A table cached by an older version lists only the texts, so those get no names.
+    const noPushEntries = Array.isArray( table.noPushTexts )
+        ? table.noPushTexts.map( text => [ text, { names: [], count: 0 } ] )
+        : Object.entries( table.noPushTexts ?? {} );
+    const noPush = new Map( noPushEntries );
+
+    return { map: map, noPush: noPush, suffixes: suffixes, suffixLength: minLength };
 }
 
 
@@ -380,7 +388,7 @@ async function readSession( logFilePath, characterName, landing ) {
  * @property {number} defaultKill The index in kills of the kill to show first.
  * @property {Set<string>} slain The names of the NPCs slain in the window.
  * @property {Set<string>} npcNames The names known to be NPCs.
- * @property {boolean} othersSeen True when hits by players other than the character exist.
+ * @property {boolean} othersSeen True when spell damage by players other than the character exists.
  */
 
 /**
@@ -435,7 +443,7 @@ function summarize( session ) {
             targets.add( target );
         }
 
-        if ( !othersSeen && actor !== 'You' && ( rgx.PlayerName.test( actor ) || rgx.PetName.test( actor ) ) && target !== 'You' && !rgx.PlayerName.test( target ) ) {
+        if ( !othersSeen && text.indexOf( ' points of damage' ) === -1 && actor !== 'You' && ( rgx.PlayerName.test( actor ) || rgx.PetName.test( actor ) ) && target !== 'You' && !rgx.PlayerName.test( target ) ) {
             othersSeen = true;
         }
     }
@@ -562,18 +570,20 @@ function roundPush( value ) {
 /**
  * Describes a weapon proc whose landing message names no caster.
  *
- * @returns {{ name: string, names: string[], push: number | null, pushMin: number | null,
- *     pushMax: number | null, count: number }} The proc.
+ * @returns {{ text: string, name: string, names: string[], push: number | null,
+ *     pushMin: number | null, pushMax: number | null, count: number }} The proc.
  *
+ * @param {string} text The landing message, after the name of the mob.
  * @param {string[]} names The candidate spell names of the landing message.
  * @param {any} table The push spell table.
  */
-function buildProc( names, table ) {
+function buildProc( text, names, table ) {
     const pushes = names.map( n => table.spells[ n ]?.push ).filter( p => ( p !== null && p !== undefined ) );
     const pushMin = pushes.length > 0 ? Math.min( ...pushes ) : null;
     const pushMax = pushes.length > 0 ? Math.max( ...pushes ) : null;
     const name = names.length <= 3 ? names.join( ' / ' ) : `${names[ 0 ]} +${names.length - 1} more`;
-    return { name: name, names: names, push: pushMin === pushMax ? pushMin : null, pushMin: pushMin, pushMax: pushMax, count: 0 };
+    const push = pushMin === pushMax ? pushMin : null;
+    return { text: text, name: name, names: names, push: push, pushMin: pushMin, pushMax: pushMax, count: 0 };
 }
 
 
@@ -641,7 +651,7 @@ function involvesBoss( text, boss, landing ) {
  * @param {PushSession} session The session.
  * @param {PushSummary} summary The session summary.
  * @param {import('../data/push-spells').PushSpellTable} table The push spell table.
- * @param {{ map: Map<string, string[]> }} landing The landing index.
+ * @param {any} landing The landing index, with the messages that spells with no push share.
  * @param {PushKill} kill The kill to analyze.
  * @param {number} quietGapSeconds Seconds without combat that separate fights.
  */
@@ -668,7 +678,12 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
     const lastCast = new Map();
     const unattributed = { events: 0, pushValue: 0 };
     const unattributedProcs = new Map();
+    let possibleEvents = 0;
+    const possibleProcs = new Map();
+    const unmatched = [];
     const npcAbilities = new Map();
+    const othersSeen = summary.othersSeen === true;
+    const damageShown = player => player === ctx.characterName || othersSeen;
 
     const cancelCast = ( player, time ) => {
         const ev = lastCast.get( player );
@@ -731,7 +746,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                 lastCast.set( player, null );
                 continue;
             }
-            const ev = { kind: 'cast', state: 'assumed', time: time, castTime: spell.castTime, player: player, spellName: m.groups.spell, spell: spell, landed: false };
+            const ev = { kind: 'cast', state: 'assumed', time: time, castTime: spell.castTime, player: player, spellName: m.groups.spell, spell: spell, landed: false, strict: spell.variantTexts?.length > 0 };
             events.push( ev );
             lastCast.set( player, ev );
 
@@ -761,7 +776,10 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                 if ( time - ev.time > ev.castTime + landingGraceMs + 10000 ) {
                     break;
                 }
-                if ( ev.state !== 'cancelled' && !ev.landed && names.indexOf( stripRank( ev.spellName ) ) > -1 && time - ev.time <= ev.castTime + landingGraceMs ) {
+                if ( ev.kind === 'cast' && ev.spell.instantDamage && damageShown( ev.player ) ) {
+                    continue;
+                }
+                if ( ev.state !== 'cancelled' && !ev.landed && names.indexOf( stripRank( ev.spellName ) ) > -1 && time - ev.time <= ev.castTime + ( ev.strict ? strictLandingGraceMs : landingGraceMs ) ) {
                     ev.landed = true;
                     ev.state = 'confirmed';
                     matched = true;
@@ -769,20 +787,105 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                 }
             }
             if ( !matched ) {
-                unattributed.events++;
-                unattributed.pushValue += table.spells[ names[ 0 ] ]?.push ?? 0;
-                const key = text.substring( boss.length );
-                let proc = unattributedProcs.get( key );
-                if ( proc === null || proc === undefined ) {
-                    proc = buildProc( names, table );
-                    unattributedProcs.set( key, proc );
-                }
-                proc.count++;
+                unmatched.push( { time: time, key: text.substring( boss.length ), names: names, claimed: false } );
             }
         }
     }
 
-    // Keyed by player name.
+    // A cast of a spell that shares its name with spells that land differently counts only when
+    // its own landing was seen.
+    events.forEach( ev => {
+        if ( ev.strict && ev.state === 'assumed' ) {
+            ev.state = 'cancelled';
+        }
+    } );
+
+    // Instant damage spells always log a damage line naming the caster, so a cast with no
+    // damage line did not hit the boss.
+    events.forEach( ev => {
+        if ( ev.kind === 'cast' && ev.state !== 'cancelled' && ev.spell.instantDamage && damageShown( ev.player ) ) {
+            ev.state = 'cancelled';
+        }
+    } );
+
+    // A landing that no damage line claimed is not an instant damage spell of a caster whose
+    // damage lines are in the log.  The damage line can come before or after its landing.
+    // The damage events by spell, in time order, so a landing only looks at the ones within a
+    // second of it.
+    const bySpell = new Map();
+    events.forEach( ( ev, index ) => {
+        if ( ev.kind === 'damage' && ev.state !== 'cancelled' ) {
+            const base = stripRank( ev.spellName );
+            let list = bySpell.get( base );
+            if ( list === null || list === undefined ) {
+                list = [];
+                bySpell.set( base, list );
+            }
+            list.push( { ev: ev, index: index } );
+        }
+    } );
+    bySpell.forEach( list => list.sort( ( a, b ) => a.ev.time - b.ev.time || a.index - b.index ) );
+
+    unmatched.forEach( u => {
+        let claimer = null;
+        u.names.forEach( name => {
+            const list = bySpell.get( name );
+            if ( list === null || list === undefined ) {
+                return;
+            }
+            let low = 0;
+            let high = list.length;
+            while ( low < high ) {
+                const mid = ( low + high ) >> 1;
+                if ( list[ mid ].ev.time < u.time - claimGraceMs ) {
+                    low = mid + 1;
+                } else {
+                    high = mid;
+                }
+            }
+            for ( let i = low; i < list.length && list[ i ].ev.time <= u.time + claimGraceMs; i++ ) {
+                if ( !list[ i ].ev.landed && ( ( claimer === null || claimer === undefined ) || list[ i ].index < claimer.index ) ) {
+                    claimer = list[ i ];
+                }
+            }
+        } );
+        if ( claimer !== null && claimer !== undefined ) {
+            claimer.ev.landed = true;
+            u.claimed = true;
+        }
+        if ( othersSeen ) {
+            u.names = u.names.filter( n => !table.spells[ n ]?.instantDamage );
+        }
+    } );
+
+    unmatched.forEach( u => {
+        if ( u.claimed || u.names.length === 0 ) {
+            return;
+        }
+        const key = u.key;
+        const names = u.names;
+        const also = landing.noPush.get( key );
+        const shared = ( also !== null && also !== undefined );
+        if ( shared ) {
+            possibleEvents++;
+        } else {
+            unattributed.events++;
+            unattributed.pushValue += table.spells[ names[ 0 ] ]?.push ?? 0;
+        }
+        const procMap = shared ? possibleProcs : unattributedProcs;
+        let proc = procMap.get( key );
+        if ( proc === null || proc === undefined ) {
+            proc = buildProc( key, names, table );
+            if ( shared ) {
+                proc.alsoNames = also.names;
+                proc.alsoCount = also.count;
+            }
+            procMap.set( key, proc );
+        }
+        proc.count++;
+    } );
+
+    /** @type {Map<string, PushPlayer>} */
     const players = new Map();
     events.forEach( ev => {
         if ( ev.state === 'cancelled' ) {
@@ -831,6 +934,8 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
             events: unattributed.events,
             pushValue: roundPush( unattributed.pushValue ),
             procs: Array.from( unattributedProcs.values() ).sort( ( a, b ) => b.count - a.count || a.name.localeCompare( b.name ) ),
+            possibleEvents: possibleEvents,
+            possible: Array.from( possibleProcs.values() ).sort( ( a, b ) => b.count - a.count || a.name.localeCompare( b.name ) ),
         },
         npcAbilities: Array.from( npcAbilities.values() ).sort( ( a, b ) => b.count - a.count ),
         totalEvents: totalEvents,
