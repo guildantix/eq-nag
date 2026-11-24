@@ -1562,6 +1562,40 @@ export class ShareInstallResult {
 
 
     /**
+     * Returns a sentence about the sender's own triggers that were left out of, or trimmed in, an
+     * outgoing share, or an empty text when everything went as is. Worded for the sender: the
+     * triggers are theirs and still work in their profile, they just can't travel in a share.
+     *
+     * @param result The result of checking the outgoing share.
+     */
+    public static describeOutgoingRepairs( result: ShareInstallResult ): string {
+
+        const sentences: string[] = [];
+
+        if ( result.skippedCount > 0 ) {
+            const isSingle = result.skippedCount === 1;
+            const names = result.skippedNames?.length > 0 ? ' (' + result.skippedNames.join( ', ' ) + ')' : '';
+
+            sentences.push( result.skippedCount + ( isSingle ? ' trigger was' : ' triggers were' ) + ' left out because ' + ( isSingle ? 'it can\'t' : 'they can\'t' ) + ' be shared' + names + '.' );
+        }
+
+        if ( result.fixedCount > 0 ) {
+            sentences.push( result.fixedCount + ( result.fixedCount === 1 ? ' trigger was' : ' triggers were' ) + ' trimmed to fit the share limits.' );
+        }
+
+        return sentences.join( ' ' );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Adds several results together. The total is complete only when every result is complete.
      *
      * @param results The results to add together.

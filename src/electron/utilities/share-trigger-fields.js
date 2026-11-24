@@ -26,8 +26,6 @@ const maxSharedTriggers = 10000;
 const maxActionsPerTrigger = 200;
 /** The most entries any other list may carry (capture phrases, exclusions, hotkeys, folders). */
 const maxListEntries = 1000;
-/** The longest text, in characters, that is kept. Longer text is cut, so no field is huge. */
-const maxTextLength = 100000;
 /** The most overlays one share may carry. */
 const maxSharedOverlays = 200;
 /** The most skipped trigger names that are reported back, so the message stays short. */
@@ -35,11 +33,18 @@ const maxSkippedNamesReported = 3;
 /** The longest skipped trigger name that is reported back. */
 const maxSkippedNameLength = 60;
 /**
- * The longest icon, in characters, that is kept. An icon is a data URL, so cutting it would
- * leave something that still looks like an image but never draws. An icon over the limit is
- * dropped whole. The same limit is used where icons are installed from a file.
+ * The size caps for shares that come from, or go to, the share server. The server hosts everything
+ * that is uploaded and every user downloads it, so the caps stay tight. Text over maxTextLength is
+ * cut. An icon is a data URL, so cutting it would leave something that still looks like an image
+ * but never draws: an icon over maxIconLength is dropped whole.
  */
-const maxIconLength = 262144;
+const serverShareLimits = { maxTextLength: 100000, maxIconLength: 262144 };
+/**
+ * The size caps for shares that come from a file. A file is a private hand-off between friends and
+ * is not hosted anywhere, so it gets room for big content such as an animated gif icon. Only the
+ * sizes differ: every type and field check still runs.
+ */
+const fileShareLimits = { maxTextLength: 1000000, maxIconLength: 10000000 };
 /**
  * The highest action type number, read from the ActionTypes model so a new action type is
  * accepted by shares as soon as it is added there, with no second list to keep in step.
@@ -574,16 +579,17 @@ function isPresent( value ) {
  *
  * @param {any} value The value to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanText( value, tally ) {
-    if ( typeof value === 'string' && value.length <= maxTextLength ) {
+function cleanText( value, tally, limits ) {
+    if ( typeof value === 'string' && value.length <= limits.maxTextLength ) {
         return value;
     }
 
     tally.repairCount++;
 
     if ( typeof value === 'string' ) {
-        return value.slice( 0, maxTextLength );
+        return value.slice( 0, limits.maxTextLength );
     }
 
     if ( ( typeof value === 'number' && Number.isFinite( value ) ) || typeof value === 'boolean' ) {
@@ -608,9 +614,10 @@ function cleanText( value, tally ) {
  *
  * @param {any} value The value to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanIcon( value, tally ) {
-    if ( typeof value === 'string' && value.length <= maxIconLength ) {
+function cleanIcon( value, tally, limits ) {
+    if ( typeof value === 'string' && value.length <= limits.maxIconLength ) {
         return value;
     }
 
@@ -744,8 +751,9 @@ function cleanRectangle( value, tally ) {
  *
  * @param {any} value The value to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanTextList( value, tally ) {
+function cleanTextList( value, tally, limits ) {
     if ( !Array.isArray( value ) ) {
         tally.repairCount++;
         return [];
@@ -758,7 +766,7 @@ function cleanTextList( value, tally ) {
     }
 
     value.slice( 0, maxListEntries ).forEach( entry => {
-        const cleanedEntry = cleanText( entry, tally );
+        const cleanedEntry = cleanText( entry, tally, limits );
         if ( cleanedEntry !== dropField ) {
             cleanedList.push( cleanedEntry );
         }
@@ -780,12 +788,13 @@ function cleanTextList( value, tally ) {
  * Cleans a list of objects with the given cleaner. Entries the cleaner drops are removed.
  *
  * @param {any} value The value to clean.
- * @param {( entry: any, tally: { repairCount: number } ) => object | null} cleanEntry Cleans one
- * entry, returns null to drop it.
+ * @param {( entry: any, tally: { repairCount: number }, limits: { maxTextLength: number,
+ * maxIconLength: number } ) => object | null} cleanEntry Cleans one entry, returns null to drop it.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  * @param {number} [maxEntries] The most entries that are kept.
  */
-function cleanObjectList( value, cleanEntry, tally, maxEntries = maxListEntries ) {
+function cleanObjectList( value, cleanEntry, tally, limits, maxEntries = maxListEntries ) {
     if ( !Array.isArray( value ) ) {
         tally.repairCount++;
         return [];
@@ -798,7 +807,7 @@ function cleanObjectList( value, cleanEntry, tally, maxEntries = maxListEntries 
     }
 
     value.slice( 0, maxEntries ).forEach( entry => {
-        const cleanedEntry = cleanEntry( entry, tally );
+        const cleanedEntry = cleanEntry( entry, tally, limits );
         if ( cleanedEntry === null ) {
             tally.repairCount++;
         } else {
@@ -824,13 +833,14 @@ function cleanObjectList( value, cleanEntry, tally, maxEntries = maxListEntries 
  * @param {string} fieldType The type name from one of the field tables.
  * @param {any} value The value to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanFieldValue( fieldType, value, tally ) {
+function cleanFieldValue( fieldType, value, tally, limits ) {
     if ( fieldType === 'text' ) {
-        return cleanText( value, tally );
+        return cleanText( value, tally, limits );
     }
     if ( fieldType === 'icon' ) {
-        return cleanIcon( value, tally );
+        return cleanIcon( value, tally, limits );
     }
     if ( fieldType === 'number' ) {
         return cleanNumber( value, tally );
@@ -842,31 +852,31 @@ function cleanFieldValue( fieldType, value, tally ) {
         return cleanRectangle( value, tally );
     }
     if ( fieldType === 'textOverflow' ) {
-        return cleanKnownFields( value, textOverflowFieldTypes, tally ) ?? dropField;
+        return cleanKnownFields( value, textOverflowFieldTypes, tally, limits ) ?? dropField;
     }
     if ( fieldType === 'textList' ) {
-        return cleanTextList( value, tally );
+        return cleanTextList( value, tally, limits );
     }
     if ( fieldType === 'phraseList' ) {
-        return cleanObjectList( value, cleanPhrase, tally );
+        return cleanObjectList( value, cleanPhrase, tally, limits );
     }
     if ( fieldType === 'actionList' ) {
-        return cleanObjectList( value, cleanAction, tally, maxActionsPerTrigger );
+        return cleanObjectList( value, cleanAction, tally, limits, maxActionsPerTrigger );
     }
     if ( fieldType === 'conditionList' ) {
-        return cleanObjectList( value, cleanCondition, tally );
+        return cleanObjectList( value, cleanCondition, tally, limits );
     }
     if ( fieldType === 'classLevelList' ) {
-        return cleanObjectList( value, cleanClassLevel, tally );
+        return cleanObjectList( value, cleanClassLevel, tally, limits );
     }
     if ( fieldType === 'hotkeyList' ) {
-        return cleanObjectList( value, cleanHotkey, tally );
+        return cleanObjectList( value, cleanHotkey, tally, limits );
     }
     if ( fieldType === 'subActionList' ) {
-        return cleanObjectList( value, cleanSubAction, tally );
+        return cleanObjectList( value, cleanSubAction, tally, limits );
     }
     if ( fieldType === 'variableAssignmentList' ) {
-        return cleanObjectList( value, cleanVariableAssignment, tally );
+        return cleanObjectList( value, cleanVariableAssignment, tally, limits );
     }
 
     return dropField;
@@ -890,8 +900,9 @@ function cleanFieldValue( fieldType, value, tally ) {
  * @param {any} source The object to clean.
  * @param {Record<string, string>} fieldTypes The known fields and their type names.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanKnownFields( source, fieldTypes, tally ) {
+function cleanKnownFields( source, fieldTypes, tally, limits ) {
     if ( !isPlainObject( source ) ) {
         return null;
     }
@@ -915,7 +926,7 @@ function cleanKnownFields( source, fieldTypes, tally ) {
             return;
         }
 
-        const cleanedValue = cleanFieldValue( fieldTypes[ key ], value, tally );
+        const cleanedValue = cleanFieldValue( fieldTypes[ key ], value, tally, limits );
 
         // Ids are used as keys of plain objects, so a name like __proto__ is never an id.
         if ( key.endsWith( 'Id' ) && isForbiddenId( cleanedValue ) ) {
@@ -945,9 +956,10 @@ function cleanKnownFields( source, fieldTypes, tally ) {
  *
  * @param {any} phrase The phrase to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanPhrase( phrase, tally ) {
-    const cleaned = cleanKnownFields( phrase, phraseFieldTypes, tally );
+function cleanPhrase( phrase, tally, limits ) {
+    const cleaned = cleanKnownFields( phrase, phraseFieldTypes, tally, limits );
 
     if ( cleaned === null || typeof cleaned.phrase !== 'string' ) {
         return null;
@@ -977,9 +989,10 @@ function cleanPhrase( phrase, tally ) {
  *
  * @param {any} condition The condition to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanCondition( condition, tally ) {
-    return cleanKnownFields( condition, conditionFieldTypes, tally );
+function cleanCondition( condition, tally, limits ) {
+    return cleanKnownFields( condition, conditionFieldTypes, tally, limits );
 }
 
 
@@ -996,9 +1009,10 @@ function cleanCondition( condition, tally ) {
  *
  * @param {any} classLevel The class level to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanClassLevel( classLevel, tally ) {
-    return cleanKnownFields( classLevel, classLevelFieldTypes, tally );
+function cleanClassLevel( classLevel, tally, limits ) {
+    return cleanKnownFields( classLevel, classLevelFieldTypes, tally, limits );
 }
 
 
@@ -1015,9 +1029,10 @@ function cleanClassLevel( classLevel, tally ) {
  *
  * @param {any} hotkey The hotkey to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanHotkey( hotkey, tally ) {
-    return cleanKnownFields( hotkey, hotkeyFieldTypes, tally );
+function cleanHotkey( hotkey, tally, limits ) {
+    return cleanKnownFields( hotkey, hotkeyFieldTypes, tally, limits );
 }
 
 
@@ -1034,9 +1049,10 @@ function cleanHotkey( hotkey, tally ) {
  *
  * @param {any} subAction The sub-action to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanSubAction( subAction, tally ) {
-    return cleanKnownFields( subAction, subActionFieldTypes, tally );
+function cleanSubAction( subAction, tally, limits ) {
+    return cleanKnownFields( subAction, subActionFieldTypes, tally, limits );
 }
 
 
@@ -1053,9 +1069,10 @@ function cleanSubAction( subAction, tally ) {
  *
  * @param {any} assignment The variable assignment to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanVariableAssignment( assignment, tally ) {
-    return cleanKnownFields( assignment, variableAssignmentFieldTypes, tally );
+function cleanVariableAssignment( assignment, tally, limits ) {
+    return cleanKnownFields( assignment, variableAssignmentFieldTypes, tally, limits );
 }
 
 
@@ -1073,9 +1090,10 @@ function cleanVariableAssignment( assignment, tally ) {
  *
  * @param {any} action The action to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanAction( action, tally ) {
-    const cleaned = cleanKnownFields( action, actionFieldTypes, tally );
+function cleanAction( action, tally, limits ) {
+    const cleaned = cleanKnownFields( action, actionFieldTypes, tally, limits );
 
     if ( cleaned === null || !Number.isInteger( cleaned.actionType ) || cleaned.actionType < 0 || cleaned.actionType > highestActionType ) {
         return null;
@@ -1101,9 +1119,10 @@ function cleanAction( action, tally ) {
  *
  * @param {any} trigger The trigger to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanTrigger( trigger, tally ) {
-    const cleaned = cleanKnownFields( trigger, triggerFieldTypes, tally );
+function cleanTrigger( trigger, tally, limits ) {
+    const cleaned = cleanKnownFields( trigger, triggerFieldTypes, tally, limits );
 
     if ( cleaned === null ) {
         return null;
@@ -1173,8 +1192,10 @@ function describeSkippedTrigger( trigger ) {
  * were skipped, and the names of the first few skipped triggers.
  *
  * @param {any} triggers The shared triggers.
+ * @param {{ maxTextLength: number, maxIconLength: number }} [limits] The size caps to apply, the
+ * server caps when left out.
  */
-function normalizeSharedTriggers( triggers ) {
+function normalizeSharedTriggers( triggers, limits = serverShareLimits ) {
     const result = { triggers: [], fixedCount: 0, skippedCount: 0, skippedNames: [] };
 
     if ( !Array.isArray( triggers ) ) {
@@ -1193,7 +1214,7 @@ function normalizeSharedTriggers( triggers ) {
             let cleaned = null;
 
             try {
-                cleaned = cleanTrigger( trigger, tally );
+                cleaned = cleanTrigger( trigger, tally, limits );
             } catch ( error ) {
                 cleaned = null;
             }
@@ -1231,9 +1252,11 @@ function normalizeSharedTriggers( triggers ) {
  * name are dropped, and folders nested deeper than the limit are cut off.
  *
  * @param {any} folders The shared folders.
+ * @param {{ maxTextLength: number, maxIconLength: number }} [limits] The size caps to apply, the
+ * server caps when left out.
  * @param {number} [depth] The level of the list, 1 for the top level.
  */
-function normalizeSharedFolders( folders, depth = 1 ) {
+function normalizeSharedFolders( folders, limits = serverShareLimits, depth = 1 ) {
     if ( !Array.isArray( folders ) || depth > maxFolderDepth ) {
         return [];
     }
@@ -1243,7 +1266,7 @@ function normalizeSharedFolders( folders, depth = 1 ) {
     // Reading a hostile list can throw (a getter or a proxy), and the install must go on.
     try {
         folders.slice( 0, maxListEntries ).forEach( folder => {
-            const cleaned = cleanKnownFields( folder, folderFieldTypes, { repairCount: 0 } );
+            const cleaned = cleanKnownFields( folder, folderFieldTypes, { repairCount: 0 }, limits );
 
             const hasId = cleaned !== null && typeof cleaned.folderId === 'string' && cleaned.folderId.trim() !== '';
             const hasName = cleaned !== null && typeof cleaned.name === 'string' && cleaned.name.trim() !== '';
@@ -1252,7 +1275,7 @@ function normalizeSharedFolders( folders, depth = 1 ) {
                 return;
             }
 
-            cleaned.children = normalizeSharedFolders( folder.children, depth + 1 );
+            cleaned.children = normalizeSharedFolders( folder.children, limits, depth + 1 );
             cleanedFolders.push( cleaned );
         } );
     } catch ( error ) {
@@ -1276,9 +1299,10 @@ function normalizeSharedFolders( folders, depth = 1 ) {
  *
  * @param {any} overlay The overlay to clean.
  * @param {{ repairCount: number }} tally Counts each change made.
+ * @param {{ maxTextLength: number, maxIconLength: number }} limits The size caps to apply.
  */
-function cleanOverlay( overlay, tally ) {
-    const cleaned = cleanKnownFields( overlay, overlayFieldTypes, tally );
+function cleanOverlay( overlay, tally, limits ) {
+    const cleaned = cleanKnownFields( overlay, overlayFieldTypes, tally, limits );
 
     if ( cleaned === null || typeof cleaned.overlayId !== 'string' || cleaned.overlayId.trim() === '' ) {
         return null;
@@ -1300,10 +1324,12 @@ function cleanOverlay( overlay, tally ) {
  * Cleans a list of shared overlays.
  *
  * @param {any} overlays The shared overlays.
+ * @param {{ maxTextLength: number, maxIconLength: number }} [limits] The size caps to apply, the
+ * server caps when left out.
  */
-function normalizeSharedOverlays( overlays ) {
+function normalizeSharedOverlays( overlays, limits = serverShareLimits ) {
     try {
-        return cleanObjectList( overlays, cleanOverlay, { repairCount: 0 }, maxSharedOverlays );
+        return cleanObjectList( overlays, cleanOverlay, { repairCount: 0 }, limits, maxSharedOverlays );
     } catch ( error ) {
         return [];
     }
@@ -1327,7 +1353,7 @@ function normalizeSharedOverlays( overlays ) {
  * @param {any} displaySize The shared display size.
  */
 function normalizeSharedDisplaySize( displaySize ) {
-    const cleaned = cleanKnownFields( displaySize, { width: 'number', height: 'number' }, { repairCount: 0 } );
+    const cleaned = cleanKnownFields( displaySize, { width: 'number', height: 'number' }, { repairCount: 0 }, serverShareLimits );
 
     if ( cleaned === null || !( cleaned.width > 0 ) || !( cleaned.height > 0 ) ) {
         return undefined;
@@ -1351,9 +1377,11 @@ function normalizeSharedDisplaySize( displaySize ) {
  * @returns {string | undefined} The id, or undefined when unusable.
  *
  * @param {any} overlayId The shared overlay id.
+ * @param {{ maxTextLength: number, maxIconLength: number }} [limits] The size caps to apply, the
+ * server caps when left out.
  */
-function normalizeSharedOverlayId( overlayId ) {
-    const cleaned = cleanText( overlayId, { repairCount: 0 } );
+function normalizeSharedOverlayId( overlayId, limits = serverShareLimits ) {
+    const cleaned = cleanText( overlayId, { repairCount: 0 }, limits );
 
     if ( typeof cleaned !== 'string' || cleaned.trim() === '' || isForbiddenId( cleaned ) ) {
         return undefined;
@@ -1378,16 +1406,20 @@ function normalizeSharedOverlayId( overlayId ) {
  * @param {any} packageOverlays The shared overlays.
  * @param {any} defaultOverlayIds The shared default overlay ids.
  * @param {any} primaryDisplaySize The shared display size.
+ * @param {{ maxTextLength: number, maxIconLength: number }} [limits] The size caps to apply, the
+ * server caps when left out.
  */
-function normalizeSharedOverlayInput( packageOverlays, defaultOverlayIds, primaryDisplaySize ) {
+function normalizeSharedOverlayInput( packageOverlays, defaultOverlayIds, primaryDisplaySize, limits = serverShareLimits ) {
     const cleanedIds = {};
 
     [ 'detrimentalOverlayId', 'beneficialOverlayId', 'textOverlayId' ].forEach( idName => {
-        cleanedIds[ idName ] = isPlainObject( defaultOverlayIds ) ? normalizeSharedOverlayId( defaultOverlayIds[ idName ] ) : undefined;
+        cleanedIds[ idName ] = isPlainObject( defaultOverlayIds )
+            ? normalizeSharedOverlayId( defaultOverlayIds[ idName ], limits )
+            : undefined;
     } );
 
     return {
-        packageOverlays: isPresent( packageOverlays ) ? normalizeSharedOverlays( packageOverlays ) : packageOverlays,
+        packageOverlays: isPresent( packageOverlays ) ? normalizeSharedOverlays( packageOverlays, limits ) : packageOverlays,
         defaultOverlayIds: cleanedIds,
         primaryDisplaySize: isPresent( primaryDisplaySize ) ? normalizeSharedDisplaySize( primaryDisplaySize ) : undefined,
     };
@@ -1414,8 +1446,10 @@ function normalizeSharedOverlayInput( packageOverlays, defaultOverlayIds, primar
  * limit, and the names of the first few skipped.
  *
  * @param {{ triggers?: any, folders?: any }} model The package or quick share model.
+ * @param {{ maxTextLength: number, maxIconLength: number }} [limits] The size caps to apply. Server
+ * shares use the default, a shared file passes fileShareLimits.
  */
-function normalizeSharedModel( model ) {
+function normalizeSharedModel( model, limits = serverShareLimits ) {
     if ( !isPlainObject( model ) ) {
         return { isUsable: false, failureReason: 'notAnObject', fixedCount: 0, skippedCount: 0, skippedNames: [] };
     }
@@ -1425,16 +1459,16 @@ function normalizeSharedModel( model ) {
         // A share with folders or overlays only is fine, but one that had triggers and lost
         // every one of them is damaged.
         const hadTriggers = Array.isArray( model.triggers ) && model.triggers.length > 0;
-        const triggerResult = normalizeSharedTriggers( model.triggers );
+        const triggerResult = normalizeSharedTriggers( model.triggers, limits );
 
         model.triggers = triggerResult.triggers;
-        model.folders = normalizeSharedFolders( model.folders );
+        model.folders = normalizeSharedFolders( model.folders, limits );
 
         if ( isPresent( model.overlays ) ) {
-            model.overlays = normalizeSharedOverlays( model.overlays );
+            model.overlays = normalizeSharedOverlays( model.overlays, limits );
         }
 
-        const overlayInput = normalizeSharedOverlayInput( model.packageOverlays, model, model.primaryDisplaySize );
+        const overlayInput = normalizeSharedOverlayInput( model.packageOverlays, model, model.primaryDisplaySize, limits );
 
         model.packageOverlays = overlayInput.packageOverlays;
         model.primaryDisplaySize = overlayInput.primaryDisplaySize;
@@ -1469,6 +1503,8 @@ function normalizeSharedModel( model ) {
 
 
 module.exports = {
+    serverShareLimits,
+    fileShareLimits,
     shareFieldAllowlists,
     normalizeSharedTriggers,
     normalizeSharedFolders,
