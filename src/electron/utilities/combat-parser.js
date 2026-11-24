@@ -28,7 +28,6 @@ const {
 const { FctModel } = require( '../data/models/fct' );
 const { CharacterModel } = require( '../data/models/character' );
 const { nagLog, nagException } = require( './nag-console' );
-const electronLog = require( 'electron-log' );
 const { getEverQuestClassName, getEverQuestClassFromTitle, getEverQuestClassAbbreviation } = require( './everquest' );
 
 /**
@@ -1054,7 +1053,7 @@ class CombatParser {
         fs.open( logFilePath, 'r', ( err, fd ) => {
 
             if ( err !== null && err !== undefined ) {
-                electronLog.error( `Death recap: could not open the log file: ${err.message}` );
+                nagException( `Death recap: could not open the log file: ${err.message}` );
                 callback( null, { kind: 'open-failed', message: err.message } );
                 return;
             }
@@ -1071,7 +1070,7 @@ class CombatParser {
                 try {
                     fstats = fs.fstatSync( file );
                 } catch ( statError ) {
-                    electronLog.error( `Death recap: could not read the log file size: ${statError.message}` );
+                    nagException( `Death recap: could not read the log file size: ${statError.message}` );
                     finish( null, { kind: 'failed', message: statError.message } );
                     return;
                 }
@@ -1091,7 +1090,7 @@ class CombatParser {
                     fs.read( file, Buffer.alloc( rsize ), 0, rsize, position, ( err, bytecount, buff ) => {
 
                         if ( err !== null && err !== undefined ) {
-                            electronLog.error( `Death recap: could not read the log file: ${err.message}` );
+                            nagException( `Death recap: could not read the log file: ${err.message}` );
                             finish( null, { kind: 'failed', message: err.message } );
                             return;
                         }
@@ -1114,7 +1113,7 @@ class CombatParser {
                                         const recapLines = Array.prototype.concat( [], prevLines ?? [], currentLines );
                                         finish( this._processDeathRecapLines( recapLines ) );
                                     } catch ( processError ) {
-                                        electronLog.error( `Death recap: processing failed: ${processError?.stack ?? processError}` );
+                                        nagException( `Death recap: processing failed: ${processError?.stack ?? processError}` );
                                         finish( null, { kind: 'failed', message: processError?.message ?? String( processError ) } );
                                     }
                                 } );
@@ -1920,7 +1919,7 @@ class CombatParser {
             // let read = 0;
 
             if ( err !== null && err !== undefined ) {
-                electronLog.error( `Death search: could not open the log file: ${err.message}` );
+                nagException( `Death search: could not open the log file: ${err.message}` );
                 callback( deathsFound, { kind: 'open-failed', message: err.message } );
                 return;
             }
@@ -1940,7 +1939,7 @@ class CombatParser {
                     fs.read( file, Buffer.alloc( rsize ), 0, rsize, position, ( err, bytecount, buff ) => {
 
                         if ( err !== null && err !== undefined ) {
-                            electronLog.error( `Death search: could not read the log file: ${err.message}` );
+                            nagException( `Death search: could not read the log file: ${err.message}` );
                             fs.close( file, () => callback( deathsFound, { kind: 'failed', message: err.message } ) );
                             return;
                         }

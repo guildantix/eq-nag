@@ -9,7 +9,7 @@ const { StyleProperties, LogMaintenanceRules, LogMaintenanceHistory, UserPrefere
 const archiver = require( 'archiver' );
 const FsUtilities = require( '../utilities/file-system' );
 const LogBootstrapper = require( "../log-bootstrap" );
-const { DeathRecapPreferences } = require( '../data/models/death-recap' );
+const { DeathRecapPreferences, resolveDeathRecapPreferences } = require( '../data/models/death-recap' );
 const { PushRecapPreferences } = require( '../data/models/push-recap' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { GinaToNagOverlay } = require( "./models/trigger" );
@@ -1048,7 +1048,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:deathRecap', ( event ) => {
-            event.sender.send( 'settings:get:deathRecap', this.deathRecap );
+            event.sender.send( 'settings:get:deathRecap', resolveDeathRecapPreferences( this.deathRecap ) );
         } );
 
         ipcMain.on( 'settings:set:pushRecap', ( event, pushRecap ) => {

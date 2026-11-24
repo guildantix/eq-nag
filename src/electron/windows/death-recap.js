@@ -10,7 +10,7 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const nanoid = customAlphabet( alphabet, 16 );
 const { DeathRecapEncounterMob, DeathRecapRaidStats, DeathRecapEncounter, DeathRecapLog, DeathRecapDamageSource, DeathRecapModel } = require( '../data/models/death-recap' );
 const DomUtilities = require( '../utilities/dom' );
-const electronLog = require( 'electron-log' );
+const { nagException } = require( '../utilities/nag-console' );
 const NumberUtilities = require( '../utilities/numbers' );
 
 
@@ -148,7 +148,7 @@ function guardRecapCallback( drawRecap, characterName ) {
         try {
             drawRecap( data );
         } catch ( drawError ) {
-            electronLog.error( `Death recap: drawing failed: ${drawError?.stack ?? drawError}` );
+            nagException( `Death recap: drawing failed: ${drawError?.stack ?? drawError}` );
             showRecapMessage( `The death recap couldn't be loaded: ${drawError?.message ?? drawError}` );
         }
     };
@@ -436,7 +436,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName, 
     } else {
         combatParser.findAllDeaths( logFilePath, ( found, error ) => {
             if ( error !== null && error !== undefined ) {
-                electronLog.error( `Death recap: the death search failed: ${error.message}` );
+                nagException( `Death recap: the death search failed: ${error.message}` );
             }
             let message = new IpcMessage( found );
             message.id = messageId;

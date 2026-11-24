@@ -1732,9 +1732,9 @@ export class IpcMessage<T> {
 }
 
 export class DeathRecapPreferences {
-    triggerId: string;
-    engageMode: 'off' | 'hotkey' | 'automatic';
-    hotkeyPhrase: string;
+    triggerId: string = null;
+    engageMode: 'off' | 'hotkey' | 'automatic' = 'off';
+    hotkeyPhrase: string = null;
 }
 
 const pushRecapEmote = 'wonders who is pushing';
