@@ -382,7 +382,7 @@ class CharacterDatabaseStore extends Store {
 
         ipcMain.on( 'character:update:class', ( event, data ) => {
             let character = this.find( data.characterId );
-            if ( character ) {
+            if ( character && character.class !== data.class ) {
                 character.class = data.class;
                 this.update( character );
                 sendTick();

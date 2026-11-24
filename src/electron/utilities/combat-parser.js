@@ -28,7 +28,7 @@ const {
 const { FctModel } = require( '../data/models/fct' );
 const { CharacterModel } = require( '../data/models/character' );
 const { nagLog, nagException } = require( './nag-console' );
-const { getEverQuestClassName, getEverQuestClassFromTitle, getEverQuestClassAbbreviation } = require( './everquest' );
+const { getEverQuestClassName, getEverQuestClassFromTitle, getEverQuestClassAbbreviation, whoLineRegex } = require( './everquest' );
 
 const playerNpcInteractionTimeoutMs = 2000;
 const npcTimeoutMs = 8000;
@@ -298,10 +298,7 @@ const combatRgx = {
     // ResoluteStand: null,
 }
 
-// https://regex101.com/r/cqfoUU/2
-// This won't capture anon people.
-// classTitleOrName will capture any one-word class name by default, however if the class title has spaces it must be added to the list.
-const playerWhoRgx = /^(OFFLINEMODE)?\[(?<level>\d+)\s(?<classTitleOrName>Savage Lord|Arch Arcanist|Arch Animist|Arch Mage|High Priest|Grave Lord|Feral Lord|Storm Warden|Arch Convoker|Arch Lich|Lord Protector|Forest Stalker|Dread Lord|Arch Magus|Stone Fist|Scourge Knight|Grand Archanist|Storm Caller|Grand Summoner|Holy Defender|.+?)\]?\s(:?\((?<classRealName>.*?)\)\])?\s?(?<player>.*?)\s\((?<raceName>.+?)\)\s/i;
+const playerWhoRgx = whoLineRegex;
 
 
 
@@ -394,6 +391,15 @@ class CombatParser {
 
     /** @type {boolean} */
     _updateServerStatistics = false;
+
+    /**
+     * True for the combat watcher's parser, which saves the class a /who line shows, live or
+     * simulated. The death recap window builds its own parser to re-read old log lines, and those
+     * must not change a character's class, so it keeps this false.
+     *
+     * @type {boolean}
+     */
+    reportClassChanges = false;
 
     /**
      * Constructs a new combat parser.
@@ -1464,11 +1470,12 @@ class CombatParser {
                     this._playerInfos[ playerName ].raceName = playerWho.groups.raceName;
                 }
 
-                // If the player is in the character list, then we need to update their profile if their new class doesn't match their profile.
+                // If the player is in the character list and their class doesn't match their
+                // profile, save the class that the /who line shows.
                 const myCharacter = this._myCharacters.find( f => f.name === playerName && f.server === this._serverName );
-                if ( myCharacter != null ) {
+                if ( myCharacter !== null && myCharacter !== undefined && this.reportClassChanges === true ) {
                     const playerClassAbbr = getEverQuestClassAbbreviation( this._playerInfos[ playerName ].className );
-                    if ( myCharacter.classAbbr !== playerClassAbbr ) {
+                    if ( myCharacter.class !== playerClassAbbr ) {
                         ipcRenderer.send( 'character:update:class', {
                             characterId: myCharacter.characterId,
                             class: playerClassAbbr,

@@ -20,6 +20,7 @@ const FileMonitor = require( '../utilities/file-monitor' );
 const { parseConditionValues } = require( '../utilities/condition-values' );
 const perf = require( '../utilities/perf' );
 const TriggerPrefilter = require( '../utilities/trigger-prefilter' );
+const { detectPersonaClassCode, detectOwnWhoClassCode } = require( '../utilities/persona-class' );
 // Triggers are timed on one log line in ten (perf-taps.js scales them up), so
 // the per-trigger timing doesn't slow the log watcher down much.
 let perfTriggerSample = 0;
@@ -1895,6 +1896,26 @@ function generateTriggerFns() {
 
 
 /**
+ * Saves the class this character just showed, from an equipment set message or its own /who
+ * line. It goes through the same handler as picking a class on the Characters page, which also
+ * refreshes that page.
+ *
+ * @param {string} detectedClassCode The class code the log line showed.
+ */
+function saveDetectedClass( detectedClassCode ) {
+    ipcRenderer.send( 'character:update:class', { characterId: characterId, class: detectedClassCode } );
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Parses the given log entry.
  * 
  * @param {string} raw The raw log entry.
@@ -1955,6 +1976,12 @@ function parseLogEntries( raw, simulating, padTime ) {
             }
         }
         
+        // Simulated lines count as well, so a simulation shows the class the log was written with.
+        const detectedClassCode = detectPersonaClassCode( log ) ?? detectOwnWhoClassCode( log, characterName, charModel?.thj === true );
+        if ( detectedClassCode !== null ) {
+            saveDetectedClass( detectedClassCode );
+        }
+
         // https://regex101.com/r/FvGiGC/2
         // {NAG:(?<quickShareId>.+?)}
         // TODO: Remove the negative lookahead for package after a few versions.

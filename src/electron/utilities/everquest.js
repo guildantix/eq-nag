@@ -185,6 +185,7 @@ const eqClassTitleMap = {
     'Frostblood': 'Beastlord',
 
     // Berserker
+    'Berserker': 'Berserker',
     'Brawler': 'Berserker',
     'Vehement': 'Berserker',
     'Rager': 'Berserker',
@@ -450,7 +451,39 @@ const getEverQuestClassFromTitle = ( classTitle ) => {
     }
 }
 
+// https://regex101.com/r/cqfoUU/2
+// A /who line of a player, such as:
+// [60 Warlord (Warrior)] Soandso (Human) <Some Guild> ZONE: tutorial
+// This won't capture anon people.
+// classTitleOrName will capture any one-word class name by default, however if the class title
+// has spaces it must be added to the list.
+const whoLineRegex = /^(OFFLINEMODE)?\[(?<level>\d+)\s(?<classTitleOrName>Savage Lord|Arch Arcanist|Arch Animist|Arch Mage|High Priest|Grave Lord|Feral Lord|Storm Warden|Arch Convoker|Arch Lich|Lord Protector|Forest Stalker|Dread Lord|Arch Magus|Stone Fist|Scourge Knight|Grand Archanist|Storm Caller|Grand Summoner|Holy Defender|Shadow Knight|.+?)\]?\s(:?\((?<classRealName>.*?)\)\])?\s?(?<player>.*?)\s\((?<raceName>.+?)\)\s/i;
+
+
+
+
+
+
+
+
+
+
+// https://regex101.com/r/cDTOSb/3
+// A /who line on The Heroes' Journey, such as: [Soandso] - [60 WAR (Human)] <Some Guild>
+const heroesJourneyWhoLineRegex = /^\[(?<player>.*?)\]\s-\s((\[(?<level>\d+)\s(?<classAbbrv>[A-Z]+).*\((?<raceName>.+?)\)\]\s)|(\[ANONYMOUS\]))/i;
+
+
+
+
+
+
+
+
+
+
 module.exports = {
+    whoLineRegex,
+    heroesJourneyWhoLineRegex,
     getEverQuestClassAbbreviation,
     getEverQuestClassName,
     getEverQuestClassIcon,
@@ -474,4 +507,4 @@ module.exports = {
     classColor,
     eqClassTitleMap,
     getEverQuestClassFromTitle,
-}
+};

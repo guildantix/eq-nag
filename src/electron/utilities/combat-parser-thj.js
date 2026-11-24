@@ -1,6 +1,7 @@
 const _ = require( 'lodash' );
 const { CombatParser } = require( './combat-parser' );
 const { nagLog } = require( './nag-console' );
+const { heroesJourneyWhoLineRegex } = require( './everquest' );
 
 const renderDebugMessages = false;
 
@@ -134,8 +135,7 @@ const combatRgx = {
 
 }
 
-// https://regex101.com/r/cDTOSb/3
-const playerWhoRgx = /^\[(?<player>.*?)\]\s-\s((\[(?<level>\d+)\s(?<classAbbrv>[A-Z]+).*\((?<raceName>.+?)\)\]\s)|(\[ANONYMOUS\]))/i;
+const playerWhoRgx = heroesJourneyWhoLineRegex;
 
 class ThjCombatParser extends CombatParser {
 

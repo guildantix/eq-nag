@@ -724,6 +724,7 @@ function CombatWatcher() {
                     charModel.thj ? new ThjCombatParser( characterName, charModel.server ) :
                     new CombatParser( characterName, charModel.server );
                 myCombatParser.onEncounterReset = onEncounterReset;
+                myCombatParser.reportClassChanges = true;
                 startDpsTracking();
 
                 logFilePath = data.character.logFile;
