@@ -1275,7 +1275,8 @@ export class IpcService {
                         observer.next( triggers );
                         observer.complete();
                     } );
-                } );
+                } )
+                .catch( error => this.ngZone.run( () => observer.error( error ) ) );
 
         } );
 
@@ -1291,7 +1292,8 @@ export class IpcService {
                         observer.next( trigger );
                         observer.complete();
                     } );
-                } );
+                } )
+                .catch( error => this.ngZone.run( () => observer.error( error ) ) );
 
         } );
 
@@ -1307,7 +1309,8 @@ export class IpcService {
                         observer.next( triggers );
                         observer.complete();
                     } );
-                } );
+                } )
+                .catch( error => this.ngZone.run( () => observer.error( error ) ) );
 
         } );
 
@@ -1445,7 +1448,8 @@ export class IpcService {
                         observer.next( storedVariables );
                         observer.complete();
                     } );
-                } );
+                } )
+                .catch( error => this.ngZone.run( () => observer.error( error ) ) );
 
         } );
 
@@ -1461,7 +1465,8 @@ export class IpcService {
                         observer.next( counterNames );
                         observer.complete();
                     } );
-                } );
+                } )
+                .catch( error => this.ngZone.run( () => observer.error( error ) ) );
 
         } );
 
@@ -2666,7 +2671,8 @@ export class IpcService {
                         observer.next( model );
                         observer.complete();
                     } );
-                } );
+                } )
+                .catch( error => this.ngZone.run( () => observer.error( error ) ) );
 
         } );
 
@@ -2732,7 +2738,8 @@ export class IpcService {
                         observer.next( model );
                         observer.complete();
                     } );
-                } );
+                } )
+                .catch( error => this.ngZone.run( () => observer.error( error ) ) );
 
         } );
 
@@ -2860,7 +2867,8 @@ export class IpcService {
                         observer.next( data );
                         observer.complete();
                     } );
-                } );
+                } )
+                .catch( error => this.ngZone.run( () => observer.error( error ) ) );
 
         } );
 
