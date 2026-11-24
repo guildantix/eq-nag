@@ -1858,6 +1858,25 @@ export class PushRecapPreferences {
     /** Landing messages (the text after the mob name) that the proc tables, the timeline and the
      * Procs column leave out. */
     hiddenProcTexts: string[] = [];
+    /** The minimum damage slider and table sorts the Push tab remembers; null until first save. */
+    tabView: PushTabView | null = null;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * What the Push tab remembers between sessions.  A sort is stored per table, by column key.
+ */
+export interface PushTabView {
+    minDamage: number;
+    sorts: { [ table: string ]: { key: string, direction: 'asc' | 'desc' } };
 }
 
 export class VersionNumber {
@@ -2457,10 +2476,43 @@ export interface PushScanProgress {
     kills: number;
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * What the file dialog of the scan gave back.  It never holds the path,
+ * because the main process keeps that.
+ */
+export interface PushScanPickedFile {
+    picked: boolean;
+    cancelled: boolean;
+    fileName: string;
+    characterName: string;
+    pickId: number | null;
+    message: string;
+}
+
+
+
+
+
+
+
+
+
+
 export interface PushScanStatus extends PushScanProgress {
     status: 'idle' | 'running' | 'done' | 'cancelled' | 'error';
     characterId: string | null;
     characterName: string | null;
+    logFileName: string | null;
+    pickId: number | null;
     minDamage: number;
     capped: boolean;
     resumed: boolean;

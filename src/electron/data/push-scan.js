@@ -5,13 +5,14 @@ const crypto = require( 'crypto' );
 const log = require( 'electron-log' );
 const { Worker } = require( 'worker_threads' );
 const { buildListRow } = require( '../utilities/push-recap-summary' );
+const { validateLogFile } = require( './push-scan-file' );
 
 const cacheFileName = 'push-scan-cache.json';
 const badCacheFileName = 'push-scan-cache.json.bad';
 const cacheVersion = 6;
 const maxCachedLogs = 10;
-const maxResults = 300;
-const defaultDamage = 1000000;
+const maxResults = 1000;
+const defaultDamage = 1;
 const workerPath = path.join( __dirname, '..', 'threads', 'push-scan-worker.js' );
 
 /**
@@ -19,6 +20,9 @@ const workerPath = path.join( __dirname, '..', 'threads', 'push-scan-worker.js' 
  * @property {'idle' | 'running' | 'done' | 'cancelled' | 'error'} status The state of the scan.
  * @property {string | null} characterId The character that was scanned.
  * @property {string | null} characterName The name of that character.
+ * @property {string | null} logFileName The picked log file's name, or null for a character's log.
+ * @property {number | null} pickId Which pick the scanned file came from, or null for a character's
+ *     log.  Two files can share a name, so the window matches on this.
  * @property {number} minDamage The smallest damage taken that a listed fight has.
  * @property {number} bytes The number of bytes scanned.
  * @property {number} total The number of bytes to scan.
@@ -44,7 +48,7 @@ const workerPath = path.join( __dirname, '..', 'threads', 'push-scan-worker.js' 
  * @returns {PushScanStatus} The status.
  */
 function idleStatus() {
-    return { status: 'idle', characterId: null, characterName: null, minDamage: defaultDamage, bytes: 0, total: 0, kills: 0, capped: false, resumed: false, elapsedMs: 0, message: '' };
+    return { status: 'idle', characterId: null, characterName: null, logFileName: null, pickId: null, minDamage: defaultDamage, bytes: 0, total: 0, kills: 0, capped: false, resumed: false, elapsedMs: 0, message: '' };
 }
 
 
@@ -131,6 +135,16 @@ class PushScanService {
     #status = idleStatus();
     /** @type {((results: any[]) => any) | null} */
     #resultsListener = null;
+    /**
+     * The log file the user picked in the file dialog.  Only the main process sets it, so the
+     * window can ask to scan the file but never name a path.
+     *
+     * @type {{ filePath: string, characterName: string, pickId: number } | null}
+     */
+    #pickedLog = null;
+
+    /** Counts successful picks, so each picked file gets its own id. */
+    #pickCount = 0;
 
 
 
@@ -189,7 +203,7 @@ class PushScanService {
      */
     attachIpcEvents( mainWindowRef ) {
 
-        const { ipcMain } = require( 'electron' );
+        const { ipcMain, BrowserWindow } = require( 'electron' );
         this.#mainWindowRef = mainWindowRef;
 
         const reply = ( event, request, data ) => {
@@ -199,7 +213,11 @@ class PushScanService {
         };
 
         ipcMain.on( 'push-scan:start', async ( event, request ) => {
-            reply( event, request, await this.start( request?.characterId, request?.minDamage ) );
+            reply( event, request, await this.start( request?.characterId, request?.minDamage, request?.useLogFile === true ) );
+        } );
+
+        ipcMain.on( 'push-scan:pick-file', async ( event, request ) => {
+            reply( event, request, await this.pickLogFile( BrowserWindow.fromWebContents( event.sender ) ) );
         } );
 
         ipcMain.on( 'push-scan:cancel', () => this.cancel() );
@@ -278,25 +296,81 @@ class PushScanService {
 
 
     /**
-     * Starts a scan of the log of the given character.  Only one scan runs at a time.
+     * Lets the user pick a log file to scan, in a file dialog of the main process, and remembers it
+     * for the next scan.  A file that cannot be scanned is rejected here, with the reason.
+     *
+     * @returns {Promise<{ picked: boolean, cancelled: boolean, fileName: string,
+     *     characterName: string, pickId: number | null, message: string }>} What was picked.
+     *     Never holds the file path.
+     *
+     * @param {any} parentWindow The window the dialog belongs to.
+     */
+    async pickLogFile( parentWindow ) {
+        const { dialog } = require( 'electron' );
+        const none = ( cancelled, message ) => ( { picked: false, cancelled: cancelled, fileName: '', characterName: '', pickId: null, message: message } );
+
+        const options = { title: 'Choose an EverQuest log file', properties: [ 'openFile' ], filters: [ { name: 'Text files', extensions: [ 'txt' ] } ] };
+        const hasParent = parentWindow !== null && parentWindow !== undefined;
+        const chosen = hasParent ? await dialog.showOpenDialog( parentWindow, options ) : await dialog.showOpenDialog( options );
+        if ( chosen.canceled || chosen.filePaths.length === 0 ) {
+            return none( true, '' );
+        }
+
+        const checked = validateLogFile( chosen.filePaths[ 0 ] );
+        if ( !checked.ok ) {
+            this.#pickedLog = null;
+            return none( false, checked.message );
+        }
+        this.#pickCount++;
+        this.#pickedLog = { filePath: chosen.filePaths[ 0 ], characterName: checked.characterName, pickId: this.#pickCount };
+        return { picked: true, cancelled: false, fileName: path.basename( chosen.filePaths[ 0 ] ), characterName: checked.characterName, pickId: this.#pickCount, message: '' };
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Starts a scan of the log of the given character, or of the log file the user picked.
+     * Only one scan runs at a time.
      *
      * @returns {Promise<{ started: boolean, message: string }>} Whether it started, and why not.
      *
      * @param {any} characterId The id of the character.
      * @param {any} minDamage The smallest damage taken a fight needs to be listed.
+     * @param {boolean} useLogFile True to scan the picked log file instead of a character's log.
      */
-    async start( characterId, minDamage ) {
+    async start( characterId, minDamage, useLogFile ) {
 
         if ( ( this.#worker !== null && this.#worker !== undefined ) || this.#starting ) {
             return { started: false, message: 'A scan is already running.  Wait for it to finish or cancel it.' };
         }
 
-        const character = typeof characterId === 'string' ? this.#characterDatabase.find( characterId ) : null;
-        if ( ( character === null || character === undefined ) || typeof character.logFile !== 'string' || character.logFile === '' ) {
-            return { started: false, message: 'That character has no log file.' };
-        }
-        if ( !fs.existsSync( character.logFile ) ) {
-            return { started: false, message: `The log file of ${character.name} was not found.` };
+        let character;
+        if ( useLogFile ) {
+            const picked = this.#pickedLog;
+            if ( picked === null || picked === undefined ) {
+                return { started: false, message: 'Choose a log file first.' };
+            }
+            // The file may have been moved since it was picked, so it is checked again.
+            const checked = validateLogFile( picked.filePath );
+            if ( !checked.ok ) {
+                return { started: false, message: checked.message };
+            }
+            character = { characterId: null, name: picked.characterName, logFile: picked.filePath, isFile: true, pickId: picked.pickId };
+        } else {
+            character = typeof characterId === 'string' ? this.#characterDatabase.find( characterId ) : null;
+            if ( ( character === null || character === undefined ) || typeof character.logFile !== 'string' || character.logFile === '' ) {
+                return { started: false, message: 'That character has no log file.' };
+            }
+            if ( !fs.existsSync( character.logFile ) ) {
+                return { started: false, message: `The log file of ${character.name} was not found.` };
+            }
         }
 
         const floor = Number.isFinite( minDamage ) && minDamage >= 1 ? Math.floor( minDamage ) : defaultDamage;
@@ -315,7 +389,7 @@ class PushScanService {
 
             this.#results = [];
             this.#partial = ( cache !== null && cache !== undefined ) ? cache.results.slice() : [];
-            this.#status = Object.assign( idleStatus(), { status: 'running', characterId: character.characterId, characterName: character.name, minDamage: floor } );
+            this.#status = Object.assign( idleStatus(), { status: 'running', characterId: character.characterId, characterName: character.name, logFileName: character.isFile === true ? path.basename( character.logFile ) : null, pickId: character.isFile === true ? character.pickId : null, minDamage: floor } );
 
             const worker = new Worker( workerPath, { workerData: {
                 logFilePath: character.logFile,
@@ -428,7 +502,7 @@ class PushScanService {
 
         } else if ( message.type === 'done' ) {
             const result = message.result;
-            const stillKnown = this.#characterDatabase.find( character.characterId );
+            const stillKnown = character.isFile === true ? character : this.#characterDatabase.find( character.characterId );
             if ( stillKnown === null || stillKnown === undefined ) {
                 this.#status.kills = 0;
                 this.#finish( worker, 'done', 'The character was removed during the scan, so the results were discarded.' );

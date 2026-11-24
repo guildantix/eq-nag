@@ -396,6 +396,19 @@ class WindowManager {
 
         ipcMain.handle( 'push-recaps:hidden:get', () => this.#userPrefDb.hiddenProcTexts );
 
+        ipcMain.on( 'push-recaps:view:set',
+            /**
+             * Remembers the damage sliders and table sorts of the Push tab.  No window needs
+             * telling, because the tab is the only one that shows them.
+             *
+             * @param {any} event Event args.
+             * @param {any} view The view to store, checked before it is kept.
+             */
+            ( event, view ) => {
+                this.#userPrefDb.changePushTabView( view );
+            }
+        );
+
         ipcMain.on( 'push-recaps:hidden:set',
             /**
              * Hides or shows a push recap message, and tells the windows that show it.

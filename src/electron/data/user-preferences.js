@@ -10,7 +10,7 @@ const archiver = require( 'archiver' );
 const FsUtilities = require( '../utilities/file-system' );
 const LogBootstrapper = require( "../log-bootstrap" );
 const { DeathRecapPreferences, resolveDeathRecapPreferences } = require( '../data/models/death-recap' );
-const { PushRecapPreferences, sanitizeHiddenProcTexts } = require( '../data/models/push-recap' );
+const { PushRecapPreferences, sanitizeHiddenProcTexts, sanitizePushTabView } = require( '../data/models/push-recap' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { GinaToNagOverlay } = require( "./models/trigger" );
 const log = require( 'electron-log' );
@@ -224,6 +224,47 @@ class UserPreferencesStore extends Store {
         prefs.hiddenProcTexts = sanitizeHiddenProcTexts( texts );
         this.pushRecap = prefs;
         return prefs.hiddenProcTexts;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns what the Push tab remembers: its damage sliders and table sorts.
+     *
+     * @returns {import( './models/push-recap' ).PushTabView} The view.
+     */
+    get pushTabView() {
+        return sanitizePushTabView( this.#data.pushRecap?.tabView );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Stores what the Push tab remembers, leaving the other Push Recap settings as they are.
+     *
+     * @returns {import( './models/push-recap' ).PushTabView} The stored view.
+     *
+     * @param {any} view The view to store.
+     */
+    changePushTabView( view ) {
+        const prefs = Object.assign( new PushRecapPreferences(), this.#data.pushRecap );
+        prefs.tabView = sanitizePushTabView( view );
+        this.pushRecap = prefs;
+        return prefs.tabView;
     }
 
 
@@ -1097,7 +1138,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:set:pushRecap', ( event, pushRecap ) => {
-            this.pushRecap = Object.assign( {}, pushRecap, { hiddenProcTexts: this.hiddenProcTexts } );
+            this.pushRecap = Object.assign( {}, pushRecap, { hiddenProcTexts: this.hiddenProcTexts, tabView: this.pushTabView } );
             if ( mainWindowRef.reference !== null && mainWindowRef.reference !== undefined && !mainWindowRef.reference.isDestroyed() ) {
                 mainWindowRef.reference.webContents.send( 'settings:changed:pushRecap', this.pushRecap );
             }
