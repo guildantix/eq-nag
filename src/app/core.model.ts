@@ -1853,6 +1853,8 @@ export const pushRecapHotkeyCommand = `/hot "Push Recap" /em ${pushRecapEmote}.`
  */
 export class PushRecapPreferences {
     quietGapSeconds: number = 30;
+    showTab: boolean = false;
+    saveRecaps: boolean = true;
 }
 
 export class VersionNumber {
@@ -2363,4 +2365,81 @@ export class TokenChangeModel {
     public actionId: string;
     public bounds: Rectangle;
 
+}
+
+export interface PushRecapSpellCount {
+    events: number;
+    assumed: number;
+    /** The push value of one hit. Missing on recaps saved by older versions. */
+    push?: number;
+}
+
+export interface PushRecapProc {
+    name: string;
+    /** The spells the landing message can belong to. Missing on recaps saved by older versions. */
+    names?: string[];
+    /** The push of one hit, or null when the landing message fits spells with different values. */
+    push: number | null;
+    pushMin: number | null;
+    pushMax: number | null;
+    count: number;
+}
+
+export interface PushRecapNpcAbility {
+    actor: string;
+    name: string;
+    count: number;
+    push: number;
+}
+
+export interface PushRecapPlayerSummary {
+    name: string;
+    events: number;
+    assumed: number;
+    pushValue: number;
+    spells: Record<string, PushRecapSpellCount>;
+}
+
+export interface PushRecapSummary {
+    id: string;
+    savedAt: string;
+    characterName: string;
+    mob: string;
+    killTime: string;
+    fightSeconds: number;
+    damageTaken: number;
+    named: boolean;
+    events: number;
+    assumed: number;
+    pushValue: number;
+    topPusher: string | null;
+    /** Only on a recap fetched by id, not in the list. */
+    players?: PushRecapPlayerSummary[];
+    /** The procs are only on a recap fetched by id, and not on recaps saved by older versions. */
+    unattributed: { events: number, pushValue: number, procs?: PushRecapProc[] };
+    /** The NPC abilities are only on a recap fetched by id, and not on older saved recaps. */
+    npcAbilities?: PushRecapNpcAbility[];
+    /** False when no hits from other players were in the log. Missing on older saved recaps. */
+    othersSeen?: boolean;
+    /** True when the fight may have started before the part of the log that was read. */
+    startsAtLogEdge?: boolean;
+    /** True when the part of the log that was read began at the start of the log. */
+    reachedStart?: boolean;
+}
+
+export interface PushScanProgress {
+    bytes: number;
+    total: number;
+    kills: number;
+}
+
+export interface PushScanStatus extends PushScanProgress {
+    status: 'idle' | 'running' | 'done' | 'cancelled' | 'error';
+    characterId: string | null;
+    characterName: string | null;
+    minDamage: number;
+    capped: boolean;
+    resumed: boolean;
+    elapsedMs: number;
+    message: string;
 }

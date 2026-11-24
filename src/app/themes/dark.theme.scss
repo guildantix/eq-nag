@@ -512,10 +512,12 @@ $bg-extreme-dark: #191919;
         background-color: #0000002e;
     }
 
-    // The flat form-field look only belongs to the Settings tab and the combat statistics settings pane. Everywhere else
-    // (trigger and action editors, dialogs, overlays) keeps the original fields, so these rules stay under their hosts.
+    // The flat form-field look only belongs to the Settings tab, the combat statistics settings pane and the Push tab.
+    // Everywhere else (trigger and action editors, dialogs, overlays) keeps the original fields, so these rules
+    // stay under their hosts.
     app-settings,
-    combat-statistics {
+    combat-statistics,
+    app-push-tracker {
         mat-form-field {
             .mat-form-field-infix {
                 border-top: none !important;

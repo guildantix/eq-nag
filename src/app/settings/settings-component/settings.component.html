@@ -502,6 +502,16 @@
         <code style="margin-left: 25px; margin-bottom: 25px;">{{ pushRecapHotkeyCommand }}</code>
         <button type="button" style="margin-left: 10px; color: #69b2f0;" mat-button (click)="onCopyPushRecapHotkeyCommand()">Create in-game hotkey</button>
 
+        <div class="formless-hint full-width">
+            <div class="formless-input"><mat-checkbox [(ngModel)]="pushRecapPreferences.showTab" name="cbxPushRecapShowTab" (change)="onPushRecapTabPrefsChange()">Show the Push tab</mat-checkbox></div>
+            <mat-hint>Adds a tab that lists your saved push recaps, with a filter and a player by spell grid.</mat-hint>
+        </div>
+
+        <div class="formless-hint full-width">
+            <div class="formless-input"><mat-checkbox [(ngModel)]="pushRecapPreferences.saveRecaps" name="cbxPushRecapSaveRecaps" (change)="onPushRecapTabPrefsChange()">Save every recap to the Push tab</mat-checkbox></div>
+            <mat-hint>Keeps a small summary of each recap you view, up to 200 fights.  No log lines are stored.</mat-hint>
+        </div>
+
         <div class="advanced-block" *ngIf="advancedOpen">
             <h3 class="group-title">Fight length</h3>
             <div class="group">

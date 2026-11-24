@@ -1053,6 +1053,9 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:set:pushRecap', ( event, pushRecap ) => {
             this.pushRecap = pushRecap;
+            if ( mainWindowRef.reference !== null && mainWindowRef.reference !== undefined && !mainWindowRef.reference.isDestroyed() ) {
+                mainWindowRef.reference.webContents.send( 'settings:changed:pushRecap', this.pushRecap );
+            }
         } );
 
         ipcMain.on( 'settings:get:pushRecap', ( event ) => {

@@ -65,6 +65,9 @@ class WindowManager {
     /** @type {BrowserWindow} */
     #pushRecap = null;
 
+    /** @type {{ recap: any, saved: boolean } | null} */
+    #pushRecapSnapshot = null;
+
     /** @type {WebContents} */
     #arrangeCaller;
 
@@ -368,21 +371,28 @@ class WindowManager {
 
         ipcMain.on( 'window:push-recap',
             /**
-             * Loads the push recap for the last boss kill.
+             * Loads the push recap for the last boss kill, or for the given fight.
              *
              * @param {any} event Event args.
-             * @param {IpcMessage<{logFilePath: string, characterName: string,
-             *     serverName: string}>} arg The log file and character.
+             * @param {IpcMessage<{logFilePath: string, characterName: string, serverName: string,
+             *     recap?: any, saved?: boolean}>} arg The log file, character and fight to show.
              */
             ( event, arg ) => {
                 const value = arg?.value ?? {};
-                if ( typeof value.logFilePath !== 'string' || value.logFilePath.length === 0 ) {
+                // The recap comes from the renderer, so check its shape.
+                // A snapshot is self-contained and needs no log file.
+                const hasSnapshot = ( value.recap !== null && value.recap !== undefined )
+                    && typeof value.recap === 'object' && typeof value.recap.mob === 'string';
+                const hasLogFilePath = typeof value.logFilePath === 'string' && value.logFilePath.length > 0;
+                if ( !hasSnapshot && !hasLogFilePath ) {
                     return;
                 }
 
-                this.loadPushRecap( value.logFilePath, value.characterName, value.serverName );
+                this.loadPushRecap( hasLogFilePath ? value.logFilePath : '', value.characterName, value.serverName, value.recap, value.saved === true );
             }
         );
+
+        ipcMain.handle( 'push-recap:snapshot', () => this.#pushRecapSnapshot );
 
         ipcMain.on( 'renderer:arrange-overlays', ( event ) => {
             this.#renderer.webContents.send( 'renderer:arrange-overlays' );
@@ -1335,12 +1345,16 @@ class WindowManager {
      * @param {string} logFilePath The full path to the log file.
      * @param {string} characterName The name of the character.
      * @param {string} serverName The name of the server.
+     * @param {any} [recap] The saved summary of the fight to show, instead of the last kill.
+     * @param {boolean} [saved] True when the given fight is already in the saved recaps.
      */
-    loadPushRecap( logFilePath, characterName, serverName ) {
+    loadPushRecap( logFilePath, characterName, serverName, recap, saved ) {
 
         let pushRecap = this.#pushRecap;
         const recapPrefs = this.#userPrefDb.pushRecap;
-        const query = `logFilePath=${encodeURIComponent( logFilePath )}&characterName=${encodeURIComponent( characterName )}&eqFolder=${encodeURIComponent( this.#userPrefDb.everquestInstallFolder ?? '' )}&userData=${encodeURIComponent( app.getPath( 'userData' ) )}&quietGap=${encodeURIComponent( recapPrefs?.quietGapSeconds ?? 30 )}`;
+        const snapshot = ( recap !== null && recap !== undefined ) && typeof recap === 'object' && typeof recap.mob === 'string';
+        this.#pushRecapSnapshot = snapshot ? { recap: recap, saved: saved === true } : null;
+        const query = `snapshot=${snapshot}&logFilePath=${encodeURIComponent( logFilePath )}&characterName=${encodeURIComponent( characterName )}&eqFolder=${encodeURIComponent( this.#userPrefDb.everquestInstallFolder ?? '' )}&userData=${encodeURIComponent( app.getPath( 'userData' ) )}&quietGap=${encodeURIComponent( recapPrefs?.quietGapSeconds ?? 30 )}&saveRecaps=${recapPrefs?.saveRecaps !== false}`;
 
         if ( pushRecap !== null && pushRecap !== undefined && !pushRecap.isDestroyed() ) {
             if ( pushRecap.isMinimized() ) {
@@ -1383,6 +1397,7 @@ class WindowManager {
         pushRecap.on( 'closed', () => {
             if ( this.#pushRecap === pushRecap ) {
                 this.#pushRecap = null;
+                this.#pushRecapSnapshot = null;
             }
         } );
 

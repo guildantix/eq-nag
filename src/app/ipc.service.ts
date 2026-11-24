@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer, Subject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare, PushRecapPreferences, ShareFilePayload, ShareFileReadResult, ShareFileSaveResult } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare, PushRecapPreferences, ShareFilePayload, ShareFileReadResult, ShareFileSaveResult, PushRecapSummary, PushScanProgress, PushScanStatus } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
@@ -88,6 +88,14 @@ export class IpcService {
     private _tokenChangeObservers: Record<string, Observer<TokenChangeModel>[]> = {};
 
     public onCombatGroupsInitialized: Subject<void> = new Subject<void>();
+    private _pushRecapsChanged: Subject<void> = new Subject<void>();
+    private _pushRecapReplies: Map<number, ( data: any ) => void> = new Map<number, ( data: any ) => void>();
+    private _pushRecapRequestId: number = 0;
+    private _pushScanReplies: Map<number, ( data: any ) => void> = new Map<number, ( data: any ) => void>();
+    private _pushScanRequestId: number = 0;
+    private _pushScanProgress: Subject<PushScanProgress> = new Subject<PushScanProgress>();
+    private _pushScanDone: Subject<PushScanStatus> = new Subject<PushScanStatus>();
+    private _pushRecapPreferencesChanged: Subject<PushRecapPreferences> = new Subject<PushRecapPreferences>();
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -102,6 +110,30 @@ export class IpcService {
 
         if ( window.api ) {
             try {
+
+                window.api.ipc.on( 'push-recaps:changed', () => {
+                    ngZone.run( () => this._pushRecapsChanged.next() );
+                } );
+
+                window.api.ipc.on( 'push-recaps:reply', ( event: any, reply: { requestId: number, data: any } ) => {
+                    ngZone.run( () => this._pushRecapReplies.get( reply?.requestId )?.( reply.data ) );
+                } );
+
+                window.api.ipc.on( 'push-scan:reply', ( event: any, reply: { requestId: number, data: any } ) => {
+                    ngZone.run( () => this._pushScanReplies.get( reply?.requestId )?.( reply.data ) );
+                } );
+
+                window.api.ipc.on( 'push-scan:progress', ( event: any, data: PushScanProgress ) => {
+                    ngZone.run( () => this._pushScanProgress.next( data ) );
+                } );
+
+                window.api.ipc.on( 'push-scan:done', ( event: any, data: PushScanStatus ) => {
+                    ngZone.run( () => this._pushScanDone.next( data ) );
+                } );
+
+                window.api.ipc.on( 'settings:changed:pushRecap', ( event: any, data: PushRecapPreferences ) => {
+                    ngZone.run( () => this._pushRecapPreferencesChanged.next( data ) );
+                } );
 
                 window.api.ipc.on( 'ask_combat_group_migration', ( event: any, data: boolean ) => {
                     ngZone.run( () => {
@@ -2876,6 +2908,343 @@ export class IpcService {
         } );
 
         return obs;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Emits when the Push Recap settings change anywhere in the app.
+     */
+    public onPushRecapPreferencesChanged(): Observable<PushRecapPreferences> {
+        return this._pushRecapPreferencesChanged.asObservable();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Emits when a recap is saved, deleted or cleared, so the Push tab can reload.
+     */
+    public onPushRecapsChanged(): Observable<void> {
+        return this._pushRecapsChanged.asObservable();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Lists the saved recaps without the per-player detail, which is fetched on demand.
+     */
+    public getPushRecaps(): Observable<PushRecapSummary[]> {
+        return this.requestPushRecaps<PushRecapSummary[]>( 'push-recaps:list', {} );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Fetches one saved recap with its per-player detail.
+     *
+     * @param id The recap id.
+     */
+    public getPushRecap( id: string ): Observable<PushRecapSummary | null> {
+        return this.requestPushRecaps<PushRecapSummary | null>( 'push-recaps:get', { id: id } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends a request to the recap store and matches the reply by request id, so overlapping
+     * requests are not mixed up.
+     *
+     * @param channel The IPC channel to ask.
+     * @param request The request body.
+     * @param request.id The recap id, when the request is about one recap.
+     */
+    private requestPushRecaps<T>( channel: string, request: { id?: string } ): Observable<T> {
+        return new Observable<T>( ( observer: Observer<T> ) => {
+
+            const requestId = ++this._pushRecapRequestId;
+            this._pushRecapReplies.set( requestId, ( data: T ) => {
+                this._pushRecapReplies.delete( requestId );
+                observer.next( data );
+                observer.complete();
+            } );
+            window.api.ipc.send( channel, Object.assign( { requestId: requestId }, request ) );
+
+            return () => this._pushRecapReplies.delete( requestId );
+
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the Push Recap pop-up, for the last kill in a character's log or for a saved fight.
+     *
+     * @param logFilePath The log file to read.
+     * @param characterName The character the log belongs to.
+     * @param serverName The character's server.
+     * @param recap The saved summary to show as a snapshot, instead of reading the log.
+     * @param saved True when the snapshot is one of the saved recaps.
+     */
+    public showPushRecap(
+        logFilePath: string,
+        characterName: string,
+        serverName: string,
+        recap?: PushRecapSummary,
+        saved?: boolean,
+    ): void {
+        const message = new IpcMessage( {
+            logFilePath: logFilePath,
+            characterName: characterName,
+            serverName: serverName,
+            recap: recap,
+            saved: saved,
+        } );
+        window.api.ipc.send( 'window:push-recap', message );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Keeps a recap in the Push tab, for a fight found by a log scan.
+     *
+     * @param recap The recap to keep.
+     */
+    public savePushRecap( recap: PushRecapSummary ): void {
+        window.api.ipc.send( 'push-recaps:save', recap );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Emits while a log scan runs, so the Push tab can show how far it is.
+     */
+    public onPushScanProgress(): Observable<PushScanProgress> {
+        return this._pushScanProgress.asObservable();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Emits once when a log scan ends, whether it finished, stopped or failed.
+     */
+    public onPushScanDone(): Observable<PushScanStatus> {
+        return this._pushScanDone.asObservable();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Asks the main process to scan a character's log for boss kills.
+     *
+     * @param characterId The character whose log is scanned.
+     * @param minDamage The smallest damage taken that a listed fight has.
+     */
+    public startPushScan( characterId: string, minDamage: number ): Observable<{ started: boolean, message: string }> {
+        return this.requestPushScan<{ started: boolean, message: string }>( 'push-scan:start', { characterId: characterId, minDamage: minDamage } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Asks the main process to stop the running scan.
+     */
+    public cancelPushScan(): void {
+        window.api.ipc.send( 'push-scan:cancel', null );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Fetches the state of the scan, for a tab that opened while a scan was running.
+     */
+    public getPushScanStatus(): Observable<PushScanStatus> {
+        return this.requestPushScan<PushScanStatus>( 'push-scan:status', {} );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Fetches the fights the last scan found, without their per-player detail.
+     */
+    public getPushScanResults(): Observable<PushRecapSummary[]> {
+        return this.requestPushScan<PushRecapSummary[]>( 'push-scan:results', {} );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Fetches one scanned fight with its per-player detail.
+     *
+     * @param id The scanned fight id.
+     */
+    public getPushScanResult( id: string ): Observable<PushRecapSummary | null> {
+        return this.requestPushScan<PushRecapSummary | null>( 'push-scan:get', { id: id } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends a request to the scan service and waits for the reply that carries the same request id.
+     *
+     * @param channel The ipc channel of the request.
+     * @param request The request body.
+     * @param request.id The scanned fight to fetch, for a request of one fight.
+     * @param request.characterId The character to scan, for a request to start a scan.
+     * @param request.minDamage The smallest damage taken that a listed fight has, to start a scan.
+     */
+    private requestPushScan<T>( channel: string, request: { id?: string, characterId?: string, minDamage?: number } ): Observable<T> {
+        return new Observable<T>( ( observer: Observer<T> ) => {
+
+            const requestId = ++this._pushScanRequestId;
+            this._pushScanReplies.set( requestId, ( data: T ) => {
+                this._pushScanReplies.delete( requestId );
+                observer.next( data );
+                observer.complete();
+            } );
+            window.api.ipc.send( channel, Object.assign( { requestId: requestId }, request ) );
+
+            return () => this._pushScanReplies.delete( requestId );
+
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Deletes one saved recap.
+     *
+     * @param id The recap id.
+     */
+    public deletePushRecap( id: string ): void {
+        window.api.ipc.send( 'push-recaps:delete', id );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Deletes every saved recap.
+     */
+    public clearPushRecaps(): void {
+        window.api.ipc.send( 'push-recaps:clear', null );
     }
 
     public getDeathRecapPreferences(): Observable<DeathRecapPreferences> {

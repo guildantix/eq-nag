@@ -18,6 +18,8 @@ const channelPrefixes = [
     'window',
     'main',
     'death-recap',
+    'push-recaps',
+    'push-scan',
     'gina',
     'folders',
     'overlay',
