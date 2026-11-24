@@ -85,3 +85,34 @@ perf.enabled && perf.record( 'log-watcher: my work', perfStart );
 // or wrap a whole function:
 myFunction = perf.wrap( 'renderer: my function', myFunction );
 ```
+
+## Trigger prefilter
+
+Most log lines match no trigger, so the log watcher first looks up which
+triggers can match a line (`src/electron/utilities/trigger-prefilter.js`) and
+only runs those. Each phrase gives a literal its matches must contain; one
+search over the lowered line marks the triggers whose literal is in it.
+Phrases without a safe literal (shortcodes only, stored variables, anything
+the scanner can't read) always run, as do triggers with variable conditions
+and sequential triggers with a sequence in progress.
+
+- `--no-trigger-prefilter` (or `NAG_NO_TRIGGER_PREFILTER=1`) turns it off and
+  runs every trigger on every line, as before.
+- Perf builds add a `log-watcher: prefilter` tap, and these report notes:
+  `prefilter` (phrases with a literal, always-run phrases and triggers,
+  automaton size), `prefilter average candidates per line` and
+  `prefilter misses`. On one line in 100 the log watcher also parses the
+  triggers the prefilter skipped and counts any that matched (and logs a
+  warning with the trigger name and id, at most once a minute); this should
+  stay 0.
+
+`tools/perf/prefilter-check.mjs` checks it without running Nag. With no
+arguments it runs unit cases and a small synthetic library. To check a real
+library against a real log, use copies:
+
+```
+node tools/perf/prefilter-check.mjs --triggers <trigger-database.json copy> --log <log copy>
+```
+
+It runs every phrase on every line and fails if a phrase matched a line it
+wasn't a candidate for. It prints counts only, never phrases or log lines.
