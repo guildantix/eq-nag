@@ -4,7 +4,7 @@ import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { customAlphabet } from 'nanoid';
-import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, PushRecapPreferences, pushRecapHotkeyCommand, pushRecapCapturePattern, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys, SharedTriggerPermissions, DpsMeterSettings, FileReadDelays } from 'src/app/core.model';
+import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, PushRecapPreferences, pushRecapHotkeyCommand, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys, SharedTriggerPermissions, DpsMeterSettings, FileReadDelays } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SetupService } from 'src/app/setup/setup.service';
@@ -608,117 +608,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
                     } );
                 }
             } );
-        }
-
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Builds the capture phrase for the push recap hotkey trigger.
-     */
-    private buildPushRecapCapturePhrase(): CapturePhrase {
-        const capturePhrase = new CapturePhrase();
-        capturePhrase.phraseId = nagId();
-        capturePhrase.requirePreviousPhrase = false;
-        capturePhrase.useRegEx = true;
-        capturePhrase.duration = null;
-        // Live servers prefix /emote messages with "~ "; emulators don't.
-        capturePhrase.phrase = pushRecapCapturePattern;
-        return capturePhrase;
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Applies the push recap trigger name, capture phrase and action to the given trigger.
-     *
-     * @param trigger The generated push recap trigger.
-     */
-    private applyPushRecapTrigger( trigger: TriggerModel ): void {
-        const capturePhrase = this.buildPushRecapCapturePhrase();
-
-        trigger.name = 'Push Recap [Hotkey]';
-        trigger.capturePhrases = [ capturePhrase ];
-        trigger.enabled = this.pushRecapPreferences.enabled;
-
-        const action = new TriggerAction();
-        action.phrases = [ capturePhrase.phraseId ];
-        action.actionType = ActionTypes.DisplayPushRecap;
-        action.actionId = nagId();
-        trigger.actions = [ action ];
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Saves changes to the push recap enabled switch.  The generated trigger is
-     * created on first enable, and switched on or off afterwards.
-     */
-    onPushRecapPrefsChange(): void {
-
-        if ( this.pushRecapPreferences.triggerId !== null && this.pushRecapPreferences.triggerId !== undefined ) {
-
-            this.ipcService.getTrigger( this.pushRecapPreferences.triggerId ).subscribe( trigger => {
-
-                if ( trigger === null || trigger === undefined ) {
-                    // The generated trigger was deleted by the user.
-                    this.pushRecapPreferences.triggerId = null;
-                    this.onPushRecapPrefsChange();
-                    return;
-                }
-
-                this.applyPushRecapTrigger( trigger );
-
-                this.ipcService.updateTrigger( trigger ).subscribe( success => {
-                    this.ipcService.updatePushRecapPreferences( this.pushRecapPreferences );
-                    this.snackBar.open( this.pushRecapPreferences.enabled ? 'The push recap trigger has been enabled!' : 'The push recap trigger has been disabled!', 'Dismiss', { duration: 5000 } );
-                } );
-            } );
-
-        } else if ( this.pushRecapPreferences.enabled ) {
-
-            this.dialogService.showSelectTriggerFolderDialog( null, 'Select Trigger Folder', 'Select the folder that will contain the generated trigger.' ).subscribe( folderId => {
-                if ( folderId ) {
-
-                    const trigger = new TriggerModel();
-                    trigger.folderId = folderId;
-                    this.applyPushRecapTrigger( trigger );
-
-                    this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => {
-                        this.pushRecapPreferences.triggerId = triggerId;
-
-                        this.ipcService.updatePushRecapPreferences( this.pushRecapPreferences );
-                        this.snackBar.open( 'The push recap trigger has been created!', 'Dismiss', { duration: 5000 } );
-                    } );
-                } else {
-                    this.pushRecapPreferences.enabled = false;
-                }
-            } );
-
-        } else {
-            this.ipcService.updatePushRecapPreferences( this.pushRecapPreferences );
         }
 
     }

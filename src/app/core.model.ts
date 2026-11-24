@@ -1739,15 +1739,12 @@ export class DeathRecapPreferences {
 
 const pushRecapEmote = 'wonders who is pushing';
 export const pushRecapHotkeyCommand = `/hot "Push Recap" /em ${pushRecapEmote}.`;
-export const pushRecapCapturePattern = '^(?:~ )?${Character} ' + pushRecapEmote + '\\.$';
 
 /**
  * Settings for the Push Recap hotkey pop-up, mirrored from the main process
  * so the Settings tab can edit them.
  */
 export class PushRecapPreferences {
-    triggerId: string;
-    enabled: boolean = false;
     quietGapSeconds: number = 30;
 }
 

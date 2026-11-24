@@ -45,6 +45,8 @@ const captureZoneTrigger = require( "./predefined-triggers/capture-zone.json" );
 const displaySpellBeingCastTrigger = require( "./predefined-triggers/display-spell-being-cast.json" );
 /** @type {Trigger} */
 const captureCastingTrigger = require( "./predefined-triggers/capture-casting.json" );
+/** @type {Trigger} */
+const pushRecapTrigger = require( './predefined-triggers/push-recap.json' );
 
 /** @type {FilesDatabaseStore} */
 var _fileStore;
@@ -274,6 +276,26 @@ class TriggerDatabaseStore extends Store {
             this.#data.triggers[ captureZoneIndex ] = captureZoneTrigger;
         } else {
             this.#data.triggers.push( captureZoneTrigger );
+            this.storeDataFile( this.#data );
+        }
+
+        // Beta builds let the user create their own Push Recap trigger in a folder of their
+        // choice.  While that one is on, keep it and skip the bundled copy, or one emote opens
+        // two windows.  A switched-off one doesn't count, so Push Recap still works.
+        const hasUserPushRecapTrigger = this.#data.triggers.some( trigger => {
+            return !trigger.predefined && trigger.enabled !== false
+                && trigger.actions?.some( action => action.actionType === ActionTypes.DisplayPushRecap );
+        } );
+        const pushRecapIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === pushRecapTrigger.triggerId );
+        if ( pushRecapIndex > -1 ) {
+            if ( hasUserPushRecapTrigger ) {
+                this.#data.triggers.splice( pushRecapIndex, 1 );
+                this.storeDataFile( this.#data );
+            } else {
+                this.#data.triggers[ pushRecapIndex ] = pushRecapTrigger;
+            }
+        } else if ( !hasUserPushRecapTrigger ) {
+            this.#data.triggers.push( pushRecapTrigger );
             this.storeDataFile( this.#data );
         }
 

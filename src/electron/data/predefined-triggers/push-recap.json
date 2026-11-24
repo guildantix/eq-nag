@@ -1,0 +1,29 @@
+{
+    "triggerId": "Pq3VzKd8mTnW5aRb",
+    "name": "Push Recap",
+    "capturePhrases": [
+        {
+            "phraseId": "PhrasePushRecapEm",
+            "phrase": "^(?:~ )?${Character} wonders who is pushing\\.$",
+            "useRegEx": true
+        }
+    ],
+    "comments": "Opens the Push Recap window for your last boss kill.\nUsage: /em wonders who is pushing\nThe \"~ \" prefix is added to personal emotes on live servers, and is optional for emulators.",
+    "actions": [
+        {
+            "actionType": 16,
+            "actionId": "ActionPushRecapOp",
+            "phrases": [
+                "PhrasePushRecapEm"
+            ],
+            "onlyExecuteInDev": false
+        }
+    ],
+    "captureMethod": "Any match",
+    "conditions": [],
+    "classLevels": [],
+    "predefined": true,
+    "onlyExecuteInDev": false,
+    "enabled": true,
+    "sequentialRestartBehavior": "none"
+}
