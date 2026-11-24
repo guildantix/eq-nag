@@ -69,7 +69,8 @@
         "assassinate",
         "headshot",
         "deadly_strike",
-        "finishing_blow"
+        "finishing_blow",
+        "slay_undead"
     ],
     "displayValue": 255,
     "displayType": "hit",

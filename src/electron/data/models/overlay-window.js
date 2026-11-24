@@ -298,6 +298,7 @@ const combatModifiers = [
     'double_bow_shot',
     'deadly_strike',
     'finishing_blow',
+    'slay_undead',
 ];
 
 /**

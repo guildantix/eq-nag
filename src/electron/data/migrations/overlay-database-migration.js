@@ -8,7 +8,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 const { StyleProperties } = require( '../models/common' );
 const ElectronUtilities = require( '../../utilities/electron' );
 
-const currentOverlayDbVersion = 19;
+const currentOverlayDbVersion = 20;
 
 /**
  * 
@@ -310,6 +310,21 @@ function executeDataMigration( data ) {
         } );
 
         data.version = 19;
+
+    }
+    if ( !data.version || data.version < 20 ) {
+        log.log( '[Migrations] Migrating overlay database to version -> 20.' );
+
+        // A "(Slay Undead)" hit used to parse with no modifiers and so counted as normal.
+        // It now carries its own flag, so groups that showed normal hits must also list it
+        // or those hits would stop matching any group.
+        data.fctCombatGroups?.forEach( group => {
+            if ( group?.combatModifiers?.includes( 'normal' ) && !group.combatModifiers.includes( 'slay_undead' ) ) {
+                group.combatModifiers.push( 'slay_undead' );
+            }
+        } );
+
+        data.version = 20;
 
     }
 

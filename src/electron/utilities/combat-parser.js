@@ -2183,6 +2183,9 @@ class CombatParser {
             rec.modifiers.double_bow_shot && model.combatModifiers.push( 'double_bow_shot' );
             rec.modifiers.deadly_strike && model.combatModifiers.push( 'deadly_strike' );
             rec.modifiers.finishing_blow && model.combatModifiers.push( 'finishing_blow' );
+            if ( rec.modifiers.slay_undead ) {
+                model.combatModifiers.push( 'slay_undead' );
+            }
             
             if ( model.combatModifiers.length === 0 ) {
                 model.combatModifiers.push( 'normal' );
@@ -2668,6 +2671,7 @@ class CombatParser {
         rec.modifiers.double_bow_shot = modifiers?.indexOf( 'Double Bow Shot' ) > -1;
         rec.modifiers.deadly_strike = modifiers?.indexOf( 'Deadly Strike' ) > -1;
         rec.modifiers.finishing_blow = modifiers?.indexOf( 'Finishing Blow' ) > -1;
+        rec.modifiers.slay_undead = hasModifierTag( modifiers, 'Slay Undead' );
 
         this._updateEntityStats( rec.actor, rec.target, true, false );
 
