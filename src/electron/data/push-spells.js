@@ -199,24 +199,24 @@ function findPushSpell( table, name ) {
 
 
 /**
- * Finds the folder that holds the spell data for a character.  The install that holds the
- * character's log wins, so a beta or test character reads its own spells and not the live ones;
- * the configured folder is the fallback for logs that live elsewhere.
+ * Lists the folders that hold spell data for a character, best candidate first.  The install that
+ * holds the character's log wins, so a beta or test character reads its own spells and not the
+ * live ones; the configured folder is the fallback for logs that live elsewhere.
  *
- * @returns {string | null} The folder that contains spells_us.txt, or null when there is none.
+ * @returns {string[]} The folders that contain spells_us.txt.
  *
  * @param {string} logFilePath The character's log file, e.g. "<install>\Logs\eqlog_Soandso.txt".
- * @param {string} configuredFolder The EverQuest folder from the Nag settings.
+ * @param {string} configuredFolder The EverQuest folder Nag found, if any.
  */
-function resolveSpellFolder( logFilePath, configuredFolder ) {
+function listSpellFolders( logFilePath, configuredFolder ) {
     const candidates = [];
     if ( logFilePath ) {
         candidates.push( path.dirname( path.dirname( logFilePath ) ) );
     }
-    if ( configuredFolder ) {
+    if ( configuredFolder && !candidates.some( folder => folder.toLowerCase() === configuredFolder.toLowerCase() ) ) {
         candidates.push( configuredFolder );
     }
-    return candidates.find( folder => fs.existsSync( path.join( folder, 'spells_us.txt' ) ) ) ?? null;
+    return candidates.filter( folder => fs.existsSync( path.join( folder, 'spells_us.txt' ) ) );
 }
 
 
@@ -229,29 +229,40 @@ function resolveSpellFolder( logFilePath, configuredFolder ) {
 
 
 /**
- * Loads the push spell table, from the cache when spells_us.txt has not changed.
+ * Tells whether the table holds at least one push spell.  A table without any means the file
+ * is in a layout the parser does not understand, such as an older or emulator client.
+ *
+ * @returns {boolean} True when the table is usable.
+ *
+ * @param {PushSpellTable} table The push spell table.
+ */
+function hasPushSpells( table ) {
+    return Object.keys( table.spells ).length > 0;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Loads the push spell table of one install, from the cache when spells_us.txt has not changed.
  * Reading the 35 MB spell file happens only the first time, or after a patch.
  *
- * @returns {Promise<PushSpellTable>} The push spell table.
+ * @returns {Promise<PushSpellTable>} The push spell table, possibly without any push spell.
  *
- * @param {string} logFilePath The character's log file, used to find the install it belongs to.
- * @param {string} eqFolder The EverQuest folder from the Nag settings, used when the log's
- *     install has no spell data.
+ * @param {string} spellFolder The install folder that contains spells_us.txt.
  * @param {string} cacheFolder The folder to keep the cache file in.
  */
-async function loadPushSpells( logFilePath, eqFolder, cacheFolder ) {
+async function loadFolderTable( spellFolder, cacheFolder ) {
 
-    const resolvedFolder = resolveSpellFolder( logFilePath, eqFolder );
-    if ( resolvedFolder === null ) {
-        const folderExists = !!eqFolder && fs.existsSync( eqFolder );
-        const error = new Error( "Nag couldn't find the EverQuest spell data (spells_us.txt) next to this character's log or in your EverQuest folder." );
-        error.code = folderExists ? 'no-file' : 'no-folder';
-        throw error;
-    }
-
-    const spellsFile = path.join( resolvedFolder, 'spells_us.txt' );
+    const spellsFile = path.join( spellFolder, 'spells_us.txt' );
     const stat = fs.statSync( spellsFile );
-    const stringsFile = path.join( resolvedFolder, 'spells_us_str.txt' );
+    const stringsFile = path.join( spellFolder, 'spells_us_str.txt' );
     const stringsStat = fs.existsSync( stringsFile ) ? fs.statSync( stringsFile ) : null;
     const stringsMtimeMs = stringsStat?.mtimeMs ?? null;
     const stringsSize = stringsStat?.size ?? null;
@@ -261,8 +272,9 @@ async function loadPushSpells( logFilePath, eqFolder, cacheFolder ) {
 
     try {
         const cached = JSON.parse( fs.readFileSync( cacheFile, 'utf8' ) );
+        // Windows paths differ in case between the log's location and the settings.
         const sourceUnchanged = cached.version === cacheVersion
-            && cached.sourcePath === spellsFile
+            && typeof cached.sourcePath === 'string' && cached.sourcePath.toLowerCase() === spellsFile.toLowerCase()
             && cached.sourceMtimeMs === stat.mtimeMs && cached.sourceSize === stat.size
             && cached.stringsMtimeMs === stringsMtimeMs && cached.stringsSize === stringsSize;
         const tablesPresent = cached.spells !== null && cached.spells !== undefined && typeof cached.spells === 'object'
@@ -275,6 +287,11 @@ async function loadPushSpells( logFilePath, eqFolder, cacheFolder ) {
     }
 
     const table = await buildPushSpellTable( spellsFile, stringsFile );
+
+    // A table without push spells is never cached, so a parser fix takes effect without a patch.
+    if ( !hasPushSpells( table ) ) {
+        return table;
+    }
 
     try {
         fs.writeFileSync( cacheFile, JSON.stringify( {
@@ -295,4 +312,55 @@ async function loadPushSpells( logFilePath, eqFolder, cacheFolder ) {
     return table;
 }
 
-module.exports = { loadPushSpells, resolveSpellFolder, buildPushSpellTable, findPushSpell, stripRank };
+
+
+
+
+
+
+
+
+
+/**
+ * Loads the push spell table for a character.  A candidate install whose spell file yields no
+ * push spells is skipped, so the next candidate gets its turn.
+ *
+ * @returns {Promise<PushSpellTable>} The push spell table.
+ *
+ * @param {string} logFilePath The character's log file, used to find the install it belongs to.
+ * @param {string} eqFolder The EverQuest folder Nag found, used when the log's install has no
+ *     usable spell data.
+ * @param {string} cacheFolder The folder to keep the cache file in.
+ */
+async function loadPushSpells( logFilePath, eqFolder, cacheFolder ) {
+
+    const spellFolders = listSpellFolders( logFilePath, eqFolder );
+    if ( spellFolders.length === 0 ) {
+        const folderExists = !!eqFolder && fs.existsSync( eqFolder );
+        const error = new Error( "Nag couldn't find the EverQuest spell data (spells_us.txt) next to this character's log or in the EverQuest folder it found." );
+        error.code = folderExists ? 'no-file' : 'no-folder';
+        throw error;
+    }
+
+    for ( const spellFolder of spellFolders ) {
+        const table = await loadFolderTable( spellFolder, cacheFolder );
+        if ( hasPushSpells( table ) ) {
+            return table;
+        }
+    }
+
+    const error = new Error( "Nag couldn't read the spell data (spells_us.txt) in this EverQuest install. It may be an older or emulator client, whose spell file format Push Recap doesn't support." );
+    error.code = 'no-push-spells';
+    throw error;
+}
+
+
+
+
+
+
+
+
+
+
+module.exports = { loadPushSpells, listSpellFolders, buildPushSpellTable, findPushSpell, stripRank };

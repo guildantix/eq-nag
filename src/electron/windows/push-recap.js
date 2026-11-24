@@ -382,7 +382,7 @@ async function PushRecap( params ) {
         show( summary.defaultKill );
 
     } catch ( error ) {
-        showMessage( error.code === 'no-folder' || error.code === 'no-file' ? error.message : `The push recap could not be built: ${error.message}`, true );
+        showMessage( error.code === 'no-folder' || error.code === 'no-file' || error.code === 'no-push-spells' ? error.message : `The push recap could not be built: ${error.message}`, true );
     }
 
 }
