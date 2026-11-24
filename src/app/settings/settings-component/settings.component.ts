@@ -838,6 +838,40 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
 
     /**
+     * Shows a hidden push recap message again.
+     *
+     * @param {string} text The landing message.
+     */
+    onRestorePushRecapText( text: string ): void {
+        this.ipcService.setPushProcHidden( text, false );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows all hidden push recap messages again.
+     */
+    onRestoreAllPushRecapTexts(): void {
+        this.ipcService.clearHiddenPushProcTexts();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Copies the death recap command to the user's clipboard.
      */
     onCopyDeathRecapHotkeyCommand(): void {
