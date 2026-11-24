@@ -1,11 +1,13 @@
+const crypto = require( 'crypto' );
 const fs = require( 'fs' );
 const path = require( 'path' );
 const readline = require( 'readline' );
 const log = require( 'electron-log' );
 
-const cacheFileName = 'push-spells.json';
+const legacyCacheFileName = 'push-spells.json';
 const cacheVersion = 6;
 const maxNoPushNames = 3;
+// e.g. "Color Flux Rk. II" becomes "Color Flux".
 const rankRgx = / Rk\. ?I+$/i;
 
 /**
@@ -288,39 +290,77 @@ function findPushSpell( table, name ) {
 
 
 /**
+ * Finds the folder that holds the spell data for a character.  The install that holds the
+ * character's log wins, so a beta or test character reads its own spells and not the live ones;
+ * the configured folder is the fallback for logs that live elsewhere.
+ *
+ * @returns {string | null} The folder that contains spells_us.txt, or null when there is none.
+ *
+ * @param {string} logFilePath The character's log file, e.g. "<install>\Logs\eqlog_Soandso.txt".
+ * @param {string} configuredFolder The EverQuest folder from the Nag settings.
+ */
+function resolveSpellFolder( logFilePath, configuredFolder ) {
+    const candidates = [];
+    if ( logFilePath ) {
+        candidates.push( path.dirname( path.dirname( logFilePath ) ) );
+    }
+    if ( configuredFolder ) {
+        candidates.push( configuredFolder );
+    }
+    return candidates.find( folder => fs.existsSync( path.join( folder, 'spells_us.txt' ) ) ) ?? null;
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Loads the push spell table, from the cache when spells_us.txt has not changed.
  * Reading the 35 MB spell file happens only the first time, or after a patch.
  *
  * @returns {Promise<PushSpellTable>} The push spell table.
  *
- * @param {string} eqFolder The EverQuest installation folder.
+ * @param {string} logFilePath The character's log file, used to find the install it belongs to.
+ * @param {string} eqFolder The EverQuest folder from the Nag settings, used when the log's
+ *     install has no spell data.
  * @param {string} cacheFolder The folder to keep the cache file in.
  */
-async function loadPushSpells( eqFolder, cacheFolder ) {
+async function loadPushSpells( logFilePath, eqFolder, cacheFolder ) {
 
-    if ( !eqFolder || !fs.existsSync( eqFolder ) ) {
-        const error = new Error( 'The EverQuest folder is not set.  Set the EverQuest folder in Nag Settings so the spell data can be read.' );
-        error.code = 'no-folder';
+    const resolvedFolder = resolveSpellFolder( logFilePath, eqFolder );
+    if ( resolvedFolder === null ) {
+        const folderExists = !!eqFolder && fs.existsSync( eqFolder );
+        const error = new Error( "Nag couldn't find the EverQuest spell data (spells_us.txt) next to this character's log or in your EverQuest folder." );
+        error.code = folderExists ? 'no-file' : 'no-folder';
         throw error;
     }
 
-    const spellsFile = path.join( eqFolder, 'spells_us.txt' );
-    if ( !fs.existsSync( spellsFile ) ) {
-        const error = new Error( 'spells_us.txt was not found in the EverQuest folder.  Check that the EverQuest folder is set correctly in Nag Settings.' );
-        error.code = 'no-file';
-        throw error;
-    }
-
+    const spellsFile = path.join( resolvedFolder, 'spells_us.txt' );
     const stat = fs.statSync( spellsFile );
-    const stringsFile = path.join( eqFolder, 'spells_us_str.txt' );
+    const stringsFile = path.join( resolvedFolder, 'spells_us_str.txt' );
     const stringsStat = fs.existsSync( stringsFile ) ? fs.statSync( stringsFile ) : null;
     const stringsMtimeMs = stringsStat?.mtimeMs ?? null;
     const stringsSize = stringsStat?.size ?? null;
-    const cacheFile = path.join( cacheFolder, cacheFileName );
+    // One cache per install, so switching beta and live characters doesn't rebuild it.
+    const installKey = crypto.createHash( 'sha1' ).update( spellsFile.toLowerCase() ).digest( 'hex' ).slice( 0, 12 );
+    const cacheFile = path.join( cacheFolder, `push-spells-${installKey}.json` );
 
     try {
         const cached = JSON.parse( fs.readFileSync( cacheFile, 'utf8' ) );
-        if ( cached.version === cacheVersion && cached.sourceMtimeMs === stat.mtimeMs && cached.sourceSize === stat.size && cached.stringsMtimeMs === stringsMtimeMs && cached.stringsSize === stringsSize && cached.spells !== null && cached.spells !== undefined && typeof cached.spells === 'object' && cached.exact !== null && cached.exact !== undefined && typeof cached.exact === 'object' && cached.noPushTexts !== null && cached.noPushTexts !== undefined && typeof cached.noPushTexts === 'object' && !Array.isArray( cached.noPushTexts ) ) {
+        const sourceUnchanged = cached.version === cacheVersion
+            && cached.sourcePath === spellsFile
+            && cached.sourceMtimeMs === stat.mtimeMs && cached.sourceSize === stat.size
+            && cached.stringsMtimeMs === stringsMtimeMs && cached.stringsSize === stringsSize;
+        const tablesPresent = cached.spells !== null && cached.spells !== undefined && typeof cached.spells === 'object'
+            && cached.exact !== null && cached.exact !== undefined && typeof cached.exact === 'object'
+            && cached.noPushTexts !== null && cached.noPushTexts !== undefined && typeof cached.noPushTexts === 'object'
+            && !Array.isArray( cached.noPushTexts );
+        if ( sourceUnchanged && tablesPresent ) {
             return { spells: cached.spells, exact: cached.exact, noPushTexts: cached.noPushTexts };
         }
     } catch ( error ) {
@@ -337,6 +377,7 @@ async function loadPushSpells( eqFolder, cacheFolder ) {
     try {
         fs.writeFileSync( cacheFile, JSON.stringify( {
             version: cacheVersion,
+            sourcePath: spellsFile,
             sourceMtimeMs: stat.mtimeMs,
             sourceSize: stat.size,
             stringsMtimeMs: stringsMtimeMs,
@@ -345,6 +386,7 @@ async function loadPushSpells( eqFolder, cacheFolder ) {
             exact: table.exact,
             noPushTexts: table.noPushTexts,
         } ) );
+        fs.rmSync( path.join( cacheFolder, legacyCacheFileName ), { force: true } );
     } catch ( error ) {
         // The cache is optional.
     }
@@ -352,4 +394,4 @@ async function loadPushSpells( eqFolder, cacheFolder ) {
     return table;
 }
 
-module.exports = { loadPushSpells, buildPushSpellTable, findPushSpell, stripRank };
+module.exports = { loadPushSpells, resolveSpellFolder, buildPushSpellTable, findPushSpell, stripRank };
