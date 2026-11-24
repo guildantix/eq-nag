@@ -87,11 +87,58 @@ class DeathRecapModel {
 
 class DeathRecapPreferences {
     /** @type {string} */
-    triggerId;
-    /** @type {'hotkey' | 'automatic'} */
-    engageMode;
+    triggerId = null;
+    /** @type {'off' | 'hotkey' | 'automatic'} */
+    engageMode = 'off';
     /** @type {string} */
-    hotkeyPhrase;
+    hotkeyPhrase = null;
 }
 
-module.exports = { DeathRecapEncounterMob, DeathRecapRaidStats, DeathRecapEncounter, DeathRecapLog, DeathRecapDamageSource, DeathRecapModel, DeathRecapPreferences };
+
+
+
+
+
+
+
+
+
+/**
+ * Fills in the death recap choice for profiles that never saved one. Nothing saved and no
+ * trigger means the player never opted in, so it is Off. Older saves without a mode keep
+ * working from the hotkey phrase or trigger they already have.
+ *
+ * @param {Partial<DeathRecapPreferences> | null | undefined} storedPreferences The saved choice.
+ * @returns {DeathRecapPreferences} A complete choice that always has a valid mode.
+ */
+function resolveDeathRecapPreferences( storedPreferences ) {
+    const resolvedPreferences = new DeathRecapPreferences();
+    if ( storedPreferences === null || storedPreferences === undefined ) {
+        return resolvedPreferences;
+    }
+
+    resolvedPreferences.triggerId = storedPreferences.triggerId ?? null;
+    resolvedPreferences.hotkeyPhrase = storedPreferences.hotkeyPhrase ?? null;
+
+    const storedMode = storedPreferences.engageMode;
+    if ( storedMode === 'off' || storedMode === 'hotkey' || storedMode === 'automatic' ) {
+        resolvedPreferences.engageMode = storedMode;
+    } else if ( resolvedPreferences.hotkeyPhrase !== null && resolvedPreferences.hotkeyPhrase !== '' ) {
+        resolvedPreferences.engageMode = 'hotkey';
+    } else if ( resolvedPreferences.triggerId !== null && resolvedPreferences.triggerId !== '' ) {
+        resolvedPreferences.engageMode = 'automatic';
+    }
+
+    return resolvedPreferences;
+}
+
+module.exports = {
+    DeathRecapEncounterMob,
+    DeathRecapRaidStats,
+    DeathRecapEncounter,
+    DeathRecapLog,
+    DeathRecapDamageSource,
+    DeathRecapModel,
+    DeathRecapPreferences,
+    resolveDeathRecapPreferences,
+};

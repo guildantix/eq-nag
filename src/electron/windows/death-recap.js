@@ -10,6 +10,7 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const nanoid = customAlphabet( alphabet, 16 );
 const { DeathRecapEncounterMob, DeathRecapRaidStats, DeathRecapEncounter, DeathRecapLog, DeathRecapDamageSource, DeathRecapModel } = require( '../data/models/death-recap' );
 const DomUtilities = require( '../utilities/dom' );
+const { nagException } = require( '../utilities/nag-console' );
 const NumberUtilities = require( '../utilities/numbers' );
 
 
@@ -93,6 +94,76 @@ function getNumberFormat( numeric ) {
 
 
 /**
+ * Replaces the loading spinner with a message, so the window never spins forever.
+ * 
+ * @param {string} message The text to show.
+ */
+function showRecapMessage( message ) {
+    // Error texts may already end in punctuation, so only add a full stop when there is none.
+    const text = /[.!?]$/.test( message ) ? message : `${message}.`;
+    DomUtilities.docReady( () => {
+        document.querySelector( '.css-loader' ).style.display = 'none';
+        document.querySelector( '.dashboard' ).style.display = 'none';
+        const messageElement = document.querySelector( '#recapMessage' );
+        messageElement.textContent = text;
+        messageElement.style.display = 'block';
+        document.querySelector( 'body' ).style.display = 'unset';
+    } );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Wraps the code that draws the recap, so a failure ends in a message, not an endless spinner.
+ * 
+ * @param {( data: DeathRecapModel ) => void} drawRecap Draws the recap from the loaded data.
+ * @param {string} characterName The name of the character, used in the no-death message.
+ * @returns {import( '../utilities/combat-parser' ).DeathRecapCallback} The parser callback.
+ */
+function guardRecapCallback( drawRecap, characterName ) {
+    return ( data, error ) => {
+        if ( error !== null && error !== undefined ) {
+            if ( error.kind === 'no-death' ) {
+                showRecapMessage( `No death found in this log. Nag looked for “You have been slain by …” in ${characterName}'s current log. Archived logs aren't searched.` );
+            } else if ( error.kind === 'open-failed' ) {
+                showRecapMessage( `Nag couldn't open the log file: ${error.message}` );
+            } else {
+                showRecapMessage( `The death recap couldn't be loaded: ${error.message}` );
+            }
+            return;
+        }
+
+        if ( data === null || data === undefined ) {
+            showRecapMessage( "The death recap couldn't be loaded: no data was returned" );
+            return;
+        }
+
+        try {
+            drawRecap( data );
+        } catch ( drawError ) {
+            nagException( `Death recap: drawing failed: ${drawError?.stack ?? drawError}` );
+            showRecapMessage( `The death recap couldn't be loaded: ${drawError?.message ?? drawError}` );
+        }
+    };
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * The death recap screen.
  * 
  * @param {string} logFilePath The full path to the log file.
@@ -122,7 +193,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName, 
 
     if ( lineNo !== -1 ) {
         
-        combatParser.loadDeathRecap( logFilePath, lineNo, characterName,
+        combatParser.loadDeathRecap( logFilePath, lineNo, characterName, guardRecapCallback(
             /**
              * Processes the model and renders the view.
              * 
@@ -134,7 +205,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName, 
 
                 // Populates the death log view.
                 const damageLogContainer = document.querySelector( '#damageLogContainer' );
-                for ( let i = data.myDeathLog?.length - 1 ?? -1; i >= 0 && i >= data.myDeathLog?.length - 10; i-- ) {
+                for ( let i = ( data.myDeathLog?.length ?? 0 ) - 1; i >= 0 && i >= data.myDeathLog.length - 10; i-- ) {
                     const event = data.myDeathLog[ i ];
                     if ( event.damage > 0 ) {
                         let numberFormat = getNumberFormat( event.damage );
@@ -357,13 +428,16 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName, 
                         encounterStatsContainer.innerHTML += sanitizeHtml( statGroupTemplate( mobModel ) );
                     }
                 }
-            } );
+            }, characterName ) );
 
         // Show the window.
         document.querySelector( 'body' ).style.display = 'unset';
         
     } else {
-        combatParser.findAllDeaths( logFilePath, found => {
+        combatParser.findAllDeaths( logFilePath, ( found, error ) => {
+            if ( error !== null && error !== undefined ) {
+                nagException( `Death recap: the death search failed: ${error.message}` );
+            }
             let message = new IpcMessage( found );
             message.id = messageId;
             ipcRenderer.send( 'death-recap:find-deaths:results', message );
