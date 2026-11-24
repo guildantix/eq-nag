@@ -3,8 +3,9 @@ import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, OnInit, Inject } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatTree, MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { combineLatest, forkJoin, Observable, of } from 'rxjs';
-import { AuthorModel, OverlayWindowModel, PackageFileModel, PackageFolder, PackageTrigger, QuickShareFileModel, QuickShareMetaModel, QuickShareModel, ShareFilePayload, TriggerAction, TriggerFolder, TriggerModel } from 'src/app/core.model';
+import { combineLatest, EMPTY, forkJoin, Observable, of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+import { AuthorModel, OverlayWindowModel, PackageFileModel, PackageFolder, PackageTrigger, QuickShareFileModel, QuickShareMetaModel, QuickShareModel, ShareFilePayload, ShareInstallResult, TriggerAction, TriggerFolder, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { PrepareQuickShareModel } from '../dialog.model';
 import * as _ from 'lodash-es';
@@ -584,9 +585,33 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                 // Submits the final quickshare to the server to generate a
                 // quickShareId, when sharing to the server.
                 const alreadyUploaded = this.shareToServer && !!this._uploadedQuickShareId;
-                const upload: Observable<string> = this.shareToServer && !alreadyUploaded ?
-                    this.quickShareService.createQuickShare( author.authorId, quickShare, quickShareFiles, null ) :
-                    of( this.shareToServer ? this._uploadedQuickShareId : null );
+                let outgoingRepairNote = '';
+                let upload: Observable<string>;
+
+                if ( this.shareToServer && !alreadyUploaded ) {
+
+                    // The server limits are checked here, before the upload, so a receiver is never
+                    // sent damaged data. The file save below keeps the full content, since a file
+                    // is checked against the larger file limits when it is opened.
+                    upload = this.ipcService
+                        .sanitizeQuickShares( [ Object.assign( new QuickShareMetaModel(), { model: quickShare } ) ] )
+                        .pipe( switchMap( sanitizedShares => {
+                            const sanitizedShare = sanitizedShares[ 0 ];
+
+                            if ( sanitizedShare?.model === null || sanitizedShare?.model === undefined ) {
+                                this.snackBar.open( 'This quick share can not be created because its data is damaged.', 'Dismiss', { duration: 8000 } );
+                                this.creatingQuickShare = false;
+                                return EMPTY;
+                            }
+
+                            outgoingRepairNote = ShareInstallResult.describeOutgoingRepairs( sanitizedShare.repairReport );
+
+                            return this.quickShareService.createQuickShare( author.authorId, sanitizedShare.model, quickShareFiles, null );
+                        } ) );
+
+                } else {
+                    upload = of( this.shareToServer ? this._uploadedQuickShareId : null );
+                }
 
                 upload.subscribe( quickShareId => {
 
@@ -594,7 +619,7 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                         this._uploadedQuickShareId = quickShareId;
                         let code = `{NAG:quick-share/${quickShareId}}`;
                         this.ipcService.sendTextToClipboard( code );
-                        this.snackBar.open( 'Quickshare copied to clipboard', 'Dismiss', { duration: 5000 } );
+                        this.snackBar.open( outgoingRepairNote ? `Quickshare copied to clipboard. ${outgoingRepairNote}` : 'Quickshare copied to clipboard', 'Dismiss', { duration: outgoingRepairNote ? 8000 : 5000 } );
                     }
 
                     if ( this.saveAsFile ) {

@@ -71,6 +71,7 @@ import FilesDatabaseStore from "./src/electron/data/files-database.js";
 import GinaImporter from "./src/electron/gina-importer.js";
 import RollTracker from "./src/electron/roll-tracker.js";
 import ShareFile from './src/electron/utilities/share-file.js';
+import FileShareOrigin from './src/electron/utilities/file-share-origin.js';
 
 import {
   IpcMessage,
@@ -922,7 +923,9 @@ ipcMain.handle( 'fileshare:open',
                 return { ok: false, code: 'cancelled', fileName: '' };
             }
 
-            return logShareResult( ShareFile.readShareFile( result.filePaths[ 0 ], app.getVersion() ) );
+            // Only a share read here is marked as coming from a file, which is what earns it the
+            // file size limits when it is cleaned and installed.
+            return logShareResult( FileShareOrigin.markFileShares( ShareFile.readShareFile( result.filePaths[ 0 ], app.getVersion() ) ) );
         } catch ( error ) {
             log.error( '[fileshare:open] Failed to open the share file.', error );
             return { ok: false, code: 'damaged', fileName: '', details: 'The file could not be read.' };
@@ -957,7 +960,7 @@ ipcMain.handle( 'fileshare:read-path',
                 return { ok: false, code: 'damaged', fileName: '', details: 'The path is not valid.' };
             }
 
-            return logShareResult( ShareFile.readShareFile( filePath, app.getVersion() ) );
+            return logShareResult( FileShareOrigin.markFileShares( ShareFile.readShareFile( filePath, app.getVersion() ) ) );
         } catch ( error ) {
             log.error( '[fileshare:read-path] Failed to read the share file.', error );
             return { ok: false, code: 'damaged', fileName: '', details: 'The file could not be read.' };
