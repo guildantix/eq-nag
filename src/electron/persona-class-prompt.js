@@ -39,6 +39,14 @@ class PersonaClassPrompt {
      */
     #shownRequest = null;
 
+    /**
+     * Characters whose prompt was closed without an answer since the window was last shown. They
+     * are skipped, so a prompt that another snackbar keeps replacing cannot loop with the next one.
+     *
+     * @type {Set<string>}
+     */
+    #dismissedCharacterIds = new Set();
+
 
 
 
@@ -70,12 +78,13 @@ class PersonaClassPrompt {
         // A reloaded page has lost the prompt it was showing, so show it again.
         ipcMain.on( 'main:angular-ready', () => {
             this.#shownRequest = null;
+            this.#dismissedCharacterIds.clear();
             this.showNextRequest();
         } );
 
         mainWindowRef.whenReady( () => {
-            mainWindowRef.reference.on( 'show', () => this.showNextRequest() );
-            mainWindowRef.reference.on( 'restore', () => this.showNextRequest() );
+            mainWindowRef.reference.on( 'show', () => this.#showNextRequestAfterWindowShown() );
+            mainWindowRef.reference.on( 'restore', () => this.#showNextRequestAfterWindowShown() );
         } );
     }
 
@@ -102,14 +111,17 @@ class PersonaClassPrompt {
             return;
         }
 
-        const nextEntry = this.#pendingClassCodes.entries().next();
-        if ( nextEntry.done ) {
+        const nextEntry = [ ...this.#pendingClassCodes.entries() ]
+            .find( ( [ pendingCharacterId ] ) => !this.#dismissedCharacterIds.has( pendingCharacterId ) );
+        if ( nextEntry === undefined ) {
             return;
         }
 
-        const [ characterId, classCode ] = nextEntry.value;
+        const [ characterId, classCode ] = nextEntry;
         const character = this.#characterDatabase.find( characterId );
-        if ( !character ) {
+
+        // The player may have set the class by hand while the prompt was waiting or hidden.
+        if ( !character || character.class === classCode ) {
             this.#pendingClassCodes.delete( characterId );
             this.showNextRequest();
             return;
@@ -169,6 +181,7 @@ class PersonaClassPrompt {
 
         this.#pendingClassCodes.delete( characterId );
         this.#pendingClassCodes.set( characterId, classCode );
+        this.#dismissedCharacterIds.delete( characterId );
 
         // A newer swap of the character on screen replaces its prompt.
         if ( this.#shownRequest?.characterId === characterId ) {
@@ -208,13 +221,44 @@ class PersonaClassPrompt {
             this.#pendingClassCodes.delete( characterId );
         }
 
+        // The class was set by hand meanwhile, so there is nothing left to ask or to remember.
+        const character = this.#characterDatabase.find( characterId );
+        if ( character?.class === classCode ) {
+            if ( this.#pendingClassCodes.get( characterId ) === classCode ) {
+                this.#pendingClassCodes.delete( characterId );
+            }
+            this.showNextRequest();
+            return;
+        }
+
         if ( answer === 'declined' ) {
             this.#declinedClassCodes.set( characterId, classCode );
         }
 
-        if ( answer !== 'dismissed' ) {
-            this.showNextRequest();
+        // A dismissed prompt is not a decline: its entry stays pending, but it waits behind the
+        // other characters until the window is shown again or a new swap of it is detected.
+        if ( answer === 'dismissed' && isAnswerToShownRequest ) {
+            this.#dismissedCharacterIds.add( characterId );
         }
+
+        this.showNextRequest();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows the waiting requests again, including ones dismissed earlier, once the window is back.
+     */
+    #showNextRequestAfterWindowShown() {
+        this.#dismissedCharacterIds.clear();
+        this.showNextRequest();
     }
 
 }

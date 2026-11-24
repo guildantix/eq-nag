@@ -1,7 +1,7 @@
 <div class="class-suggestion">
     <span class="message">{{ data.suggestion.characterName }} switched to {{ data.suggestion.className }}. Update the class?</span>
     <span class="buttons">
-        <button mat-button class="update-button" (click)="answer( 'updated' )">Update</button>
+        <button mat-button color="accent" (click)="answer( 'updated' )">Update</button>
         <button mat-button (click)="answer( 'declined' )">Not now</button>
     </span>
 </div>
