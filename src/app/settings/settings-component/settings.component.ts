@@ -796,6 +796,22 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
 
     /**
+     * Saves changes to the Push tab preferences.
+     */
+    onPushRecapTabPrefsChange(): void {
+        this.ipcService.updatePushRecapPreferences( this.pushRecapPreferences );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Copies the death recap command to the user's clipboard.
      */
     onCopyDeathRecapHotkeyCommand(): void {
