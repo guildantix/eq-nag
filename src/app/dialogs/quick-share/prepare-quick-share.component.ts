@@ -617,7 +617,7 @@ export class PrepareQuickShareDialogComponent implements OnInit {
 
                     if ( quickShareId && !alreadyUploaded ) {
                         this._uploadedQuickShareId = quickShareId;
-                        let code = `{NAG:quick-share/${quickShareId}}`;
+                        const code = `{NAG:quick-share/${quickShareId}}`;
                         this.ipcService.sendTextToClipboard( code );
                         this.snackBar.open( outgoingRepairNote ? `Quickshare copied to clipboard. ${outgoingRepairNote}` : 'Quickshare copied to clipboard', 'Dismiss', { duration: outgoingRepairNote ? 8000 : 5000 } );
                     }
