@@ -948,18 +948,22 @@ class UserPreferencesStore extends Store {
                 event.sender.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
             } else {
                 get_win_drives( drives => {
-                    this.#data.everquestInstallFolder = null;
+                    let foundFolder = null;
 
                     drives.forEach( drive => {
                         possibleEqFolders.forEach( eqFolder => {
                             if ( fs.existsSync( drive + eqFolder + '\\LaunchPad.exe' ) ) {
-                                this.#data.everquestInstallFolder = drive + eqFolder;
+                                foundFolder = drive + eqFolder;
                             }
                         } );
                     } );
 
-                    this.storeDataFile( this.#data );
-                    event.sender.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
+                    // A picked folder survives an offline drive; only a found install replaces it.
+                    if ( foundFolder !== null ) {
+                        this.#data.everquestInstallFolder = foundFolder;
+                        this.storeDataFile( this.#data );
+                    }
+                    event.sender.send( 'settings:get:everquest-folder', foundFolder );
                 } );
             }
         } );

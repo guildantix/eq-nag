@@ -897,7 +897,12 @@ class LogBootstrapper {
 
             // 2e-2 => 20KB
             // this.#userPreferences.logMaintenanceRules?.maxLogFileSizeMb
-            if ( enableLogFileMaintenanceBySize && _stats != null && this.#userPreferences.everquestInstallFolder?.length > 0 && _stats.size / ( 1024 * 1024 ) > this.#userPreferences.logMaintenanceRules?.maxLogFileSizeMb ) {
+            // The saved EverQuest folder can point at an offline drive; the backup writes into it.
+            const eqFolder = this.#userPreferences.everquestInstallFolder;
+            const hasStats = _stats !== null && _stats !== undefined;
+            const maxSizeMb = this.#userPreferences.logMaintenanceRules?.maxLogFileSizeMb;
+            const overSize = enableLogFileMaintenanceBySize && hasStats && _stats.size / ( 1024 * 1024 ) > maxSizeMb;
+            if ( overSize && eqFolder?.length > 0 && fs.existsSync( eqFolder ) ) {
                 
                 // Clear the watch interval.
                 clearInterval( logWatchers[ characterId ].intervalId );
