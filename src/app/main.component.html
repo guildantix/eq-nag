@@ -71,11 +71,15 @@
                 </mat-tab>
             </mat-tab-group>
         </mat-tab>
-        <mat-tab label="Rolls">
-            <app-rolls></app-rolls>
-        </mat-tab>
-        <mat-tab label="Push" *ngIf="showPushTab">
-            <app-push-tracker></app-push-tracker>
+        <mat-tab label="Features">
+            <mat-tab-group class="sub-tabs" animationDuration="0ms">
+                <mat-tab label="Rolls">
+                    <app-rolls></app-rolls>
+                </mat-tab>
+                <mat-tab label="Push" *ngIf="showPushTab">
+                    <app-push-tracker></app-push-tracker>
+                </mat-tab>
+            </mat-tab-group>
         </mat-tab>
         <mat-tab label="Settings">
 

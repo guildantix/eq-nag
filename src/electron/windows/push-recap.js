@@ -764,7 +764,7 @@ async function PushRecap( params ) {
     let clicked = false;
     const saveButton = document.getElementById( 'saveButton' );
     const showSaveState = () => {
-        saveButton.textContent = state === 'saved' ? 'Saved' : state === 'pending' ? 'Saving...' : state === 'failed' ? "Couldn't save - try again" : 'Save to Push tab';
+        saveButton.textContent = state === 'saved' ? 'Saved' : state === 'pending' ? 'Saving...' : state === 'failed' ? "Couldn't save - try again" : 'Save to Features › Push';
         saveButton.disabled = state === 'saved' || state === 'pending';
         saveButton.hidden = ( shown === null || shown === undefined ) || ( !clicked && ( state === 'saved' || state === 'pending' ) );
     };
@@ -798,7 +798,7 @@ async function PushRecap( params ) {
         if ( params.snapshot ) {
             const snapshot = await ipcRenderer.invoke( 'push-recap:snapshot' );
             if ( ( snapshot?.recap === null || snapshot?.recap === undefined ) || typeof snapshot.recap !== 'object' ) {
-                showMessage( 'There is no fight to show. Pick one in the Push tab.', false );
+                showMessage( 'There is no fight to show. Pick one in Features › Push.', false );
                 return;
             }
             show( snapshot.recap, snapshot.saved === true );

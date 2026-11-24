@@ -503,12 +503,12 @@
         <button type="button" style="margin-left: 10px; color: #69b2f0;" mat-button (click)="onCopyPushRecapHotkeyCommand()">Create in-game hotkey</button>
 
         <div class="formless-hint full-width">
-            <div class="formless-input"><mat-checkbox [(ngModel)]="pushRecapPreferences.showTab" name="cbxPushRecapShowTab" (change)="onPushRecapTabPrefsChange()">Show the Push tab</mat-checkbox></div>
+            <div class="formless-input"><mat-checkbox [(ngModel)]="pushRecapPreferences.showTab" name="cbxPushRecapShowTab" (change)="onPushRecapTabPrefsChange()">Show Push under Features</mat-checkbox></div>
             <mat-hint>Adds a tab that lists your saved push recaps, with a filter and a player by spell grid.</mat-hint>
         </div>
 
         <div class="formless-hint full-width">
-            <div class="formless-input"><mat-checkbox [(ngModel)]="pushRecapPreferences.saveRecaps" name="cbxPushRecapSaveRecaps" (change)="onPushRecapTabPrefsChange()">Save every recap to the Push tab</mat-checkbox></div>
+            <div class="formless-input"><mat-checkbox [(ngModel)]="pushRecapPreferences.saveRecaps" name="cbxPushRecapSaveRecaps" (change)="onPushRecapTabPrefsChange()">Save every recap to Features &rsaquo; Push</mat-checkbox></div>
             <mat-hint>Keeps a small summary of each recap you view, up to 200 fights.  No log lines are stored.</mat-hint>
         </div>
 
@@ -534,7 +534,7 @@
                         <code>&hellip;{{ text }}</code>
                         <button type="button" style="margin-left: 10px; color: #69b2f0;" mat-button (click)="onRestorePushRecapText( text )">Restore</button>
                     </div>
-                    <mat-hint>Messages you hid with the &times; in the proc tables of the Push tab and the Push Recap window.</mat-hint>
+                    <mat-hint>Messages you hid with the &times; in the proc tables of Features &rsaquo; Push and the Push Recap window.</mat-hint>
                 </div>
             </div>
         </div>
