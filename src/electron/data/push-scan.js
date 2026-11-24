@@ -456,7 +456,7 @@ class PushScanService {
             this.#notifyResults( result.results );
 
         } else if ( message.type === 'error' ) {
-            if ( message.code !== 'no-folder' && message.code !== 'no-file' ) {
+            if ( message.code !== 'no-folder' && message.code !== 'no-file' && message.code !== 'no-push-spells' ) {
                 this.#dropCache( logs, logFile );
             }
             this.#finish( worker, 'error', message.message );

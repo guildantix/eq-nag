@@ -309,5 +309,5 @@ async function scanLog( params ) {
 scanLog( workerData ).then( result => {
     parentPort.postMessage( { type: 'done', result: result } );
 } ).catch( error => {
-    parentPort.postMessage( { type: 'error', code: error.code ?? null, message: error.code === 'no-folder' || error.code === 'no-file' ? error.message : `The log could not be scanned: ${error.message}` } );
+    parentPort.postMessage( { type: 'error', code: error.code ?? null, message: error.code === 'no-folder' || error.code === 'no-file' || error.code === 'no-push-spells' ? error.message : `The log could not be scanned: ${error.message}` } );
 } );
