@@ -1858,7 +1858,7 @@ export class PushRecapPreferences {
     /** Landing messages (the text after the mob name) that the proc tables, the timeline and the
      * Procs column leave out. */
     hiddenProcTexts: string[] = [];
-    /** The damage sliders and table sorts the Push tab remembers; null until it has saved any. */
+    /** The minimum damage slider and table sorts the Push tab remembers; null until first save. */
     tabView: PushTabView | null = null;
 }
 

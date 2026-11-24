@@ -1,6 +1,7 @@
 /**
  * The damage amounts the Push tab sliders move through: 1, 2.5 and 5 for every power of ten from
- * 1K to 5B, then 10B.  The same list is checked in the main process before a value is stored.
+ * 1K to 5B, then 10B.  The main process checks values against a copy of this list before storing
+ * them (damageSteps in src/electron/data/models/push-recap.js): change both together.
  */
 export const pushDamageSteps: number[] = buildDamageSteps();
 

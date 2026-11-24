@@ -38,7 +38,7 @@
                         <span class="file-name" *ngIf="pickedFileName !== ''" [matTooltip]="pickedFileName">{{pickedFileName}}</span>
                     </div>
                     <button mat-flat-button color="primary" (click)="startScan()" [disabled]="!canScan">Scan</button>
-                    <mat-icon class="info material-icons-outlined" matTooltip="Reads the whole log and lists every boss fight, newest first.  Only the newest 1,000 are kept.">info</mat-icon>
+                    <mat-icon class="info material-icons-outlined" matTooltip="Reads the whole log and lists every fight that has a kill in it, newest first.  Only the newest 1,000 kills are kept.">info</mat-icon>
                     <button mat-button *ngIf="scanRunning" (click)="cancelScan()">Cancel</button>
                     <div class="scan-status" *ngIf="scanRunning">
                         <mat-progress-bar mode="determinate" [value]="scanPercent"></mat-progress-bar>

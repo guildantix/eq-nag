@@ -12,8 +12,9 @@ const sortTables = [ 'fights', 'totals', 'grid' ];
 const defaultMinDamage = 1000;
 
 /**
- * The damage amounts the Push tab sliders offer: 1, 2.5 and 5 for every power of ten from 1K to 5B,
- * then 10B.  Kept in step with the list in the Push tab.
+ * The damage amounts the Push tab slider offers: 1, 2.5 and 5 for every power of ten from 1K to
+ * 5B, then 10B.  Duplicated in src/app/push-tracker/push-damage-steps.ts, because the
+ * renderer build cannot import main-process files: change both together.
  *
  * @type {number[]}
  */
@@ -39,7 +40,8 @@ class PushRecapPreferences {
     /** @type {string[]} */
     hiddenProcTexts = [];
     /**
-     * What the Push tab remembers between sessions: its two sliders and how each table is sorted.
+     * What the Push tab remembers between sessions: its minimum damage slider and how each table
+     * is sorted.
      *
      * @type {PushTabView}
      */

@@ -990,7 +990,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
 
 
     /**
-     * Remembers the two damage sliders and the table sorts for the next session.  Saves are
+     * Remembers the minimum damage slider and the table sorts for the next session.  Saves are
      * batched, because each keyboard step on a slider would otherwise rewrite the settings file.
      */
     public saveView(): void {
