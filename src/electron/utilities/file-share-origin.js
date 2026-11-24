@@ -1,8 +1,11 @@
 const crypto = require( 'crypto' );
 const { serverShareLimits, fileShareLimits } = require( './share-trigger-fields' );
 
-/** The most file read tokens remembered; the oldest is forgotten first. */
-const maxRememberedTokens = 200;
+/**
+ * The most file read tokens remembered; the oldest is forgotten first. Generous so a big file, or
+ * several files with receive dialogs still open, never loses tokens of shares in use.
+ */
+const maxRememberedTokens = 2000;
 /** @type {Set<string>} The tokens the main process handed out for shares it read from a file. */
 const fileShareTokens = new Set();
 
@@ -26,14 +29,24 @@ function markFileShares( result ) {
         return result;
     }
 
+    const issuedTokens = new Set();
+
     for ( const quickShare of result.payload.quickShares ) {
         const token = crypto.randomUUID();
 
         quickShare.fileShareToken = token;
         fileShareTokens.add( token );
+        issuedTokens.add( token );
+    }
 
-        if ( fileShareTokens.size > maxRememberedTokens ) {
-            fileShareTokens.delete( fileShareTokens.values().next().value );
+    // Evict only older tokens, so no share of this file silently falls back to the server limits.
+    for ( const rememberedToken of fileShareTokens ) {
+        if ( fileShareTokens.size <= maxRememberedTokens ) {
+            break;
+        }
+
+        if ( !issuedTokens.has( rememberedToken ) ) {
+            fileShareTokens.delete( rememberedToken );
         }
     }
 
