@@ -29,7 +29,8 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
 const ArrayUtilities = require( '../utilities/arrays' );
-const { normalizeSharedModel, normalizeSharedOverlayInput } = require( '../utilities/share-trigger-fields' );
+const { normalizeSharedModel, normalizeSharedOverlayInput, serverShareLimits } = require( '../utilities/share-trigger-fields' );
+const { getShareLimits } = require( '../utilities/file-share-origin' );
 const log = require( 'electron-log' );
 const StringUtilities = require( "../utilities/string" );
 const Fuse = require( 'fuse.js' );
@@ -621,7 +622,7 @@ class TriggerDatabaseStore extends Store {
         // them to be cleaned first.
         ipcMain.on( 'quickShare:sanitize', ( event, quickShares ) => {
             const sanitizedShares = ( Array.isArray( quickShares ) ? quickShares : [] ).map( quickShare => {
-                const repairReport = normalizeSharedModel( quickShare?.model );
+                const repairReport = normalizeSharedModel( quickShare?.model, getShareLimits( quickShare ) );
                 this.logShareRepairs( 'quickShare:sanitize', repairReport );
                 return { model: repairReport.isUsable ? quickShare.model : null, repairReport: repairReport };
             } );
@@ -1565,10 +1566,14 @@ class TriggerDatabaseStore extends Store {
      * @param {Electron.Size} packagePrimaryDisplaySize The original event args.
      * @param {Electron.IpcMainEvent} event The original event args.
      * @param {(overlayMap: Record<string, string>) => void} callback The callback function executed after all overlay maps have been completed.
+     * @param {{ maxTextLength: number, maxIconLength: number }} [limits] The size caps for the
+     * overlay values, the server caps when left out.
      */
-    installPackagedOverlays( packageId, packageOverlays, defaultOverlayIds, packagePrimaryDisplaySize, event, callback ) {
+    installPackagedOverlays(
+        packageId, packageOverlays, defaultOverlayIds, packagePrimaryDisplaySize, event, callback, limits = serverShareLimits
+    ) {
         // The overlays come from a share, so every value is checked before it is used.
-        const cleanedOverlayInput = normalizeSharedOverlayInput( packageOverlays, defaultOverlayIds, packagePrimaryDisplaySize );
+        const cleanedOverlayInput = normalizeSharedOverlayInput( packageOverlays, defaultOverlayIds, packagePrimaryDisplaySize, limits );
         packageOverlays = cleanedOverlayInput.packageOverlays;
         defaultOverlayIds = cleanedOverlayInput.defaultOverlayIds;
         packagePrimaryDisplaySize = cleanedOverlayInput.primaryDisplaySize;
@@ -1811,8 +1816,10 @@ class TriggerDatabaseStore extends Store {
             throw 'Trigger database not loaded!';
         }
 
-        // The quick share comes from a server, so its triggers are cleaned first.
-        const repairReport = normalizeSharedModel( quickShare?.model );
+        // The quick share comes from a server or a file, so its triggers are cleaned first. Only
+        // a share the main process read from a file gets the larger file limits.
+        const shareLimits = getShareLimits( quickShare );
+        const repairReport = normalizeSharedModel( quickShare?.model, shareLimits );
         this.logShareRepairs( 'installQuickshare', repairReport );
 
         if ( !repairReport.isUsable ) {
@@ -1872,7 +1879,7 @@ class TriggerDatabaseStore extends Store {
                 this.storeDataFile( this.#data );
     
                 resolve( { installComplete: true, repairReport: repairReport } );
-            } );
+            }, shareLimits );
 
         } );
 

@@ -85,5 +85,13 @@
 
 </section>
 
+<div class="drop-overlay" *ngIf="dropActive">
+    <div class="drop-overlay-box">
+        <mat-icon class="material-icons-outlined">file_download</mat-icon>
+        <div class="drop-overlay-title">Drop to import triggers</div>
+        <div class="drop-overlay-sub">.nag, .zip or .json &middot; up to 40 MB</div>
+    </div>
+</div>
+
 <app-quick-actions></app-quick-actions>
 <app-debug-console></app-debug-console>

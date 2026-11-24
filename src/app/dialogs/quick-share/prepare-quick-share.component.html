@@ -26,12 +26,21 @@
         </mat-tree>
     </div>
 
+    <div class="share-options">
+        <div class="share-options-title">How to share</div>
+        <mat-checkbox [(ngModel)]="shareToServer">Share to server</mat-checkbox>
+        <div class="share-option-hint">Uploads to the share server and copies a {{shareCodeExample}} code to your clipboard</div>
+        <mat-checkbox [(ngModel)]="saveAsFile">Save as file</mat-checkbox>
+        <div class="share-option-hint">Saves a .nag file you can send on Discord, a forum, or keep as a backup. Includes your author name and Discord handle.</div>
+        <div class="share-option-hint share-option-warning" *ngIf="!canShare">Pick at least one way to share.</div>
+    </div>
+
 </mat-dialog-content>
 
 <mat-dialog-actions>
 
     <!-- cdk-focus-start -->
     <button mat-button [mat-dialog-close]="null" class="t-confirm-no" color="warn">Cancel</button>
-    <button mat-button (click)="createQuickShare()" class="t-confirm-yes" color="accent" [disabled]="creatingQuickShare">Copy to Clipboard <div *ngIf="creatingQuickShare" style="display: inline-block; margin-left: 10px;"><mat-spinner [diameter]="24" color="accent"></mat-spinner></div></button>
+    <button mat-button (click)="createQuickShare()" class="t-confirm-yes" color="accent" [disabled]="creatingQuickShare || !canShare">{{shareButtonLabel}} <div *ngIf="creatingQuickShare" style="display: inline-block; margin-left: 10px;"><mat-spinner [diameter]="24" color="accent"></mat-spinner></div></button>
 
 </mat-dialog-actions>

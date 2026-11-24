@@ -78,6 +78,13 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
     public stageNewTriggers: boolean = false;
     private _shownOverwriteWarning: boolean = false;
     private _overwriteExistingTriggers: boolean = true;
+    /** The authors declared by shares that came from a file, which are not verified. */
+    public get fileShareAuthors(): string[] {
+        return _.uniq( this.data.quickShares
+            .filter( quickShare => quickShare.quickShareId?.startsWith( 'file-' ) )
+            .map( quickShare => quickShare.author || 'Unknown author' ) );
+    }
+
     public get overwriteExistingTriggers(): boolean {
         return this._overwriteExistingTriggers;
     }
