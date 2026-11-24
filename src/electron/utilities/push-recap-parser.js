@@ -644,6 +644,45 @@ function involvesBoss( text, boss, landing ) {
 
 
 /**
+ * Finds where the fight of the given kill starts: the earliest line about the boss, with no quiet
+ * gap in between.  Shared with the log scan, which only keeps the lines it needs for the replay.
+ *
+ * @returns {number} The index of the first line of the fight.
+ *
+ * @param {string[]} lines The kept log lines, oldest first.
+ * @param {number[]} times The time of each kept line, in ms.
+ * @param {number} killIndex The index of the kill line.
+ * @param {number} killTime The time of the kill, in ms.
+ * @param {string} boss The name of the boss.
+ * @param {{ map: Map<string, string[]> }} landing The landing index.
+ * @param {number} gapMs The quiet gap that separates fights, in ms.
+ * @param {number} lowestIndex The first index the search may reach.
+ */
+function findFightStart( lines, times, killIndex, killTime, boss, landing, gapMs, lowestIndex ) {
+    let startIndex = killIndex;
+    let lastTime = killTime;
+    for ( let i = killIndex - 1; i >= lowestIndex; i-- ) {
+        if ( lastTime - times[ i ] >= gapMs ) {
+            break;
+        }
+        if ( involvesBoss( lines[ i ].substring( textOffset ), boss, landing ) ) {
+            lastTime = times[ i ];
+            startIndex = i;
+        }
+    }
+    return startIndex;
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Counts who pushed the given kill.
  *
  * @returns {any} The recap result.
@@ -661,18 +700,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
     const ctx = { characterName: session.characterName, boss: boss, npcNames: summary.npcNames };
     const gapMs = quietGapSeconds * 1000;
 
-    // The fight starts at the earliest line about the boss, with no quiet gap in between.
-    let startIndex = kill.index;
-    let lastTime = kill.time;
-    for ( let i = kill.index - 1; i >= 0; i-- ) {
-        if ( lastTime - session.times[ i ] >= gapMs ) {
-            break;
-        }
-        if ( involvesBoss( session.lines[ i ].substring( textOffset ), boss, landing ) ) {
-            lastTime = session.times[ i ];
-            startIndex = i;
-        }
-    }
+    const startIndex = findFightStart( session.lines, session.times, kill.index, kill.time, boss, landing, gapMs, 0 );
 
     const events = [];
     const lastCast = new Map();
@@ -960,6 +988,6 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
 }
 
 module.exports = {
-    readSession, summarize, analyzeKill, buildLandingIndex, parseTimestamp, isRelevantLine, matchCombat,
+    readSession, summarize, analyzeKill, findFightStart, formatClock, buildLandingIndex, parseTimestamp, isRelevantLine, matchCombat,
     isPlayerName, isPetName, textOffset, lookbackMs,
 };
