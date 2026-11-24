@@ -1851,6 +1851,7 @@ export const CombatModifiers: string[] = [
     'double_bow_shot',
     'deadly_strike',
     'finishing_blow',
+    'slay_undead',
 ];
 
 export class FctCombatGroup {

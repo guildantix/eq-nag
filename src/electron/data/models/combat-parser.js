@@ -38,6 +38,8 @@ class AttackModifiers {
     deadly_strike = false;
     /** @type {boolean} */
     finishing_blow = false;
+    /** @type {boolean} */
+    slay_undead = false;
 }
 
 class PlayerInfo {

@@ -493,6 +493,7 @@ class OverlayDatabaseStore extends Store {
                 'double_bow_shot',
                 'deadly_strike',
                 'finishing_blow',
+                'slay_undead',
             ];
 
             this.#data.fctCombatGroups.push( group );
@@ -528,6 +529,7 @@ class OverlayDatabaseStore extends Store {
                 'double_bow_shot',
                 'deadly_strike',
                 'finishing_blow',
+                'slay_undead',
             ];
 
             this.#data.fctCombatGroups.push( group );
@@ -563,6 +565,7 @@ class OverlayDatabaseStore extends Store {
                 'double_bow_shot',
                 'deadly_strike',
                 'finishing_blow',
+                'slay_undead',
             ];
 
             this.#data.fctCombatGroups.push( group );
@@ -599,6 +602,7 @@ class OverlayDatabaseStore extends Store {
                 'double_bow_shot',
                 'deadly_strike',
                 'finishing_blow',
+                'slay_undead',
             ];
 
             this.#data.fctCombatGroups.push( group );
@@ -635,6 +639,7 @@ class OverlayDatabaseStore extends Store {
                 'double_bow_shot',
                 'deadly_strike',
                 'finishing_blow',
+                'slay_undead',
             ];
 
             this.#data.fctCombatGroups.push( group );
@@ -671,6 +676,7 @@ class OverlayDatabaseStore extends Store {
                 'double_bow_shot',
                 'deadly_strike',
                 'finishing_blow',
+                'slay_undead',
             ];
 
             this.#data.fctCombatGroups.push( group );

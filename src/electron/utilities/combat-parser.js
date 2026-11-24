@@ -120,6 +120,34 @@ const executCombatRgx = ( rgx, logLine ) => {
 
 
 /**
+ * Tells whether the bracketed hit tag text contains the given tag as a whole tag.
+ * A plain substring check cannot tell "Rampage" from "Wild Rampage", so the tag
+ * must be delimited by whitespace or the ends of the text.
+ * Example tag text: "Strikethrough Crippling Blow".
+ * 
+ * @returns {boolean} True if the tag text contains the whole tag.
+ * 
+ * @param {string | undefined} modifiers The text between the brackets at the end of the log line.
+ * @param {string} tag The whole tag to look for, e.g. "Crippling Blow".
+ */
+const hasModifierTag = ( modifiers, tag ) => {
+    if ( modifiers === undefined || modifiers === null ) {
+        return false;
+    }
+    const paddedModifiers = ' ' + modifiers.replace( /\s+/g, ' ' ) + ' ';
+    return paddedModifiers.indexOf( ' ' + tag + ' ' ) > -1;
+};
+
+
+
+
+
+
+
+
+
+
+/**
  * Minifies the given log record.  Deleting undefined properties and false modifiers.
  * 
  * @returns {any} Returns the minified log record.
@@ -2117,15 +2145,17 @@ class CombatParser {
 
             }
 
-            if ( rec.modifiers.dodge ) {
+            // The riposte flag is also set on landed hits tagged (Riposte),
+            // so only avoided swings may take the avoid branch.
+            if ( rec.attackAvoided && rec.modifiers.dodge ) {
                 model.avoidType = 'dodge';
-            } else if ( rec.modifiers.parry ) {
+            } else if ( rec.attackAvoided && rec.modifiers.parry ) {
                 model.avoidType = 'parry';
-            } else if ( rec.modifiers.riposte ) {
+            } else if ( rec.attackAvoided && rec.modifiers.riposte ) {
                 model.avoidType = 'riposte';
-            } else if ( rec.modifiers.block ) {
+            } else if ( rec.attackAvoided && rec.modifiers.block ) {
                 model.avoidType = 'block';
-            } else if ( rec.modifiers.miss ) {
+            } else if ( rec.attackAvoided && rec.modifiers.miss ) {
                 model.avoidType = 'miss';
             } else {
                 model.amount = model.combatTypes.myHealing || model.combatTypes.otherHealingOnMe ? rec.heal : rec.damage;
@@ -2153,6 +2183,9 @@ class CombatParser {
             rec.modifiers.double_bow_shot && model.combatModifiers.push( 'double_bow_shot' );
             rec.modifiers.deadly_strike && model.combatModifiers.push( 'deadly_strike' );
             rec.modifiers.finishing_blow && model.combatModifiers.push( 'finishing_blow' );
+            if ( rec.modifiers.slay_undead ) {
+                model.combatModifiers.push( 'slay_undead' );
+            }
             
             if ( model.combatModifiers.length === 0 ) {
                 model.combatModifiers.push( 'normal' );
@@ -2624,17 +2657,21 @@ class CombatParser {
         rec.thorns = false;
         rec.modifiers = new AttackModifiers();
         rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
+        rec.modifiers.cripplingBlow = hasModifierTag( modifiers, 'Crippling Blow' );
         rec.modifiers.flurry = modifiers?.indexOf( 'Flurry' ) > -1;
         rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
         rec.modifiers.riposte = modifiers?.indexOf( 'Riposte' ) > -1;
         rec.modifiers.strikethrough = modifiers?.indexOf( 'Strikethrough' ) > -1;
         rec.modifiers.wild_rampage = modifiers?.indexOf( 'Wild Rampage' ) > -1;
-        rec.modifiers.rampage = modifiers?.indexOf( 'Rampage' ) > -1;
+        // "Wild Rampage" ends in the word "Rampage", so it is removed first
+        // or it would count as a plain Rampage too.
+        rec.modifiers.rampage = hasModifierTag( modifiers?.replace( 'Wild Rampage', '' ), 'Rampage' );
         rec.modifiers.assassinate = modifiers?.indexOf( 'Assassinate' ) > -1;
         rec.modifiers.headshot = modifiers?.indexOf( 'Headshot' ) > -1;
         rec.modifiers.double_bow_shot = modifiers?.indexOf( 'Double Bow Shot' ) > -1;
         rec.modifiers.deadly_strike = modifiers?.indexOf( 'Deadly Strike' ) > -1;
         rec.modifiers.finishing_blow = modifiers?.indexOf( 'Finishing Blow' ) > -1;
+        rec.modifiers.slay_undead = hasModifierTag( modifiers, 'Slay Undead' );
 
         this._updateEntityStats( rec.actor, rec.target, true, false );
 
@@ -2727,6 +2764,7 @@ class CombatParser {
         rec.modifiers = new AttackModifiers();
         rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
         rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
+        rec.modifiers.twincast = hasModifierTag( modifiers, 'Twincast' );
         rec.modifiers.strikethrough = modifiers?.indexOf( 'Strikethrough' ) > -1;
         rec.resistType = resistType;
     
@@ -2779,6 +2817,7 @@ class CombatParser {
         rec.modifiers = new AttackModifiers();
         rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
         rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
+        rec.modifiers.twincast = hasModifierTag( modifiers, 'Twincast' );
 
         if ( healActual + healLiteral > 0 ) {
             this._updateEntityStats( rec.actor, rec.target, false, true );
