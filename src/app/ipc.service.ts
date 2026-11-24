@@ -1269,13 +1269,13 @@ export class IpcService {
     public getTriggers(): Observable<TriggerModel[]> {
         let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
             
-            window.api.ipc.once( 'trigger:get', ( e, triggers: TriggerModel[] ) => {
-                this.ngZone.run( () => {
-                    observer.next( triggers );
-                    observer.complete();
+            window.api.ipc.invoke<TriggerModel[]>( 'trigger:get', null )
+                .then( triggers => {
+                    this.ngZone.run( () => {
+                        observer.next( triggers );
+                        observer.complete();
+                    } );
                 } );
-            } );
-            window.api.ipc.send( 'trigger:get', null );
 
         } );
 
@@ -1285,13 +1285,13 @@ export class IpcService {
     public getTrigger( triggerId: string ): Observable<TriggerModel> {
         let obs: Observable<TriggerModel> = new Observable<TriggerModel>( ( observer: Observer<TriggerModel> ) => {
             
-            window.api.ipc.once( 'trigger:get', ( e, trigger: TriggerModel ) => {
-                this.ngZone.run( () => {
-                    observer.next( trigger );
-                    observer.complete();
+            window.api.ipc.invoke<TriggerModel>( 'trigger:get', triggerId )
+                .then( trigger => {
+                    this.ngZone.run( () => {
+                        observer.next( trigger );
+                        observer.complete();
+                    } );
                 } );
-            } );
-            window.api.ipc.send( 'trigger:get', triggerId );
 
         } );
 
@@ -1301,13 +1301,13 @@ export class IpcService {
     public searchTriggers( term: string, restrictByFolderIds?: string[] ): Observable<TriggerModel[]> {
         let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
             
-            window.api.ipc.once( 'trigger:search', ( e, triggers: TriggerModel[] ) => {
-                this.ngZone.run( () => {
-                    observer.next( triggers );
-                    observer.complete();
+            window.api.ipc.invoke<TriggerModel[]>( 'trigger:search', { term: term, folderIds: restrictByFolderIds } )
+                .then( triggers => {
+                    this.ngZone.run( () => {
+                        observer.next( triggers );
+                        observer.complete();
+                    } );
                 } );
-            } );
-            window.api.ipc.send( 'trigger:search', { term: term, folderIds: restrictByFolderIds } );
 
         } );
 
@@ -1439,13 +1439,13 @@ export class IpcService {
     public getStoredVariables(): Observable<string[]> {
         let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
             
-            window.api.ipc.once( 'trigger:get:stored-variables', ( e, storedVariables: string[] ) => {
-                this.ngZone.run( () => {
-                    observer.next( storedVariables );
-                    observer.complete();
+            window.api.ipc.invoke<string[]>( 'trigger:get:stored-variables', null )
+                .then( storedVariables => {
+                    this.ngZone.run( () => {
+                        observer.next( storedVariables );
+                        observer.complete();
+                    } );
                 } );
-            } );
-            window.api.ipc.send( 'trigger:get:stored-variables', null );
 
         } );
 
@@ -1455,13 +1455,13 @@ export class IpcService {
     public getCounterNames(): Observable<string[]> {
         let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
             
-            window.api.ipc.once( 'trigger:get:counters', ( e, counterNames: string[] ) => {
-                this.ngZone.run( () => {
-                    observer.next( counterNames );
-                    observer.complete();
+            window.api.ipc.invoke<string[]>( 'trigger:get:counters', null )
+                .then( counterNames => {
+                    this.ngZone.run( () => {
+                        observer.next( counterNames );
+                        observer.complete();
+                    } );
                 } );
-            } );
-            window.api.ipc.send( 'trigger:get:counters', null );
 
         } );
 
@@ -2649,23 +2649,24 @@ export class IpcService {
     public getParseHistory(): Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> {
         let obs: Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> ) => {
             
-            window.api.ipc.once( 'trigger:get:history:all', ( e, model: { successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] } ) => {
-                this.ngZone.run( () => {
-                    model.successful = model.successful.map( x => {
-                        let m = Object.assign( new TriggerParseHistoryModel(), x );
-                        m.timestamp = new Date( x.timestamp );
-                        return m;
+            window.api.ipc.invoke<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>( 'trigger:get:history:all', null )
+                .then( model => {
+                    this.ngZone.run( () => {
+                        model.successful = model.successful.map( x => {
+                            const m = Object.assign( new TriggerParseHistoryModel(), x );
+                            m.timestamp = new Date( x.timestamp );
+                            return m;
+                        } );
+                        model.exceptions = model.exceptions.map( x => {
+                            const m = Object.assign( new TriggerParseHistoryModel(), x );
+                            m.timestamp = new Date( x.timestamp );
+                            return m;
+                        } );
+
+                        observer.next( model );
+                        observer.complete();
                     } );
-                    model.exceptions = model.exceptions.map( x => {
-                        let m = Object.assign( new TriggerParseHistoryModel(), x );
-                        m.timestamp = new Date( x.timestamp );
-                        return m;
-                    } );
-                    observer.next( model );
-                    observer.complete();
                 } );
-            } );
-            window.api.ipc.send( 'trigger:get:history:all', null );
 
         } );
 
@@ -2714,24 +2715,24 @@ export class IpcService {
     public getTriggerParseHistory( triggerId: string ): Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }> {
         let obs: Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }> ) => {
             
-            window.api.ipc.once( 'trigger:get:history', ( e, model: { successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] } ) => {
-                this.ngZone.run( () => {
-                    model.successful = model.successful.map( x => {
-                        let m = Object.assign( new TriggerParseHistoryModel(), x );
-                        m.timestamp = new Date( x.timestamp );
-                        return m;
+            window.api.ipc.invoke<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }>( 'trigger:get:history', triggerId )
+                .then( model => {
+                    this.ngZone.run( () => {
+                        model.successful = model.successful.map( x => {
+                            const m = Object.assign( new TriggerParseHistoryModel(), x );
+                            m.timestamp = new Date( x.timestamp );
+                            return m;
+                        } );
+                        model.failed = model.failed.map( x => {
+                            const m = Object.assign( new TriggerParseHistoryModel(), x );
+                            m.timestamp = new Date( x.timestamp );
+                            return m;
+                        } );
+
+                        observer.next( model );
+                        observer.complete();
                     } );
-                    model.failed = model.failed.map( x => {
-                        let m = Object.assign( new TriggerParseHistoryModel(), x );
-                        m.timestamp = new Date( x.timestamp );
-                        return m;
-                    } );
-                    
-                    observer.next( model );
-                    observer.complete();
                 } );
-            } );
-            window.api.ipc.send( 'trigger:get:history', triggerId );
 
         } );
 
@@ -2853,13 +2854,13 @@ export class IpcService {
     public getTriggerFullName( triggerId: string ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
                 
-            window.api.ipc.once( 'trigger:get:full-name', ( e, data: string ) => {
-                this.ngZone.run( () => {
-                    observer.next( data );
-                    observer.complete();
+            window.api.ipc.invoke<string>( 'trigger:get:full-name', triggerId )
+                .then( data => {
+                    this.ngZone.run( () => {
+                        observer.next( data );
+                        observer.complete();
+                    } );
                 } );
-            } );
-            window.api.ipc.send( 'trigger:get:full-name', triggerId );
 
         } );
 

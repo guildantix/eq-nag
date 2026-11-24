@@ -392,29 +392,30 @@ class TriggerDatabaseStore extends Store {
         _fileStore = fileStore;
         _userPreferences = userPreferences;
 
-        ipcMain.on( 'trigger:get:full-name', ( event, triggerId ) => {
+        ipcMain.handle( 'trigger:get:full-name', ( event, triggerId ) => {
             if ( triggerId ) {
-                event.sender.send( 'trigger:get:full-name', this.getTriggerFullName( triggerId ) );
+                return this.getTriggerFullName( triggerId );
             }
+            return undefined;
         } );
 
-        ipcMain.on( 'trigger:get:history', ( event, triggerId ) => {
+        ipcMain.handle( 'trigger:get:history', ( event, triggerId ) => {
             let successful = successfulTriggerExecutions?.filter( f => f.triggerId === triggerId ) ?? [];
             let failed = failedTriggerExecutions?.filter( f => f.triggerId === triggerId ) ?? [];
             let exceptions = exceptionHistory?.filter( f => f.triggerId === triggerId ) ?? [];
 
-            event.sender.send( 'trigger:get:history', {
+            return {
                 successful: _.orderBy( successful, [ 'timestamp' ], [ 'asc' ] ),
                 failed: _.orderBy( Array.prototype.concat( failed, exceptions ), [ 'timestamp' ], [ 'asc' ] )
-            } );
+            };
         } );
 
-        ipcMain.on( 'trigger:get:history:all', ( event ) => {
+        ipcMain.handle( 'trigger:get:history:all', ( event ) => {
 
-            event.sender.send( 'trigger:get:history:all', {
+            return {
                 successful: _.orderBy( successfulTriggerExecutions ?? [], [ 'timestamp' ], [ 'asc' ] ),
                 exceptions: _.orderBy( exceptionHistory ?? [], [ 'timestamp' ], [ 'asc' ] )
-            } );
+            };
 
         } );
 
@@ -485,12 +486,12 @@ class TriggerDatabaseStore extends Store {
             sendTick();
         } );
 
-        ipcMain.on( 'trigger:get', ( event, triggerId ) => {
+        // handle() pairs each reply with its own invoke() call, so overlapping requests never mix.
+        ipcMain.handle( 'trigger:get', ( event, triggerId ) => {
             if ( triggerId != null && triggerId.length > 0 ) {
-                event.sender.send( 'trigger:get', this.find( triggerId ) );
-            } else {
-                event.sender.send( 'trigger:get', this.getAll() );
+                return this.find( triggerId );
             }
+            return this.getAll();
         } );
 
         ipcMain.on( 'trigger:update', ( event, trigger ) => {
@@ -511,12 +512,12 @@ class TriggerDatabaseStore extends Store {
             sendTick();
         } );
 
-        ipcMain.on( 'trigger:get:stored-variables', ( event, data ) => {
-            event.sender.send( 'trigger:get:stored-variables', this.getVariableNames() );
+        ipcMain.handle( 'trigger:get:stored-variables', ( event, data ) => {
+            return this.getVariableNames();
         } );
 
-        ipcMain.on( 'trigger:get:counters', ( event, data ) => {
-            event.sender.send( 'trigger:get:counters', this.getCounterNames() );
+        ipcMain.handle( 'trigger:get:counters', ( event, data ) => {
+            return this.getCounterNames();
         } );
         
         // Folder methods.
@@ -529,8 +530,8 @@ class TriggerDatabaseStore extends Store {
             sendTick();
         } );
 
-        ipcMain.on( 'trigger:search', ( event, args ) => {
-            event.sender.send( 'trigger:search', this.searchTriggers( args.term, args.folderIds ) );
+        ipcMain.handle( 'trigger:search', ( event, args ) => {
+            return this.searchTriggers( args.term, args.folderIds );
         } );
 
         ipcMain.on( 'trigger:search:properties', ( event, args ) => {
