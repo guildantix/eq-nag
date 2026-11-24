@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer, Subject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
@@ -1947,12 +1947,27 @@ export class IpcService {
         return obs;
     }
 
-    public installTriggerPackage( triggerPackage: TriggerPackageMetaModel ): Observable<boolean> {
-        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
 
-            window.api.ipc.once( 'pkg:install', ( e, installComplete: boolean ) => {
+
+
+
+
+
+
+
+
+    /**
+     * Installs the given trigger package. The result says how many of its triggers were corrected
+     * or skipped because they were damaged.
+     * 
+     * @param triggerPackage The trigger package to install.
+     */
+    public installTriggerPackage( triggerPackage: TriggerPackageMetaModel ): Observable<ShareInstallResult> {
+        const obs: Observable<ShareInstallResult> = new Observable<ShareInstallResult>( ( observer: Observer<ShareInstallResult> ) => {
+
+            window.api.ipc.once( 'pkg:install', ( e, installComplete: boolean, repairReport: ShareInstallResult ) => {
                 this.ngZone.run( () => {
-                    observer.next( installComplete );
+                    observer.next( Object.assign( new ShareInstallResult(), repairReport, { installComplete: installComplete } ) );
                     observer.complete();
                 } );
             } );
@@ -2011,16 +2026,65 @@ export class IpcService {
         return obs;
     }
 
-    public installQuickShare( quickShare: QuickShareMetaModel ): Observable<boolean> {
-        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
 
-            window.api.ipc.once( 'quickShare:install', ( e, installComplete: boolean ) => {
+
+
+
+
+
+
+
+
+    /**
+     * Installs the given quick share. The result says how many of its triggers were corrected or
+     * skipped because they were damaged.
+     * 
+     * @param quickShare The quick share to install.
+     */
+    public installQuickShare( quickShare: QuickShareMetaModel ): Observable<ShareInstallResult> {
+        const obs: Observable<ShareInstallResult> = new Observable<ShareInstallResult>( ( observer: Observer<ShareInstallResult> ) => {
+
+            window.api.ipc.once( 'quickShare:install', ( e, installComplete: boolean, repairReport: ShareInstallResult ) => {
                 this.ngZone.run( () => {
-                    observer.next( installComplete );
+                    observer.next( Object.assign( new ShareInstallResult(), repairReport, { installComplete: installComplete } ) );
                     observer.complete();
                 } );
             } );
             window.api.ipc.send( 'quickShare:install', quickShare );
+
+        } );
+
+        return obs;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Asks the app to clean the triggers, folders and overlays of the given quick shares, before
+     * the receive dialog reads them. A share that can not be used comes back with a null model.
+     *
+     * @param quickShares The quick shares to clean.
+     */
+    public sanitizeQuickShares( quickShares: QuickShareMetaModel[] ): Observable<SanitizedQuickShare[]> {
+        const obs = new Observable<SanitizedQuickShare[]>( ( observer: Observer<SanitizedQuickShare[]> ) => {
+
+            window.api.ipc.once( 'quickShare:sanitize', ( e, sanitizedShares: SanitizedQuickShare[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( sanitizedShares.map( share => {
+                        const repairReport = Object.assign( new ShareInstallResult(), share.repairReport, { installComplete: true } );
+                        return Object.assign( new SanitizedQuickShare(), share, { repairReport: repairReport } );
+                    } ) );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'quickShare:sanitize', quickShares );
 
         } );
 

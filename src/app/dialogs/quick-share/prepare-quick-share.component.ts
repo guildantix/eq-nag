@@ -4,7 +4,7 @@ import { Component, OnInit, Inject } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatTree, MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { combineLatest, forkJoin, Observable } from 'rxjs';
-import { AuthorModel, OverlayWindowModel, PackageFileModel, PackageFolder, PackageTrigger, QuickShareFileModel, QuickShareModel, TriggerAction, TriggerFolder, TriggerModel } from 'src/app/core.model';
+import { AuthorModel, OverlayWindowModel, PackageFileModel, PackageFolder, PackageTrigger, QuickShareFileModel, QuickShareMetaModel, QuickShareModel, ShareInstallResult, TriggerAction, TriggerFolder, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { PrepareQuickShareModel } from '../dialog.model';
 import * as _ from 'lodash-es';
@@ -494,18 +494,37 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                     } );
                 } );
 
-                // Submits the final quickshare to the server to generate a 
-                // quickShareId.
-                this.quickShareService
-                    .createQuickShare( author.authorId, quickShare, quickShareFiles, null )
-                    .subscribe( quickShareId => {
-                        let code = `{NAG:quick-share/${quickShareId}}`;
-                        this.ipcService.sendTextToClipboard( code );
-                        this.snackBar.open( 'Quickshare copied to clipboard', 'Dismiss', { duration: 5000 } );
-                        this.dialogRef.close( quickShareId );
-                    } );
-                
-                this.creatingQuickShare = false;
+                // The receiving side cuts or rejects what is over the server's limits, so the
+                // same clean-up runs here first. That way the upload holds only what will
+                // install, and the user hears what was left out.
+                const outgoingShare = Object.assign( new QuickShareMetaModel(), { model: quickShare } );
+
+                this.ipcService.sanitizeQuickShares( [ outgoingShare ] ).subscribe( sanitizedShares => {
+
+                    const sanitizedShare = sanitizedShares[ 0 ];
+
+                    if ( sanitizedShare?.model === null || sanitizedShare?.model === undefined ) {
+                        this.snackBar.open( 'This quick share can not be created because its data is damaged.', 'Dismiss', { duration: 8000 } );
+                        this.creatingQuickShare = false;
+                        return;
+                    }
+
+                    const repairText = ShareInstallResult.describeOutgoingRepairs( sanitizedShare.repairReport );
+
+                    // Submits the final quickshare to the server to generate a
+                    // quickShareId.
+                    this.quickShareService
+                        .createQuickShare( author.authorId, sanitizedShare.model, quickShareFiles, null )
+                        .subscribe( quickShareId => {
+                            const code = `{NAG:quick-share/${quickShareId}}`;
+                            this.ipcService.sendTextToClipboard( code );
+                            this.snackBar.open( repairText === '' ? 'Quickshare copied to clipboard' : 'Quickshare copied to clipboard. ' + repairText, 'Dismiss', { duration: repairText === '' ? 5000 : 8000 } );
+                            this.dialogRef.close( quickShareId );
+                        } );
+
+                    this.creatingQuickShare = false;
+
+                } );
 
             }, ( err: HttpErrorResponse | string ) => {
                 

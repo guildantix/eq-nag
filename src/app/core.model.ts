@@ -1498,6 +1498,178 @@ export class QuickShareMetaModel {
 
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * What the app reports after installing a package or quick share: whether it was installed, how
+ * many of its triggers had a field corrected, and how many were skipped because they were damaged.
+ */
+export class ShareInstallResult {
+
+    public installComplete: boolean = false;
+    public fixedCount: number = 0;
+    public skippedCount: number = 0;
+    /** The names of the first few skipped triggers. */
+    public skippedNames: string[] = [];
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a sentence about corrected or skipped triggers, or an empty text when every trigger
+     * was fine.
+     *
+     * @param result The result of the install.
+     */
+    public static describeRepairs( result: ShareInstallResult ): string {
+
+        const sentences: string[] = [];
+
+        if ( result.skippedCount > 0 ) {
+            const isSingle = result.skippedCount === 1;
+            const names = result.skippedNames?.length > 0 ? ' (' + result.skippedNames.join( ', ' ) + ')' : '';
+
+            sentences.push( result.skippedCount + ( isSingle ? ' trigger was' : ' triggers were' ) + ' skipped because ' + ( isSingle ? 'it was' : 'they were' ) + ' damaged' + names + '.' );
+        }
+
+        if ( result.fixedCount > 0 ) {
+            sentences.push( result.fixedCount + ( result.fixedCount === 1 ? ' trigger had' : ' triggers had' ) + ' fields corrected.' );
+        }
+
+        return sentences.join( ' ' );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a sentence about the sender's own triggers that were left out of, or trimmed in, an
+     * outgoing share, or an empty text when everything went as is. Worded for the sender: the
+     * triggers are theirs and still work in their profile, they just can't travel in a share.
+     *
+     * @param result The result of checking the outgoing share.
+     */
+    public static describeOutgoingRepairs( result: ShareInstallResult ): string {
+
+        const sentences: string[] = [];
+
+        if ( result.skippedCount > 0 ) {
+            const isSingle = result.skippedCount === 1;
+            const names = result.skippedNames?.length > 0 ? ' (' + result.skippedNames.join( ', ' ) + ')' : '';
+
+            sentences.push( result.skippedCount + ( isSingle ? ' trigger was' : ' triggers were' ) + ' left out because ' + ( isSingle ? 'it can\'t' : 'they can\'t' ) + ' be shared' + names + '.' );
+        }
+
+        if ( result.fixedCount > 0 ) {
+            sentences.push( result.fixedCount + ( result.fixedCount === 1 ? ' trigger was' : ' triggers were' ) + ' trimmed to fit the share limits.' );
+        }
+
+        return sentences.join( ' ' );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Adds several results together. The total is complete only when every result is complete.
+     *
+     * @param results The results to add together.
+     */
+    public static combine( results: ShareInstallResult[] ): ShareInstallResult {
+
+        const total = new ShareInstallResult();
+
+        total.installComplete = results.every( result => result.installComplete );
+
+        results.forEach( result => {
+            total.fixedCount += result.fixedCount;
+            total.skippedCount += result.skippedCount;
+            total.skippedNames = total.skippedNames.concat( result.skippedNames ?? [] ).slice( 0, 3 );
+        } );
+
+        return total;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the text to show the user after an install: the success message with any repair
+     * sentence added, or a failure message when nothing could be installed.
+     *
+     * @param result The result of the install.
+     * @param successMessage The message to show when the install worked.
+     */
+    public static describeOutcome( result: ShareInstallResult, successMessage: string ): string {
+
+        if ( !result.installComplete ) {
+            return 'The install failed because the shared data is damaged.';
+        }
+
+        const repairs = ShareInstallResult.describeRepairs( result );
+
+        return repairs === '' ? successMessage : successMessage + ' ' + repairs;
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+/** A quick share model after it was cleaned (null when unusable), with the repair report. */
+export class SanitizedQuickShare {
+
+    public model: QuickShareModel | null = null;
+    public repairReport: ShareInstallResult = new ShareInstallResult();
+
+}
+
+
+
+
+
+
+
+
+
+
 export class QuickShareTransferModel {
 
     public model: any;
