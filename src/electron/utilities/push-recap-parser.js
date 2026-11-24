@@ -680,6 +680,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
     const unattributedProcs = new Map();
     let possibleEvents = 0;
     const possibleProcs = new Map();
+    const landings = [];
     const unmatched = [];
     const npcAbilities = new Map();
     const othersSeen = summary.othersSeen === true;
@@ -883,6 +884,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
             procMap.set( key, proc );
         }
         proc.count++;
+        landings.push( [ u.time, shared ? 3 : 2, key, shared ? proc.pushMin ?? 0 : table.spells[ names[ 0 ] ]?.push ?? 0 ] );
     } );
 
     /** @type {Map<string, PushPlayer>} */
@@ -919,6 +921,13 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
     } );
     list.sort( ( a, b ) => b.events - a.events || a.name.localeCompare( b.name ) );
 
+    const playerIndex = new Map( list.map( ( p, i ) => [ p.name, i ] ) );
+    const startTime = session.times[ startIndex ];
+    const seconds = ms => Math.max( 0, Math.round( ( ms - startTime ) / 1000 ) );
+    const timeline = events.filter( ev => ev.state !== 'cancelled' ).map( ev => [ seconds( ev.time ), ev.state === 'confirmed' ? 0 : 1, playerIndex.get( ev.player ), ev.spellName, ev.spell.push ] )
+        .concat( landings.map( l => [ seconds( l[ 0 ] ), l[ 1 ], -1, l[ 2 ], l[ 3 ] ] ) )
+        .sort( ( a, b ) => a[ 0 ] - b[ 0 ] );
+
     const totalEvents = list.reduce( ( sum, p ) => sum + p.events, 0 );
     const totalPush = roundPush( list.reduce( ( sum, p ) => sum + p.pushValue, 0 ) );
 
@@ -926,6 +935,8 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
         boss: boss,
         killClock: kill.clock,
         killTime: kill.time,
+        startTime: startTime,
+        timeline: timeline,
         startClock: formatClock( session.times[ startIndex ] ),
         durationSeconds: Math.round( ( kill.time - session.times[ startIndex ] ) / 1000 ),
         damageTaken: kill.damage,

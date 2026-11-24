@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
-import { Subscription } from 'rxjs';
+import { forkJoin, of, Subscription } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import { CharacterModel, PushRecapPreferences, PushRecapProc, PushRecapSummary, PushScanStatus } from '../core.model';
+import { aggregateFights, axisStep, describeTotals, nightKey, PushTotals } from './push-totals';
 
 /**
  * One cell of the player by spell grid.
@@ -13,6 +15,28 @@ export interface PushGridCell {
     assumed: number;
     background: string;
     tooltip: string;
+}
+
+export interface PushTotalsRow {
+    name: string;
+    fights: number;
+    events: number;
+    assumed: number;
+    pushValue: number;
+    cells: PushGridCell[];
+}
+
+export interface PushFightBar {
+    d: string;
+    x: number;
+    width: number;
+}
+
+export interface PushChartTick {
+    value: string;
+    x: number;
+    y: number;
+    anchor: string;
 }
 
 
@@ -90,6 +114,22 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     public rows: PushRecapSummary[] = [];
     public showCharacter: boolean = false;
     public selected: PushRecapSummary | null = null;
+    public selection: PushRecapSummary[] = [];
+    public selectedIds: Set<string> = new Set<string>();
+    public multi: boolean = false;
+    public dateFilter: string = '';
+    public dateOptions: string[] = [];
+    public totals: PushTotals | null = null;
+    public totalsLoading: boolean = false;
+    public totalsNote: string = '';
+    public totalsTitle: string = '';
+    public totalsMeasure: 'hits' | 'push' = 'hits';
+    public totalsRows: PushTotalsRow[] = [];
+    public fightBars: PushFightBar[] = [];
+    public fightGrid: number[] = [];
+    public fightYTicks: PushChartTick[] = [];
+    public fightXTicks: PushChartTick[] = [];
+    public fightTip: { x: number, y: number, title: string, value: string } | null = null;
     public detail: PushRecapSummary | null = null;
     public gridSpells: string[] = [];
     public gridSpellPush: Map<string, number | null> = new Map<string, number | null>();
@@ -102,6 +142,10 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
 
     private subscription: Subscription = new Subscription();
     private detailSubscription: Subscription | null = null;
+    private totalsSubscription: Subscription | null = null;
+    private detailCache: Map<string, PushRecapSummary> = new Map<string, PushRecapSummary>();
+    private detailStale = false;
+    private anchorId: string | null = null;
 
     constructor(
         private readonly ipcService: IpcService,
@@ -164,6 +208,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.subscription.unsubscribe();
         this.detailSubscription?.unsubscribe();
+        this.totalsSubscription?.unsubscribe();
     }
 
 
@@ -531,7 +576,8 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * Switches between the saved recaps and the scan results, dropping the other list selection.
      */
     public onSourceChange(): void {
-        this.selected = null;
+        this.selectedIds = new Set<string>();
+        this.anchorId = null;
         this.applyFilters();
     }
 
@@ -649,16 +695,49 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
 
 
     /**
-     * Picks the recap whose details are shown, and scrolls its row into view.
+     * Picks the clicked row, or adds it with Ctrl, or extends the selection to it with Shift, and
+     * scrolls it into view.
      *
      * @param recap The recap that was clicked.
-     * @param event The click event, used to find the row.
+     * @param event The click event, for the modifier keys and the row.
      */
-    public select( recap: PushRecapSummary, event: Event ): void {
+    public select( recap: PushRecapSummary, event: MouseEvent ): void {
         const row = event.currentTarget as HTMLElement;
-        this.selected = recap;
-        this.loadDetail();
+        const anchor = this.rows.findIndex( r => r.id === this.anchorId );
+        if ( event.ctrlKey || event.metaKey ) {
+            if ( this.selectedIds.has( recap.id ) ) {
+                this.selectedIds.delete( recap.id );
+            } else {
+                this.selectedIds.add( recap.id );
+            }
+            this.anchorId = recap.id;
+        } else if ( event.shiftKey && anchor > -1 ) {
+            const to = this.rows.indexOf( recap );
+            this.selectedIds = new Set( this.rows.slice( Math.min( anchor, to ), Math.max( anchor, to ) + 1 ).map( r => r.id ) );
+        } else {
+            this.selectedIds = new Set<string>( [ recap.id ] );
+            this.anchorId = recap.id;
+        }
+        this.applySelection();
         setTimeout( () => row.scrollIntoView( { block: 'nearest' } ) );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Selects every fight in the list, for the totals of all of them.
+     */
+    public selectAllShown(): void {
+        this.selectedIds = new Set( this.rows.map( r => r.id ) );
+        this.anchorId = this.rows[ 0 ]?.id ?? null;
+        this.applySelection();
     }
 
 
@@ -674,8 +753,90 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * Closes the docked details panel and drops the selection.
      */
     public closeDetails(): void {
-        this.selected = null;
-        this.loadDetail();
+        this.selectedIds = new Set<string>();
+        this.applySelection();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Narrows the selection to one fight, from the fights chart of the totals.
+     *
+     * @param id The fight id.
+     */
+    public selectFight( id: string ): void {
+        this.selectedIds = new Set<string>( [ id ] );
+        this.anchorId = id;
+        this.applySelection();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Switches the bars of the fights chart between hits and push.
+     *
+     * @param measure The new measure.
+     */
+    public setTotalsMeasure( measure: 'hits' | 'push' ): void {
+        this.totalsMeasure = measure;
+        this.buildFightChart();
+        this.changeDetector.markForCheck();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows the tooltip of one bar in the fights chart next to the mouse.
+     *
+     * @param event The mouse event, for the tooltip position.
+     * @param index The bar under the mouse.
+     */
+    public showFightTip( event: MouseEvent, index: number ): void {
+        const fight = this.totals.perFight[ index ];
+        const value = this.totalsMeasure === 'hits' ? fight.hits : fight.pushValue;
+        this.fightTip = {
+            x: Math.min( event.clientX + 14, window.innerWidth - 240 ),
+            y: event.clientY + 14,
+            title: `${fight.mob} \u00b7 ${fight.killTime.substring( 11, 16 )}`,
+            value: `${value} ${this.totalsMeasure === 'hits' ? 'push hits' : 'push'}`,
+        };
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Hides the fights chart tooltip when the mouse leaves a bar.
+     */
+    public hideFightTip(): void {
+        this.fightTip = null;
     }
 
 
@@ -750,13 +911,19 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * Copies a short text version of the selected recap, for pasting into chat.
      */
     public copySummary(): void {
+        if ( this.multi && this.totals !== null && this.totals !== undefined ) {
+            const first = nightKey( this.totals.firstKill );
+            const last = nightKey( this.totals.lastKill );
+            this.ipcService.sendTextToClipboard( describeTotals( this.totals, first === last ? first : `${first} to ${last}`, this.formatLength( this.totals.seconds ) ) );
+            return;
+        }
         const recap = this.detail;
         if ( recap === null || recap === undefined ) {
             return;
         }
         const lines = [
             `Push Recap - ${recap.mob}, killed ${this.formatTime( recap )}, fight ${this.formatLength( recap.fightSeconds )}`,
-            `${recap.events} push hits, ${recap.players.length} players pushing`,
+            `${recap.events} push ${recap.events === 1 ? 'hit' : 'hits'}, ${recap.players.length} ${recap.players.length === 1 ? 'player' : 'players'} pushing`,
         ];
         recap.players.forEach( ( p, i ) => {
             const share = recap.events > 0 ? Math.round( p.events * 100 / recap.events ) : 0;
@@ -854,8 +1021,10 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      */
     private load(): void {
         this.ipcService.getPushRecaps().subscribe( recaps => {
+            this.detailCache.clear();
             this.recaps = ( recaps ?? [] ).slice().sort( ( a, b ) => b.killTime.localeCompare( a.killTime ) );
             this.savedKeys = new Set( this.recaps.map( r => this.recapKey( r ) ) );
+            this.detailStale = this.detailStale || this.source === 'saved';
             this.loaded = true;
             this.applyFilters();
         } );
@@ -878,6 +1047,9 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     private setHiddenTexts( prefs: PushRecapPreferences | null ): void {
         this.hiddenTexts = new Set( Array.isArray( prefs?.hiddenProcTexts ) ? prefs.hiddenProcTexts : [] );
         this.buildProcs();
+        if ( this.multi && this.totals !== null && this.totals !== undefined ) {
+            this.buildTotals();
+        }
         this.changeDetector.markForCheck();
     }
 
@@ -934,6 +1106,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      */
     private loadScanResults(): void {
         this.ipcService.getPushScanResults().subscribe( results => {
+            this.detailCache.clear();
             this.scanResults = ( results ?? [] ).slice().sort( ( a, b ) => b.killTime.localeCompare( a.killTime ) );
             this.applyFilters();
         } );
@@ -955,21 +1128,207 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         const mob = this.mobFilter.trim().toLowerCase();
         const items = this.source === 'scan' ? this.scanResults : this.recaps;
         this.showCharacter = this.source === 'saved' && new Set( this.recaps.map( r => r.characterName ) ).size > 1;
-        this.rows = items.filter( r => {
-            return r.damageTaken >= this.minDamage
-                && ( !this.namedOnly || r.named )
-                && ( mob === '' || r.mob.toLowerCase().indexOf( mob ) > -1 );
-        } );
-        const selectedId = this.selected?.id;
-        const stillListed = this.rows.find( r => r.id === selectedId ) ?? null;
-        this.selected = ( this.selected === null || this.selected === undefined ) ? null : stillListed;
-        const selectionChanged = this.selected === null || this.selected === undefined
-            || this.selected.id !== this.detail?.id || this.selected.savedAt !== this.detail?.savedAt;
-        if ( selectionChanged ) {
-            this.loadDetail();
-        } else {
-            this.changeDetector.markForCheck();
+        this.dateOptions = Array.from( new Set( items.map( r => nightKey( r.killTime ) ) ) ).sort().reverse();
+        if ( this.dateFilter !== '' && this.dateOptions.indexOf( this.dateFilter ) === -1 ) {
+            this.dateFilter = '';
         }
+        this.rows = items.filter( r => r.damageTaken >= this.minDamage && ( !this.namedOnly || r.named ) && ( mob === '' || r.mob.toLowerCase().indexOf( mob ) > -1 ) && ( this.dateFilter === '' || nightKey( r.killTime ) === this.dateFilter ) );
+        this.applySelection();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Applies the selected rows: totals for several fights, details for one, nothing for none.
+     */
+    private applySelection(): void {
+        this.selection = this.rows.filter( r => this.selectedIds.has( r.id ) );
+        this.selectedIds = new Set( this.selection.map( r => r.id ) );
+        if ( this.anchorId !== null && this.anchorId !== undefined && this.rows.every( r => r.id !== this.anchorId ) ) {
+            this.anchorId = null;
+        }
+        this.selected = this.selection.length === 1 ? this.selection[ 0 ] : null;
+        this.multi = this.selection.length > 1;
+        this.totalsSubscription?.unsubscribe();
+        this.totalsSubscription = null;
+        if ( this.multi ) {
+            this.loadDetail();
+            this.loadTotals();
+        } else {
+            this.totals = null;
+            this.totalsLoading = false;
+            const noSelection = this.selected === null || this.selected === undefined;
+            const otherDetail = noSelection || this.selected.id !== this.detail?.id || this.selected.savedAt !== this.detail?.savedAt;
+            if ( this.detailStale || otherDetail ) {
+                this.loadDetail();
+            } else {
+                this.changeDetector.markForCheck();
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Builds the key under which the full recap of a fight is cached.  The save date is part of it
+     * so a refreshed recap is fetched again.
+     *
+     * @param recap The fight to key.
+     */
+    private cacheKey( recap: PushRecapSummary ): string {
+        return `${this.source}|${recap.id}|${recap.savedAt ?? ''}`;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Fetches the fights of the selection that are not cached yet, then builds the totals.  A fight
+     * that cannot be loaded is skipped.
+     */
+    private loadTotals(): void {
+        const missing = this.selection.filter( r => !this.detailCache.has( this.cacheKey( r ) ) );
+        if ( missing.length === 0 ) {
+            this.totalsLoading = false;
+            this.buildTotals();
+            return;
+        }
+        this.totals = null;
+        this.totalsLoading = true;
+        this.changeDetector.markForCheck();
+        const requests = missing.map( r => {
+            const request = this.source === 'scan' ? this.ipcService.getPushScanResult( r.id ) : this.ipcService.getPushRecap( r.id );
+            return request.pipe( catchError( () => of( null ) ) );
+        } );
+        this.totalsSubscription = forkJoin( requests ).subscribe( results => {
+            results.forEach( ( full, i ) => {
+                if ( full !== null && full !== undefined ) {
+                    this.detailCache.set( this.cacheKey( missing[ i ] ), full );
+                }
+            } );
+            this.totalsLoading = false;
+            this.buildTotals();
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Adds up the loaded fights of the selection and prepares the tiles, the player grid and the
+     * fights chart.
+     */
+    private buildTotals(): void {
+        const cached = this.selection.map( r => this.detailCache.get( this.cacheKey( r ) ) );
+        const details = cached.filter( r => r !== null && r !== undefined );
+        const totals = aggregateFights( details, this.hiddenTexts );
+        this.totals = totals;
+        this.totalsNote = details.length < this.selection.length ? 'Some fights could not be loaded.' : '';
+
+        const first = nightKey( totals.firstKill );
+        const last = nightKey( totals.lastKill );
+        const clock = ( time: string ) => time.substring( 11, 16 );
+        const range = first === last ? `${first} ${clock( totals.firstKill )}\u2013${clock( totals.lastKill )}` : `${first} ${clock( totals.firstKill )} \u2013 ${last} ${clock( totals.lastKill )}`;
+        this.totalsTitle = `${totals.fights} fights \u00b7 ${range} \u00b7 ${this.formatLength( totals.seconds )} of fighting`;
+
+        let max = 0;
+        totals.players.forEach( p => p.spells.forEach( s => max = Math.max( max, s.events ) ) );
+        this.totalsRows = totals.players.map( p => ( {
+            name: p.name,
+            fights: p.fights,
+            events: p.events,
+            assumed: p.assumed,
+            pushValue: p.pushValue,
+            cells: totals.spells.map( s => {
+                const count = p.spells.get( s );
+                return ( count === null || count === undefined ) || count.events <= 0
+                    ? null
+                    : {
+                        events: count.events,
+                        assumed: count.assumed,
+                        background: `rgba( 105, 240, 174, ${( 0.12 + 0.6 * count.events / max ).toFixed( 2 )} )`,
+                        tooltip: this.cellTooltip( count.events, count.assumed, totals.spellPush.get( s ) ?? undefined ),
+                    };
+            } ),
+        } ) );
+        this.buildFightChart();
+        this.changeDetector.markForCheck();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Builds the bars of the fights chart from the totals.
+     */
+    private buildFightChart(): void {
+        this.fightBars = [];
+        this.fightGrid = [];
+        this.fightYTicks = [];
+        this.fightXTicks = [];
+        if ( ( this.totals === null || this.totals === undefined ) || this.totals.perFight.length === 0 ) {
+            return;
+        }
+        const fights = this.totals.perFight;
+        const width = 1000, height = 150, left = 44, right = 8, top = 20, bottom = 30;
+        const plotWidth = width - left - right;
+        const plotHeight = height - top - bottom;
+        const values = fights.map( f => this.totalsMeasure === 'hits' ? f.hits : f.pushValue );
+        const max = Math.max( 1, ...values );
+        const step = axisStep( max );
+        const ceiling = Math.ceil( max / step ) * step;
+        for ( let v = 0; v <= ceiling + step / 2; v += step ) {
+            const y = top + plotHeight - v / ceiling * plotHeight;
+            this.fightGrid.push( y );
+            this.fightYTicks.push( { value: `${Math.round( v * 100 ) / 100}`, x: left - 8, y: y + 4, anchor: 'end' } );
+        }
+        const barWidth = plotWidth / fights.length;
+        const gap = Math.min( 2, barWidth * 0.2 );
+        this.fightBars = values.map( ( value, i ) => {
+            const x = left + i * barWidth + gap / 2;
+            const w = barWidth - gap;
+            const h = value / ceiling * plotHeight;
+            const y = top + plotHeight - h;
+            const y0 = top + plotHeight;
+            const r = Math.min( 3, w / 2, h );
+            const d = h <= 0 ? '' : r > 0 ? `M${x},${y0} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y0} Z` : `M${x},${y0} V${y} H${x + w} V${y0} Z`;
+            return { d: d, x: left + i * barWidth, width: barWidth };
+        } );
+        const clock = ( time: string ) => time.substring( 11, 16 );
+        const ticks = fights.length > 1 ? [ [ 0, 'start' ], [ ( fights.length - 1 ) / 2, 'middle' ], [ fights.length - 1, 'end' ] ] : [ [ 0, 'start' ] ];
+        this.fightXTicks = ticks.map( ( [ index, anchor ] ) => ( { value: clock( fights[ Math.round( index as number ) ].killTime ), x: anchor === 'start' ? left : anchor === 'end' ? width - right : left + plotWidth / 2, y: height - 10, anchor: anchor as string } ) );
     }
 
 
@@ -986,6 +1345,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * not returned.
      */
     private loadDetail(): void {
+        this.detailStale = false;
         this.detailSubscription?.unsubscribe();
         this.detailSubscription = null;
         this.detail = null;
@@ -1070,8 +1430,8 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      */
     private cellTooltip( events: number, assumed: number, push: number | undefined ): string {
         const text = ( push === null || push === undefined )
-            ? `${events} hits`
-            : `${events} hits \u00d7 ${push} push = ${Math.round( events * push * 100 ) / 100} push`;
+            ? `${events} ${events === 1 ? 'hit' : 'hits'}`
+            : `${events} ${events === 1 ? 'hit' : 'hits'} \u00d7 ${push} push = ${Math.round( events * push * 100 ) / 100} push`;
         return assumed > 0 ? `${text}, ${assumed} assumed` : text;
     }
 

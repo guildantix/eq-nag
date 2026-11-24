@@ -3,7 +3,7 @@ const fsp = fs.promises;
 const path = require( 'path' );
 const crypto = require( 'crypto' );
 const log = require( 'electron-log' );
-const { buildListRow } = require( '../utilities/push-recap-summary' );
+const { buildListRow, maxTimeline, maxTimelineTexts } = require( '../utilities/push-recap-summary' );
 
 const fileName = 'push-recaps.json';
 const badFileName = 'push-recaps.json.bad';
@@ -76,6 +76,13 @@ const maxNpcAbilities = 100;
  * @property {boolean} [othersSeen] True when spell damage from other players was in the log.
  * @property {boolean} [startsAtLogEdge] True when the fight may have begun before the part read.
  * @property {boolean} [reachedStart] True when the part read began at the start of the log.
+ * @property {string} [fightStart] When the fight started, as an ISO date.
+ * @property {any[][]} [timeline] Every counted hit, in fight order: [ seconds into the fight, kind
+ *     (0 hit, 1 assumed cast, 2 proc, 3 possible proc), index in players or -1, spell name or index
+ *     in timelineTexts, push ].
+ * @property {string[]} [timelineTexts] The landing messages the timeline refers to.
+ * @property {boolean} [timelineTruncated] True when a long fight had entries left out of the
+ *     timeline.
  */
 
 
@@ -138,6 +145,49 @@ function toOptionalCount( value ) {
  */
 function toText( value ) {
     return typeof value === 'string' ? value.substring( 0, 200 ) : '';
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the given timeline entry as a clean entry, or null when it is not valid.
+ *
+ * @returns {any[] | null} The entry.
+ *
+ * @param {any} entry The entry.
+ * @param {number} playerCount The number of players.
+ * @param {number} textCount The number of landing messages.
+ */
+function toTimelineEntry( entry, playerCount, textCount ) {
+    if ( !Array.isArray( entry ) || entry.length < 5 ) {
+        return null;
+    }
+    let [ time, kind, who, ref, push ] = entry;
+    const badTime = !Number.isFinite( time ) || time < 0;
+    const badKind = !Number.isInteger( kind ) || kind < 0 || kind > 3;
+    if ( badTime || badKind || !Number.isFinite( push ) || push < 0 ) {
+        return null;
+    }
+    if ( kind < 2 ) {
+        if ( typeof ref !== 'string' ) {
+            return null;
+        }
+        ref = toText( ref );
+        who = Number.isInteger( who ) && who >= 0 && who < playerCount ? who : -1;
+    } else {
+        if ( !Number.isInteger( ref ) || ref < 0 || ref >= textCount ) {
+            return null;
+        }
+        who = -1;
+    }
+    return [ Math.round( time ), kind, who, ref, Math.round( push * 100 ) / 100 ];
 }
 
 
@@ -239,6 +289,20 @@ function sanitize( data ) {
         summary.npcAbilities = data.npcAbilities.slice( 0, maxNpcAbilities ).map( a => {
             return { actor: toText( a?.actor ), name: toText( a?.name ), count: toCount( a?.count ), push: toCount( a?.push ) };
         } );
+    }
+    if ( typeof data.fightStart === 'string' && !isNaN( new Date( data.fightStart ).getTime() ) ) {
+        summary.fightStart = new Date( data.fightStart ).toISOString();
+    }
+    if ( Array.isArray( data.timeline ) ) {
+        const rawTexts = Array.isArray( data.timelineTexts ) ? data.timelineTexts : [];
+        const texts = rawTexts.slice( 0, maxTimelineTexts ).map( toText );
+        summary.timelineTexts = texts;
+        summary.timeline = data.timeline.slice( 0, maxTimeline )
+            .map( e => toTimelineEntry( e, players.length, texts.length ) )
+            .filter( e => ( e !== null && e !== undefined ) );
+        if ( data.timelineTruncated === true || data.timeline.length > maxTimeline || rawTexts.length > maxTimelineTexts ) {
+            summary.timelineTruncated = true;
+        }
     }
     [ 'othersSeen', 'startsAtLogEdge', 'reachedStart' ].forEach( key => {
         if ( typeof data[ key ] === 'boolean' ) {
