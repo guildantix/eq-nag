@@ -6,7 +6,10 @@
  * trigger's folder twice, once in place and once at the root, under the same
  * id; installing both copies put the triggers in the root copy and left the
  * real folder empty. The deepest copy is kept, because the stray copies were
- * always added at the root. Children of a dropped copy move to the kept copy.
+ * always added at the root, but never one nested inside another copy of the
+ * same id: dropping its outer copy would take the kept one with it. Children
+ * of a dropped copy move to the kept copy. The package editor has the same
+ * rule in NewTriggerPackageComponent.removeStrayPackageFolders.
  *
  * @param {PackageFolder[]} packageFolders The package's root folders.
  * @returns {PackageFolder[]} The de-duplicated tree; the input is not changed.
@@ -32,27 +35,31 @@ function removeDuplicatePackageFolders( packageFolders ) {
             return folders;
         }
 
-        let keep = duplicated[ 0 ];
-        for ( const occurrence of duplicated ) {
+        // Only an outermost copy can be kept; a copy inside another copy 
+        // would be removed together with that outer copy.
+        const isInsideAnotherCopy = occurrence =>
+            duplicated.some( other => other !== occurrence && containsNode( other.folder.children, occurrence.folder ) );
+        const outermost = duplicated.filter( occurrence => !isInsideAnotherCopy( occurrence ) );
+        let keep = outermost[ 0 ];
+        for ( const occurrence of outermost ) {
             if ( occurrence.depth > keep.depth ) {
                 keep = occurrence;
             }
         }
 
-        for ( const occurrence of duplicated ) {
-            if ( occurrence === keep ) {
-                continue;
+        // Remove one other copy per pass: removing a second copy in the same
+        // pass could use a sibling list the first move already changed.
+        const drop = duplicated.find( occurrence => occurrence !== keep );
+        for ( const child of drop.folder.children ?? [] ) {
+            // Skip a child that holds the kept copy, so the tree never loops.
+            const childHoldsKeptCopy = containsNode( [ child ], keep.folder );
+            // A child whose id the kept copy already has is still moved; the
+            // next pass merges the two, so nothing below it is lost.
+            if ( !childHoldsKeptCopy ) {
+                keep.folder.children.push( child );
             }
-            for ( const child of occurrence.folder.children ?? [] ) {
-                // Skip a child that holds the kept copy, so the tree never loops.
-                const childHoldsKeptCopy = containsFolderId( [ child ], keep.folder.folderId );
-                const alreadyKept = keep.folder.children.some( keptChild => keptChild.folderId === child.folderId );
-                if ( !childHoldsKeptCopy && !alreadyKept ) {
-                    keep.folder.children.push( child );
-                }
-            }
-            occurrence.siblings.splice( occurrence.siblings.indexOf( occurrence.folder ), 1 );
         }
+        drop.siblings.splice( drop.siblings.indexOf( drop.folder ), 1 );
     }
 }
 
@@ -73,7 +80,7 @@ function removeDuplicatePackageFolders( packageFolders ) {
  * @returns {PackageFolder[]} The copies, each with a children array.
  */
 function cloneFolders( folders ) {
-    return folders.map( folder => ( {
+    return folders.filter( folder => folder !== null && typeof folder === 'object' ).map( folder => ( {
         folderId: folder.folderId,
         name: folder.name,
         children: cloneFolders( folder.children ?? [] ),
@@ -117,14 +124,23 @@ function collectOccurrences( folders, depth, occurrencesByFolderId ) {
 
 
 /**
- * Returns true when the folder id appears anywhere in the given trees.
- *
+ * Returns true when the given folder object sits anywhere in the trees.
+ * 
  * @param {PackageFolder[]} folders The trees to search.
- * @param {string} folderId The folder id to look for.
+ * @param {PackageFolder} node The folder object to look for.
  * @returns {boolean} True when found.
  */
-function containsFolderId( folders, folderId ) {
-    return folders.some( folder => folder.folderId === folderId || containsFolderId( folder.children ?? [], folderId ) );
+function containsNode( folders, node ) {
+    return ( folders ?? [] ).some( folder => folder === node || containsNode( folder.children, node ) );
 }
+
+
+
+
+
+
+
+
+
 
 module.exports = { removeDuplicatePackageFolders };

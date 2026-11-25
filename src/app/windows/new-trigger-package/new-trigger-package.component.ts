@@ -13,6 +13,9 @@ import { ColoredString } from 'src/app/dialogs/dialog.model';
 import { nagId } from 'src/app/core/nag-id.util';
 import { describeUnshareableIcons } from 'src/app/utilities/timer-icons';
 
+/** One place a folder id appears in a package folder tree. */
+type PackageFolderOccurrence = { folder: PackageFolder, siblings: PackageFolder[], parentId: string, depth: number };
+
 @Component( {
     selector: 'app-new-trigger-package',
     templateUrl: 'new-trigger-package.component.html',
@@ -170,8 +173,12 @@ export class NewTriggerPackageComponent implements OnInit {
 
                     if ( pkgTrigger.folderId !== trigger.folderId ) {
                         // if the folder was changed, ensure the new folder is added to the package.
+                        // A trigger at the root, or in a folder that no longer 
+                        // exists, has no folder to add.
                         let folder = this.findTriggerFolder( trigger.folderId, this.triggerFolders );
-                        this.addFolderAncestors( folder );
+                        if ( folder !== undefined ) {
+                            this.addFolderAncestors( folder );
+                        }
                         pkgTrigger.folderId = trigger.folderId;
                     }
 
@@ -213,58 +220,120 @@ export class NewTriggerPackageComponent implements OnInit {
 
 
     /**
-     * Keeps one copy of each folder in the package, the one that sits where
-     * the folder is in the author's tree. Older updates added a moved
-     * trigger's folder again at the package root, and installers then put
-     * the triggers in that root copy instead of the real folder.
+     * Keeps one copy of each folder in the package, the one that sits where 
+     * the folder is in the author's tree. Older updates added a moved 
+     * trigger's folder again at the package root, and installers then put 
+     * the triggers in that root copy instead of the real folder. The 
+     * installer has the same rule, minus the author's tree, in 
+     * src/electron/data/package-folders.js.
      */
-    removeStrayPackageFolders(): void {
+    private removeStrayPackageFolders(): void {
         if ( !( this.package?.model?.folders?.length > 0 ) ) {
             return;
         }
 
-        // Fix one duplicated id per pass and rescan, because merging children
-        // changes where nested duplicates live.
-        for ( ;; ) {
-            /** Every place a folder id appears, with the id of its package parent. */
-            type FolderOccurrence = { folder: PackageFolder, siblings: PackageFolder[], parentId: string, depth: number };
-            const occurrencesByFolderId: Record<string, FolderOccurrence[]> = {};
-            const collectOccurrences = ( folders: PackageFolder[], parentId: string, depth: number ): void => {
-                for ( const folder of folders ?? [] ) {
-                    occurrencesByFolderId[ folder.folderId ] = occurrencesByFolderId[ folder.folderId ] ?? [];
-                    occurrencesByFolderId[ folder.folderId ].push( { folder, siblings: folders, parentId, depth } );
-                    collectOccurrences( folder.children, folder.folderId, depth + 1 );
-                }
-            };
-            collectOccurrences( this.package.model.folders, null, 0 );
+        // Fix one duplicated id per pass and rescan, because merging children 
+        // changes where nested duplicates live. Each pass removes at least one 
+        // copy, so the loop ends.
+        let occurrences = this.findDuplicatedPackageFolder();
+        while ( occurrences !== undefined ) {
+            this.mergeDuplicatedPackageFolder( occurrences );
+            occurrences = this.findDuplicatedPackageFolder();
+        }
+    }
 
-            const folderId = Object.keys( occurrencesByFolderId ).find( id => occurrencesByFolderId[ id ].length > 1 );
-            if ( folderId === undefined ) {
-                return;
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns every copy of the first folder id that appears more than once 
+     * in the package folders.
+     * 
+     * @returns The copies, or undefined when every id appears once.
+     */
+    private findDuplicatedPackageFolder(): PackageFolderOccurrence[] {
+        const occurrencesByFolderId: Record<string, PackageFolderOccurrence[]> = {};
+        const collect = ( folders: PackageFolder[], parentId: string, depth: number ): void => {
+            for ( const folder of folders ?? [] ) {
+                occurrencesByFolderId[ folder.folderId ] = occurrencesByFolderId[ folder.folderId ] ?? [];
+                occurrencesByFolderId[ folder.folderId ].push( { folder, siblings: folders, parentId, depth } );
+                collect( folder.children, folder.folderId, depth + 1 );
             }
-            const occurrences = occurrencesByFolderId[ folderId ];
+        };
+        collect( this.package.model.folders, null, 0 );
 
-            // Prefer the copy whose parent matches the author's tree; fall back
-            // to the deepest copy, since the stray copies were added at the root.
-            const authorParentId = this.ancestryMap[ folderId ];
-            const keep = occurrences.find( occurrence => authorParentId !== undefined && occurrence.parentId === authorParentId )
-                ?? _.maxBy( occurrences, occurrence => occurrence.depth );
+        return Object.values( occurrencesByFolderId ).find( copies => copies.length > 1 );
+    }
 
-            for ( const occurrence of occurrences ) {
-                if ( occurrence === keep ) {
-                    continue;
-                }
-                keep.folder.children = keep.folder.children ?? [];
-                for ( const child of occurrence.folder.children ?? [] ) {
-                    // Skip a child that holds the kept copy, so the tree never loops.
-                    const childHoldsKeptCopy = PackageFolder.findFolderById( keep.folder.folderId, [ child ] ) !== undefined;
-                    if ( !childHoldsKeptCopy && !keep.folder.children.some( keptChild => keptChild.folderId === child.folderId ) ) {
-                        keep.folder.children.push( child );
-                    }
-                }
-                occurrence.siblings.splice( occurrence.siblings.indexOf( occurrence.folder ), 1 );
+
+
+
+
+
+
+
+
+
+    /**
+     * Keeps one copy of a duplicated package folder and removes one other 
+     * copy, moving its child folders to the kept copy.
+     * 
+     * @param occurrences Every copy of one folder id.
+     */
+    private mergeDuplicatedPackageFolder( occurrences: PackageFolderOccurrence[] ): void {
+        const folderId = occurrences[ 0 ].folder.folderId;
+
+        // Only an outermost copy can be kept; a copy inside another copy would 
+        // be removed together with that outer copy.
+        const isInsideAnotherCopy = ( occurrence: PackageFolderOccurrence ): boolean =>
+            occurrences.some( other => other !== occurrence && this.packageFolderContains( other.folder.children, occurrence.folder ) );
+        const outermost = occurrences.filter( occurrence => !isInsideAnotherCopy( occurrence ) );
+
+        // Prefer the copy whose parent matches the author's tree; fall back to 
+        // the deepest copy, since the stray copies were added at the root.
+        const authorParentId = this.ancestryMap[ folderId ];
+        const keep = outermost.find( occurrence => authorParentId !== undefined && occurrence.parentId === authorParentId )
+            ?? _.maxBy( outermost, occurrence => occurrence.depth );
+        keep.folder.children = keep.folder.children ?? [];
+
+        // Remove one other copy per pass: removing a second copy in the same
+        // pass could use a sibling list the first move already changed.
+        const drop = occurrences.find( occurrence => occurrence !== keep );
+        for ( const child of drop.folder.children ?? [] ) {
+            // Skip a child that holds the kept copy, so the tree never loops.
+            const childHoldsKeptCopy = this.packageFolderContains( [ child ], keep.folder );
+            // A child whose id the kept copy already has is still moved; the
+            // next pass merges the two, so nothing below it is lost.
+            if ( !childHoldsKeptCopy ) {
+                keep.folder.children.push( child );
             }
         }
+        drop.siblings.splice( drop.siblings.indexOf( drop.folder ), 1 );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns true when the given folder object sits anywhere in the trees.
+     * 
+     * @param folders The trees to search.
+     * @param node The folder object to look for.
+     */
+    private packageFolderContains( folders: PackageFolder[], node: PackageFolder ): boolean {
+        return ( folders ?? [] ).some( folder => folder === node || this.packageFolderContains( folder.children, node ) );
     }
 
 
