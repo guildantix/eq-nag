@@ -149,6 +149,9 @@ export class NewTriggerPackageComponent implements OnInit {
      */
     pullTriggerUpdates(): void {
 
+        // addFolderAncestors and the folder-condition check walk this map;
+        // without it a moved trigger's folder lands at the package root.
+        this.buildFolderAncestryMap();
         this.deletedTriggerIds = [];
 
         this.package.model.triggers.forEach( pkgTrigger => {
@@ -196,6 +199,72 @@ export class NewTriggerPackageComponent implements OnInit {
             } );
 
         } );
+
+        this.removeStrayPackageFolders();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Keeps one copy of each folder in the package, the one that sits where
+     * the folder is in the author's tree. Older updates added a moved
+     * trigger's folder again at the package root, and installers then put
+     * the triggers in that root copy instead of the real folder.
+     */
+    removeStrayPackageFolders(): void {
+        if ( !( this.package?.model?.folders?.length > 0 ) ) {
+            return;
+        }
+
+        // Fix one duplicated id per pass and rescan, because merging children
+        // changes where nested duplicates live.
+        for ( ;; ) {
+            /** Every place a folder id appears, with the id of its package parent. */
+            type FolderOccurrence = { folder: PackageFolder, siblings: PackageFolder[], parentId: string, depth: number };
+            const occurrencesByFolderId: Record<string, FolderOccurrence[]> = {};
+            const collectOccurrences = ( folders: PackageFolder[], parentId: string, depth: number ): void => {
+                for ( const folder of folders ?? [] ) {
+                    occurrencesByFolderId[ folder.folderId ] = occurrencesByFolderId[ folder.folderId ] ?? [];
+                    occurrencesByFolderId[ folder.folderId ].push( { folder, siblings: folders, parentId, depth } );
+                    collectOccurrences( folder.children, folder.folderId, depth + 1 );
+                }
+            };
+            collectOccurrences( this.package.model.folders, null, 0 );
+
+            const folderId = Object.keys( occurrencesByFolderId ).find( id => occurrencesByFolderId[ id ].length > 1 );
+            if ( folderId === undefined ) {
+                return;
+            }
+            const occurrences = occurrencesByFolderId[ folderId ];
+
+            // Prefer the copy whose parent matches the author's tree; fall back
+            // to the deepest copy, since the stray copies were added at the root.
+            const authorParentId = this.ancestryMap[ folderId ];
+            const keep = occurrences.find( occurrence => authorParentId !== undefined && occurrence.parentId === authorParentId )
+                ?? _.maxBy( occurrences, occurrence => occurrence.depth );
+
+            for ( const occurrence of occurrences ) {
+                if ( occurrence === keep ) {
+                    continue;
+                }
+                keep.folder.children = keep.folder.children ?? [];
+                for ( const child of occurrence.folder.children ?? [] ) {
+                    // Skip a child that holds the kept copy, so the tree never loops.
+                    const childHoldsKeptCopy = PackageFolder.findFolderById( keep.folder.folderId, [ child ] ) !== undefined;
+                    if ( !childHoldsKeptCopy && !keep.folder.children.some( keptChild => keptChild.folderId === child.folderId ) ) {
+                        keep.folder.children.push( child );
+                    }
+                }
+                occurrence.siblings.splice( occurrence.siblings.indexOf( occurrence.folder ), 1 );
+            }
+        }
     }
 
 
