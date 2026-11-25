@@ -25,6 +25,7 @@ const {
 } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const { sanitizeTriggerIcons } = require( '../utilities/icons' );
+const { removeDuplicatePackageFolders } = require( './package-folders' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
@@ -1783,7 +1784,11 @@ class TriggerDatabaseStore extends Store {
             // } );
 
             // Finally, install the triggers.
-            pkg.model?.triggers?.forEach( pkgTrigger => this.installPackageTrigger( pkg.triggerPackageId, pkgTrigger, folderMap ) );
+            const vacatedFolderIds = new Set();
+            pkg.model?.triggers?.forEach( pkgTrigger => {
+                vacatedFolderIds.add( this.installPackageTrigger( pkg.triggerPackageId, pkgTrigger, folderMap ) );
+            } );
+            this.removeEmptyFolders( vacatedFolderIds );
 
             // Save changes to the data.
             this.processPredefinedTriggers();
@@ -1874,9 +1879,11 @@ class TriggerDatabaseStore extends Store {
                 // folder ids to existing folders. If a folder does not exist,  it is 
                 // created  using  the  folder  id  in  the trigger   package  folder.
                 let folderMap = this.installPackageFolders( quickShare.model?.folders );
-                quickShare.model?.triggers?.forEach( trigger => this.installPackageTrigger(
+                const vacatedFolderIds = new Set();
+                quickShare.model?.triggers?.forEach( trigger => vacatedFolderIds.add( this.installPackageTrigger(
                     quickShare.quickShareId, trigger, folderMap, shareLimits.maxIconLength
-                ) );
+                ) ) );
+                this.removeEmptyFolders( vacatedFolderIds );
     
                 // Save changes to the data.
                 this.processPredefinedTriggers();
@@ -1956,13 +1963,7 @@ class TriggerDatabaseStore extends Store {
         filesForRemoval?.forEach( fileId => _fileStore.deleteFile( fileId ) );
 
         // Remove any empty folders that were imported with the package.
-        let foldersForRemoval = _.remove( packageFolders, folderId => {
-            return !_.some( this.#data.triggers, trigger => trigger.folderId === folderId );
-        } );
-
-        foldersForRemoval?.forEach( folderId => {
-            this.removeFolder( this.#data.folders, folderId );
-        } );
+        this.removeEmptyFolders( packageFolders );
 
         _.remove( this.#data.installedPackages, f => f.packageId === packageId );
 
@@ -1991,18 +1992,55 @@ class TriggerDatabaseStore extends Store {
 
 
     /**
-     * Removes the specified folder form the store.
+     * Removes each of the given folders that holds no triggers and no child 
+     * folders. Passes repeat until one removes nothing, so the result does not 
+     * depend on the order of the ids (a parent listed before its child is 
+     * removed once the child is gone).
      * 
+     * @param {Iterable<string | null>} folderIds The candidate folder ids; nulls are skipped.
+     */
+    removeEmptyFolders( folderIds ) {
+        const remaining = new Set( Array.from( folderIds ).filter( folderId => folderId !== null && folderId !== undefined ) );
+        let removedAny = true;
+
+        while ( removedAny ) {
+            removedAny = false;
+            for ( const folderId of remaining ) {
+                const holdsTriggers = this.#data.triggers.some( trigger => trigger.folderId === folderId );
+                if ( !holdsTriggers && this.removeFolder( this.#data.folders, folderId ) ) {
+                    remaining.delete( folderId );
+                    removedAny = true;
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Removes the specified folder from the store, at any depth. Only a folder
+     * with no child folders is removed, because the uninstall check only looks
+     * at the folder's own triggers, not at its subfolders.
+     *
      * @param {TriggerFolder[]} folders The list of folders to search.
      * @param {string} folderId The id of the folder to remove.
+     * @returns {boolean} True when the folder was found and removed.
      */
     removeFolder( folders, folderId ) {
-        let folder = _.remove( folders, f => f.folderId === folderId );
-        if ( !folder ) {
-            folders?.forEach( f => {
-                this.removeFolder( f.children, folderId );
-            } );
+        // _.remove returns an array, so check its length: the old truthiness
+        // check never searched below the root.
+        const removed = _.remove( folders, f => f.folderId === folderId && !( f.children?.length > 0 ) );
+        if ( removed.length > 0 ) {
+            return true;
         }
+        return ( folders ?? [] ).some( f => this.removeFolder( f.children, folderId ) );
     }
 
 
@@ -2022,6 +2060,8 @@ class TriggerDatabaseStore extends Store {
      * @param {PackageTrigger} packageTrigger The package trigger to install.
      * @param {Record<string, string>} folderMap The folder id map.
      * @param {number} [maxIconLength] The largest accepted icon, the server cap when left out.
+     * @returns {string | null} The id of a stray root folder the trigger was 
+     * moved out of, so the caller can remove it once it is empty; otherwise null.
      */
     installPackageTrigger( packageId, packageTrigger, folderMap, maxIconLength = serverShareLimits.maxIconLength ) {
         /** @type {Trigger} */
@@ -2031,6 +2071,7 @@ class TriggerDatabaseStore extends Store {
 
         /** @type {Record<string, import("electron").Rectangle>} */
         let listPositions = {};
+        let vacatedFolderId = null;
 
         if ( i > -1 ) {
             trigger = this.#data.triggers.find( f => f.triggerId === packageTrigger.triggerId );
@@ -2041,6 +2082,19 @@ class TriggerDatabaseStore extends Store {
             lists.forEach( list => {
                 listPositions[ list.actionId ] = list.staticPosition;
             } );
+
+            // Move the trigger to the package's folder when its folder is gone,
+            // or when it still sits in a root folder carrying the package's own
+            // id (a stray copy from an older install). A trigger the user moved
+            // elsewhere, or a folder the user nested, stays where they put it.
+            const mappedFolderId = folderMap[ packageTrigger.folderId ];
+            const folderIsMissing = !this.folderExists( trigger.folderId, this.#data.folders );
+            const inStrayPackageFolder = trigger.folderId === packageTrigger.folderId
+                && this.#data.folders.some( folder => folder.folderId === trigger.folderId );
+            if ( mappedFolderId !== undefined && mappedFolderId !== trigger.folderId && ( folderIsMissing || inStrayPackageFolder ) ) {
+                vacatedFolderId = inStrayPackageFolder ? trigger.folderId : null;
+                trigger.folderId = mappedFolderId;
+            }
 
         } else {
             trigger = new Trigger();
@@ -2078,6 +2132,7 @@ class TriggerDatabaseStore extends Store {
             }
         } );
 
+        return vacatedFolderId;
     }
 
 
@@ -2122,7 +2177,7 @@ class TriggerDatabaseStore extends Store {
         /** @type {Record<string, string>} */
         const folderMap = Object.create( null );
 
-        packageFolders?.forEach( pkgFolder => {
+        removeDuplicatePackageFolders( packageFolders ).forEach( pkgFolder => {
             
             // If there exists a folder with the name, then map the package 
             // folder id to the existing folder id.
