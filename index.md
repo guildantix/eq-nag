@@ -32,13 +32,14 @@ Nag reads your EverQuest log as you play and tells you what matters, with alerts
 </div>
 
 <div class="nag-whatsnew">
-  <p class="nag-whatsnew-head"><strong>What's new in 0.2.27</strong> <span class="nag-badge">Not released yet</span> <a class="nag-more" href="{{ '/whats-new/' | relative_url }}">All release notes &rarr;</a></p>
+  <p class="nag-whatsnew-head"><strong>What's new in 0.2.30</strong> <span class="nag-badge">Pre-release</span> <a class="nag-more" href="{{ '/whats-new/' | relative_url }}">All release notes &rarr;</a></p>
   <ul>
-    <li>Emote triggers work on live servers again. <a href="{{ '/help/faq' | relative_url }}#emote-prefix">Fix your own emote triggers</a>.</li>
-    <li>Timers now end when a mob or pet dies on live servers.</li>
-    <li>The Allakhazam option is gone. Use EQ Spell Resources instead.</li>
-    <li>Plus pets in Combat Statistics, a Regex Visualizer and more sound formats.</li>
+    <li>Push Recap shows who pushed the boss. <a href="{{ '/guides/push-recap' | relative_url }}">How Push Recap works</a>.</li>
+    <li>Trigger shares can be saved as .nag files.</li>
+    <li>Settings are reorganized, with a Status card.</li>
+    <li>Less CPU use in raids.</li>
   </ul>
+  <p>The latest stable release is 0.2.28. Pages marked <strong>Applies to v0.2.30</strong> describe the 0.2.30 pre-release. On 0.2.28, some settings are in different places.</p>
 </div>
 
 Support the development of Nag on [Patreon](https://www.patreon.com/EverQuestNag). Nag is open source on [GitHub](https://github.com/guildantix/eq-nag).
