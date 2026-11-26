@@ -26,6 +26,10 @@
   page: guides/disabling-triggers.md
   status: documented
   note: "Screenshots need a refresh."
+- id: trigger-profiles
+  feature: "Trigger profiles"
+  page: guides/trigger-profiles.md
+  status: documented
 - id: arrange-overlays
   feature: "Overlays tab and arrange overlays"
   page: guides/arrange-overlays.md

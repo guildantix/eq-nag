@@ -19,6 +19,8 @@ Add another character to Nag.
 
 You will see **Character added!** and the character in the list. Then click its name and pick its **Character Class** on the **Settings** tab.
 
+You can skip that last step if you like. Nag also sets the class by itself when you swap class with an equipment set, or when you type `/who` on that character. See [Add your character]({{ '/get-started/first-character' | relative_url }}).
+
 If your character is not in the list, or Nag cannot find your EverQuest folder, click **Select Log File** and pick the character's `eqlog_` file from the `Logs` folder.
 
 {: .note }
