@@ -108,7 +108,7 @@ Nag uses your class to work out how long your timers last. It also keeps class-o
 
 While Nag reads your character's log, it can pick the class by itself. It saves the same **Character Class** you would pick by hand, and the **Characters** tab updates. It happens in two cases.
 
-**You swap to another class.** Some servers let a character switch class with equipment sets. When you load or save an equipment set, EverQuest writes a line with the class name, and Nag uses it. These lines work:
+**You swap to another class.** Some servers let a character switch class with equipment sets. EverQuest calls these personas. When you load or save an equipment set, EverQuest writes a line with the class name, and Nag uses it. These lines work:
 
 - You successfully loaded your Monk equipment set.
 - You loaded only part of your Monk equipment set.

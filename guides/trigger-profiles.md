@@ -2,6 +2,8 @@
 title: Trigger profiles and character triggers
 parent: How-to guides
 nav_order: 15
+applies_to: "0.2.30"
+last_verified: 2026-11-26
 ---
 
 # Trigger profiles and character triggers
@@ -16,16 +18,16 @@ Turning a trigger off for one character does not delete it. Your other character
 2. Click the character's name.
 3. Click the **Triggers** tab.
 
-You will see the **Character Triggers** list on the right, with your folders and triggers.
+   You will see the **Character Triggers** list on the right, with your folders and triggers.
 
-![A character's Triggers tab with the Profile box on the left and the Character Triggers list on the right]({{ '/assets/images/trigger-profiles/character-triggers-tab.png' | relative_url }})
+   ![A character's Triggers tab with the Profile box on the left and the Character Triggers list on the right]({{ '/assets/images/trigger-profiles/character-triggers-tab.png' | relative_url }})
 
 4. Click a folder's arrow to open it.
 5. Click a trigger's name, or its box, to turn it off or on for this character.
 
 A green box means the trigger is on. A red box with an X means it is off for this character.
 
-To change a whole folder at once, click the box next to the folder. A yellow box means some triggers in the folder are on and some are off.
+To change a whole folder at once, click the box next to the folder. A folder box is green when every trigger in the folder is on for this character, red when every trigger is off, and yellow when some are on and some are off.
 
 Nag saves each change as you make it.
 
