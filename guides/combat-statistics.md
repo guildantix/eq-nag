@@ -2,6 +2,8 @@
 title: Combat Statistics and the DPS meter
 parent: How-to guides
 nav_order: 13
+applies_to: "0.2.30"
+last_verified: 2026-11-26
 ---
 
 # Combat Statistics and the DPS meter
@@ -12,11 +14,10 @@ Combat Statistics reads the hits in your log and shows who did how much damage. 
 
 1. Click the **Settings** tab.
 2. Click **Combat** in the list on the left.
-3. Check **Enable combat statistics**.
+3. Tick **Enable combat statistics**.
 
 The DPS meter window appears on your screen. It stays empty until a fight starts. To hide it between fights, see the options below.
 
-{: .note }
 Combat statistics read every hit in your log while you play. Floating Combat Text has its own switch. See [Floating Combat Text]({{ '/guides/floating-combat-text' | relative_url }}).
 
 ## Read the DPS meter
@@ -39,7 +40,6 @@ The meter only shows damage. It has no healing view.
 
 Hover the mouse over the meter to show its buttons. The column names hide while you do.
 
-{: .note }
 If the **Time** column is cut off, drag the edge of the meter to make it wider. It starts 250 pixels wide.
 
 | Button | What it does |

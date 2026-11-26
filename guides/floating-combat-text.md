@@ -2,6 +2,8 @@
 title: Floating Combat Text
 parent: How-to guides
 nav_order: 14
+applies_to: "0.2.30"
+last_verified: 2026-11-26
 ---
 
 # Floating Combat Text
@@ -14,7 +16,7 @@ You set it up in groups. Each group picks the kinds of hits it shows, the look o
 
 1. Click the **Combat** tab.
 2. Click **Floating Combat Text**.
-3. Check **Enable FCT** at the top right.
+3. Tick **Enable FCT** at the top right.
 
 You also need an overlay of the type **Floating Combat Text**. See [Overlays]({{ '/guides/arrange-overlays' | relative_url }}).
 
@@ -43,13 +45,13 @@ Each group has buttons in its title bar:
 | **Delete group** | Removes the group. |
 
 {: .note }
-Order matters. When a hit happens, Nag goes through the groups from the top. A group fits when it has the kind of hit checked under **Combat Types** and has every modifier of the hit picked. The first group that fits shows the hit. If no group has every modifier, the first group that has at least one of them shows it. Put your most specific groups at the top.
+Order matters. When a hit happens, Nag goes through the groups from the top. A group fits when it has the kind of hit ticked under **Combat Types** and has every modifier of the hit picked. The first group that fits shows the hit. If no group has every modifier, the first group that has at least one of them shows it. Put your most specific groups at the top.
 
 ## Combat Types
 
-Check the kinds of hits the group should show.
+Tick the kinds of hits the group should show.
 
-| Check box | Shows |
+| Tick box | Shows |
 |---|---|
 | **Your Melee Hits** | Melee damage you do. |
 | **You Being Hit by Melee** | Melee damage done to you. |
@@ -90,6 +92,9 @@ Modifiers are the special kinds of hit. Click a button to pick it. Click it agai
 
 For example, a group with only **Critical** picked shows critical hits. Add **Normal** to show plain hits too.
 
+{: .note }
+The first time Nag 0.2.30 starts, it adds **Slay Undead** to every group that has **Normal** picked. Slay Undead hits used to count as normal hits, so those groups keep showing them.
+
 ## Group Settings
 
 The settings of the group are in tabs on the right.
@@ -115,14 +120,14 @@ You can pick more than one of each. The numbers start from the positions you pic
 
 Under **Overlay**, pick the overlay that draws this group. The list only has overlays of the type **Floating Combat Text**. A group with no overlay shows nothing, and its box is marked red.
 
-Under **Hit Data**, you can check:
+Under **Hit Data**, you can tick:
 
-| Check box | What it does |
+| Tick box | What it does |
 |---|---|
 | **Consolidate Hits** | Adds up small hits into one number, so your screen stays tidy. |
 | **Ignore Hits** | Hides hits below a limit. |
 
-Checking one of them adds a tab with the same name.
+Ticking one of them adds a tab with the same name.
 
 ### Ignore Hits and Consolidate Hits
 

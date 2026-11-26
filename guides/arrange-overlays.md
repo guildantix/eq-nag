@@ -2,6 +2,8 @@
 title: Overlays
 parent: How-to guides
 nav_order: 5
+applies_to: "0.2.30"
+last_verified: 2026-11-26
 ---
 
 # Overlays
@@ -27,7 +29,7 @@ When you make an overlay, you pick its type. The type decides what the overlay c
 | Type in the list | Used by |
 |---|---|
 | **Text Notifications** | The **Display Text** action. |
-| **Timer & Countdown** | The **Timer**, **Countdown**, **DoT Timer** and **Beneficial Timer** actions. |
+| **Timer & Countdown** | The **Timer**, **Countdown**, **DoT Timer**, **Beneficial Timer** and **Stopwatch** actions. |
 | **Floating Combat Text** | Floating Combat Text groups. See [Floating Combat Text]({{ '/guides/floating-combat-text' | relative_url }}). |
 | **Debug Log** | Debug messages from Nag, such as which trigger actions ran and the log line that set them off. You do not need one for normal use. |
 
@@ -101,7 +103,7 @@ Arrange mode shows all your overlays at once, so you can place and resize them t
 1. Click the **Overlays** tab.
 2. Click the blue **Arrange Overlays** button.
 
-   ![The Overlays tab with the Arrange Overlays button marked]({{ '/assets/images/overlays/arrange-button.png' | relative_url }})
+   ![The Overlays tab with the Arrange Overlays and New Overlay buttons at the top right]({{ '/assets/images/overlays/arrange-button.png' | relative_url }})
 
 3. Each overlay opens on your screen. Drag an overlay to move it. Drag its edge to resize it.
 
