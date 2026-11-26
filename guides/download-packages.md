@@ -42,4 +42,24 @@ If you click **Cancel**, the package is not installed.
 {: .tip }
 Click **Back to List** to return to the package list.
 
+## If a package left folders at the top of your list
+
+Some packages left their triggers in loose folders at the top of your **Triggers** list. Version 0.2.30 fixes this. To repair an older install:
+
+1. Open the Trigger Library and click the package.
+2. Click **Uninstall Package**.
+3. Click **Install Package**.
+
+Nag moves the triggers back into the right folders and removes the loose folders it empties. A trigger you moved yourself stays where you put it. **Uninstall Package** also removes the empty package folders it leaves behind. Updating a package no longer causes the problem.
+
+## Publishing your own packages
+
+The green plus button at the top of **Browse Packages** creates a new package. It only shows for verified authors. To ask for verification:
+
+1. Open **Settings**, then **Sharing**.
+2. Under **Author details**, type your **Author name** and click **Save**.
+3. Click **Request verification**. This button shows after your author name is saved. Nag says **Request submitted!**
+
+Once you are verified, a small shield icon shows next to the **Sharing** title in Settings, and the plus button appears in the Trigger Library.
+
 To share a package with a friend, click **Copy Quick Share Code** and send them the code. See [Quick Share]({{ '/guides/quick-share' | relative_url }}).
