@@ -72,6 +72,12 @@ Before 0.2.27, Nag sometimes misread times written in words. "10 minutes" became
 It was removed in 0.2.27 because Allakhazam does not allow automated access. Use **Auto Generation**, then **EQ Spell Resources**. For an old timer, see [Re-import a timer from EQ Spell Resources]({{ '/guides/reimport-allakhazam' | relative_url }}).
 </details>
 
+<details id="package-loose-folders" markdown="1">
+<summary>Triggers from a package landed loose at the top level</summary>
+
+Some Trigger Library packages left loose folders at the top of the **Triggers** list. Version 0.2.30 fixes this. Update Nag, then uninstall and install the package again. Nag moves the triggers into the right folders and removes the loose folders it empties. **Uninstall Package** now also removes the empty package folders. See [Downloading trigger packages]({{ '/guides/download-packages' | relative_url }}#if-a-package-left-folders-at-the-top-of-your-list).
+</details>
+
 ## Characters and sounds
 
 <details id="logging" markdown="1">

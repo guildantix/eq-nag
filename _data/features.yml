@@ -47,7 +47,6 @@
   feature: "Quick Share"
   page: guides/quick-share.md
   status: documented
-  note: "Misses the author allow and block list."
 - id: death-recap
   feature: "Death Recap"
   page: guides/death-recap.md
