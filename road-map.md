@@ -7,4 +7,5 @@ hide_meta: true
 ## Road map
 
 ### On the Horizon
+- [ ] Search in the Trigger Library.
 - [ ] Changing the overlay subsystem to render all overlays in the same window.  This may improve performance.

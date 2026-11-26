@@ -8,9 +8,11 @@ hide_meta: true
 
 What changed in each Nag release. You can also open the **Update Notes** window from the **Settings** tab, by clicking **Notes** at the top.
 
+Pages marked **Applies to v0.2.30** describe the 0.2.30 pre-release. On 0.2.28, some settings are in different places.
+
 ## v0.2.30 (pre-release)
 
-Pre-release builds are offered only if you turn on **Get pre-release updates** in **Settings**. See [Install Nag]({{ '/get-started/install' | relative_url }}).
+Pre-release builds are offered only if you turn them on. On 0.2.28 and 0.2.29, tick **Allow Pre-release.** under **Update Settings** in **Settings**. From 0.2.30, tick **Get pre-release updates** under **Settings** › **Advanced** › **Updates**. See [Install Nag]({{ '/get-started/install' | relative_url }}).
 
 ### New
 
@@ -28,7 +30,8 @@ Pre-release builds are offered only if you turn on **Get pre-release updates** i
 - **Less CPU use in raids.** Nag only tries the triggers that could match a log line. Matches are unchanged.
 - **Trigger Library packages install into the right folders.** If a package left triggers in loose top-level folders, reinstall it. Nag moves them back and removes the empty folders.
 - **One broken trigger pattern** no longer slows down every log line. Nag skips it and reports it once in the Console.
-- **Floating combat text:** Crippling Blow, Twincast and Slay Undead hits show in their own modifier group, and riposte hits show again. See [Floating Combat Text]({{ '/guides/floating-combat-text' | relative_url }}).
+- **Floating combat text:** Crippling Blow, Twincast and Slay Undead hits show in their own modifier group, and riposte hits show again. Wild Rampage is no longer counted as Rampage. See [Floating Combat Text]({{ '/guides/floating-combat-text' | relative_url }}).
+- **Hidden pop-ups** are listed under **Advanced** in **Settings**, each with **Show again**.
 - **Conditions** with spaces around `|` work, and two conditions on the same variable keep their own values.
 - **Renamed or archived log copies** no longer show up as extra characters.
 - Your EverQuest folder is kept when its drive is offline at start-up.
@@ -49,6 +52,7 @@ Pre-release builds are offered only if you turn on **Get pre-release updates** i
 
 - **Roll Tracker.** Nag follows `/random` rolls, ranks them, handles ties and can copy or speak the result. See [Roll Tracker]({{ '/guides/roll-tracker' | relative_url }}).
 - **Help & guides link** at the top of **Settings**. It opens this site.
+- **Hotkeys moved** to the bottom of the trigger editor.
 - **Your zone from `/who`.** The built-in Capture Zone trigger also sets `CurrentZone` from your own `/who` line. See [Conditions and variables]({{ '/triggers/conditions' | relative_url }}#zone-conditions).
 - **DoT timers start at once.** They count down from the cast, and restart from the first damage line if you chose one.
 - **Millions show as "1.5M"** in the DPS meter and floating combat text.
@@ -67,9 +71,10 @@ Pre-release builds are offered only if you turn on **Get pre-release updates** i
 
 ## v0.2.28 (latest) and v0.2.27
 
+0.2.28 is the stable release of 0.2.27, with the same changes.
+
 ### Fixes
 
-- **Number conditions** check again after the first run. (New in 0.2.28.)
 - **The Setup window no longer gets stuck.** On a new install, or after Nag's settings files were lost or damaged, the buttons could stop working and the window covered the app. This affected every version since 0.2.23. Anyone already stuck is fixed automatically after updating.
 - **Clear All works again on live servers.** EverQuest's October 2026 patch puts `~ ` in front of the player's name on `/emote` messages. That stopped the built-in Clear All trigger. It now accepts both the new and the old format, so it also keeps working on emulator servers.
 - **The Death Recap hotkey works again on live servers.** It had the same problem. Existing Death Recap triggers are updated automatically, unless you edited the phrase yourself.

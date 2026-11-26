@@ -37,8 +37,9 @@ Nag reads your EverQuest log as you play and tells you what matters, with alerts
     <li>Push Recap shows who pushed the boss. <a href="{{ '/guides/push-recap' | relative_url }}">How Push Recap works</a>.</li>
     <li>Trigger shares can be saved as .nag files.</li>
     <li>Settings are reorganized, with a Status card.</li>
-    <li>Less CPU use in raids. The latest stable release is 0.2.28.</li>
+    <li>Less CPU use in raids.</li>
   </ul>
+  <p>The latest stable release is 0.2.28. Pages marked <strong>Applies to v0.2.30</strong> describe the 0.2.30 pre-release. On 0.2.28, some settings are in different places.</p>
 </div>
 
 Support the development of Nag on [Patreon](https://www.patreon.com/EverQuestNag). Nag is open source on [GitHub](https://github.com/guildantix/eq-nag).
