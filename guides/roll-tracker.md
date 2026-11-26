@@ -2,6 +2,8 @@
 title: Roll Tracker
 parent: How-to guides
 nav_order: 11
+applies_to: "0.2.30"
+last_verified: 2026-11-26
 ---
 
 # Roll Tracker
@@ -46,7 +48,7 @@ Under the ranking, **Copied text (paste into chat)** shows the exact line Nag co
 
 Nag saves the position as soon as you let go of the mouse. **Cancel** does not undo it. Until you place it, the panel sits 15% from the left and 20% from the top of your main monitor. If a saved position ends up off screen, for example after you unplug a monitor, Nag uses that default again.
 
-See [Arrange your overlays]({{ '/guides/arrange-overlays' | relative_url }}).
+See [the Overlays guide]({{ '/guides/arrange-overlays' | relative_url }}).
 
 ## Settings
 

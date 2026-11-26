@@ -2,6 +2,8 @@
 title: Push Recap
 parent: How-to guides
 nav_order: 12
+applies_to: "0.2.30"
+last_verified: 2026-11-26
 ---
 
 # Push Recap
@@ -50,7 +52,12 @@ A Push Recap window opens for your last boss kill. It shows:
 {: .note }
 If the log starts in the middle of the fight, the window says so. Earlier pushes can't be counted then.
 
-The window has **Copy summary**, which copies the result as text so you can paste it into chat. It also has **Save to Features › Push**, which keeps the recap for later. That button only shows while the recap is not saved yet. A recap from the hotkey is saved by itself when **Save every recap to Features › Push** is on, so the button stays hidden. A fight you open from the **Push** tab that is already saved shows only **Copy summary** (and **Show NPC abilities**).
+The window has two buttons:
+
+- **Copy summary** copies the result as text so you can paste it into chat.
+- **Save to Features › Push** keeps the recap for later.
+
+The save button only shows while the recap is not saved yet. A recap from the hotkey is saved by itself when **Save every recap to Features › Push** is on, so the button stays hidden. A fight you open from the **Push** tab that is already saved shows only **Copy summary** (and **Show NPC abilities**).
 
 ![The Push Recap window for a made-up boss, with the chart and the player list]({{ '/assets/images/push-recap/push-recap-window.png' | relative_url }})
 
@@ -76,9 +83,9 @@ If you untick **Save every recap to Features › Push**, you can still save one 
 2. Leave **Source** on **Saved recaps**.
 3. Click a fight in the list. A panel opens below the list.
 
-The list shows the time, the mob, the length of the fight, the damage taken, the push hits, the total push, the procs and the top pusher. Click a column name to sort by it. The panel shows each player and the spells they used, and the timeline of the fight.
+The list shows the time, the mob, the length of the fight, the damage taken, the push hits, the total push, the procs and the top pusher. A number with a **~** after it, such as "~2", counts casts that Nag assumed had landed. Click a column name to sort by it. The panel shows each player and the spells they used, and the timeline of the fight.
 
-To open the full window for one fight, select it and click **Open Push Recap**. To delete a fight, click the bin icon on its row. **Clear all** deletes every saved recap.
+To open the full window for one fight, select it and click **Open Push Recap**. With no fight selected, the same button at the top opens the recap for the last boss kill in your log. If you have more than one character, it asks which character first. To delete a fight, click the trash can icon on its row. **Clear all** deletes every saved recap.
 
 ### Totals for many fights
 
@@ -87,6 +94,8 @@ Hold Ctrl or Shift and click to select more fights, or click **Select all shown*
 - Tiles with the push hits, the total push and the top pusher.
 - A bar chart with one bar per fight. Hover over a bar for the mob and time. Click a bar to open just that fight.
 - A grid of each player and spell, added up over all the selected fights.
+
+The **Push hits** and **Push value** switch above the bar chart changes what the bars show: how many times push landed, or how much push it added up to.
 
 Click **Copy summary** to copy the totals as text.
 

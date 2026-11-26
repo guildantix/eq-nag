@@ -134,6 +134,10 @@
   feature: "Timers: restart behavior, Ending, Ended, End Early, focus effects, hide conditions"
   page: triggers/timers.md
   status: documented
+- id: push-recap
+  feature: "Push Recap and the Push tab"
+  page: guides/push-recap.md
+  status: documented
 - id: trigger-hotkeys
   feature: "Trigger hotkeys"
   page: triggers/hotkeys.md

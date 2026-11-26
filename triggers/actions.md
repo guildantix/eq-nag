@@ -210,6 +210,6 @@ See [Death Recap]({{ '/guides/death-recap' | relative_url }}) for what the windo
 
 Opens the Push Recap window for the last boss kill in the log. The editor note is: "This action will load the Push Recap window for the last boss kill in the log." There are no settings, just **Trigger on phrase**.
 
-Nag ships a built-in **Push Recap** trigger that does this when your character does the `/em wonders who is pushing` emote. The three-dot menu in the **Triggers** tab has **Hotkeys**, then **Push Recap**, to make you an in-game hotkey for it. If you make your own trigger with this action and turn it on, Nag removes the built-in copy, so one emote doesn't open two windows.
+Nag ships a built-in **Push Recap** trigger that does this when your character does the `/em wonders who is pushing` emote. The three-dot menu in the **Triggers** tab has **Hotkeys**, then **Push Recap**, to make you an in-game hotkey for it. If you make your own trigger with this action and turn it on, Nag removes the built-in copy the next time Nag loads its triggers, so one emote doesn't open two windows.
 
 See [Push Recap]({{ '/guides/push-recap' | relative_url }}) for what the window shows.
