@@ -28,7 +28,7 @@ Each condition in the **Conditions** group has three boxes:
 |---|---|
 | **Variable Name** | Pick a variable from the list. It lists the variables your triggers create with a **Store Variable** action, and your counters. |
 | **Operator** | **Is empty**, **Equals**, **Is not equal to** or **Contains** |
-| **Value** | The text to compare. Separate several choices with a vertical bar, with no spaces around it. |
+| **Value** | The text to compare. Separate several choices with a vertical bar. Spaces around the bar are ignored. |
 
 The operators work like this:
 
@@ -41,7 +41,9 @@ The operators work like this:
 
 A blank **Value** with **Equals** or **Contains** never passes.
 
-To pass for several zones, separate the names with a vertical bar. Do not put spaces around the bar. Nag splits on the bar and does not trim the pieces, so `Zone A | Zone B` looks for "Zone A " and " Zone B" and neither would match.
+To pass for several zones, separate the names with a vertical bar. Nag ignores spaces around the bar, so `Zone A | Zone B` and `Zone A|Zone B` mean the same thing. Spaces inside a name, such as the one in `Zone A`, are kept. Empty choices, such as the gap in `Zone A||Zone B`, are dropped.
+
+You can add two conditions on the same variable. Each condition keeps its own values, so a second condition does not replace the first.
 
 For example:
 
