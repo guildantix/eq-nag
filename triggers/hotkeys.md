@@ -65,4 +65,4 @@ Once **Command** is on, the **Quick Action** checkbox in the **Hotkeys** table b
 
 ## Built-in hotkeys
 
-The three-dot menu in the **Triggers** tab has a **Hotkeys** submenu, titled **Create Hotkeys**. **Clear All** copies `/hot "Clear All" /em clears their mind.` for the built-in Clear All trigger. **Death Recap** is for the Death Recap trigger and is greyed out unless Death Recap is set to load by hotkey in **Settings**. See [Death Recap]({{ '/guides/death-recap' | relative_url }}).
+The three-dot menu in the **Triggers** tab has a **Hotkeys** submenu, titled **Create Hotkeys**. **Clear All** copies `/hot "Clear All" /em clears their mind.` for the built-in Clear All trigger. **Death Recap** is for the Death Recap trigger and is greyed out unless Death Recap is set to load by hotkey in **Settings**. See [Death Recap]({{ '/guides/death-recap' | relative_url }}). **Push Recap** copies `/hot "Push Recap" /em wonders who is pushing.` for the built-in Push Recap trigger. See [Push Recap]({{ '/guides/push-recap' | relative_url }}).

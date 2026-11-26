@@ -33,6 +33,7 @@ Actions run from top to bottom in the order shown, so use the up and down arrows
 | Screen Glow | Renders a glow around the main display. | [Screen Glow](#screen-glow) |
 | Clear All | Stops all active components. | [Clear All](#clear-all) |
 | Display Death Recap | Displays the Death Recap window. | [Display Death Recap](#display-death-recap) |
+| Display Push Recap | Displays the Push Recap window. | [Display Push Recap](#display-push-recap) |
 
 {: .note }
 Text boxes in actions accept snippets such as `{S1}`, `${Name}` and `+{Counter}`. See the [Triggers & Regex]({{ '/triggers/' | relative_url }}) section for the snippet reference. A snippet only fills in if the phrase that fired the action captured it.
@@ -204,3 +205,11 @@ Things to know:
 Opens the Death Recap window for your last death. The editor note is: "This action will load the latest death recap window." There are no settings, just **Trigger on phrase**.
 
 See [Death Recap]({{ '/guides/death-recap' | relative_url }}) for what the window shows.
+
+## Display Push Recap
+
+Opens the Push Recap window for the last boss kill in the log. The editor note is: "This action will load the Push Recap window for the last boss kill in the log." There are no settings, just **Trigger on phrase**.
+
+Nag ships a built-in **Push Recap** trigger that does this when your character does the `/em wonders who is pushing` emote. The three-dot menu in the **Triggers** tab has **Hotkeys**, then **Push Recap**, to make you an in-game hotkey for it. If you make your own trigger with this action and turn it on, Nag removes the built-in copy, so one emote doesn't open two windows.
+
+See [Push Recap]({{ '/guides/push-recap' | relative_url }}) for what the window shows.
