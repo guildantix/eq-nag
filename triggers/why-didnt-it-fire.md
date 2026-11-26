@@ -94,7 +94,7 @@ On the **Actions** tab, each action has a **Trigger on phrase** box. A phrase ca
 
 ## It fires, but I see or hear nothing
 
-- **Display Text and timers** need an overlay window. Check **Overlay Window** on the action, and that the overlay is visible. See [Arrange overlays]({{ '/guides/arrange-overlays' | relative_url }}).
+- **Display Text and timers** need an overlay window. Check **Overlay Window** on the action, and that the overlay is visible. See [the Overlays guide]({{ '/guides/arrange-overlays' | relative_url }}).
 - **Screen Glow** can be switched off. Open **Settings**, choose **Sharing**, turn on **Advanced**, and look under **Shared and installed trigger permissions**. **Disable screen glow** stops glow on triggers made by another author. **Disable all screen glow actions** stops it on every trigger.
 - **Speak** needs a voice chosen in **Settings**.
 - **Play Audio** needs a clip chosen, and volume above zero in **Settings**.

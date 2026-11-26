@@ -2,6 +2,8 @@
 title: Searching your triggers
 parent: How-to guides
 nav_order: 3
+applies_to: "0.2.30"
+last_verified: 2026-11-26
 ---
 
 # Searching your triggers

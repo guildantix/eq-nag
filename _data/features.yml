@@ -146,6 +146,10 @@
   feature: "Why didn't my trigger fire? checklist"
   page: triggers/why-didnt-it-fire.md
   status: documented
+- id: console
+  feature: "The Console"
+  page: help/console.md
+  status: documented
 - id: roll-tracker
   feature: "Roll Tracker"
   page: guides/roll-tracker.md

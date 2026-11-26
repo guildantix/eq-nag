@@ -55,7 +55,7 @@ Nag matches against the log line without its `[timestamp]`. In a regex phrase, `
 |---|---|
 | **Any match** | Every phrase is checked against every new log line. Each phrase that matches runs the actions linked to it. |
 | **Sequential** | The phrases must match in order, on separate log lines. Phrase 2 is only checked after phrase 1 has matched, phrase 3 after phrase 2, and so on. Each phrase runs its own linked actions when it matches. |
-| **Concurrent** | Greyed out in the app. It is not available. |
+| **Concurrent** | Grayed out in the app. It is not available. |
 
 Use **Sequential** for two-step events, such as an emote followed by a shout. When you pick it, a **Sequential Rules** group appears with a **Restart Behavior** list:
 

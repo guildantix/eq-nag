@@ -2,6 +2,8 @@
 title: The Console
 parent: "Troubleshooting & FAQ"
 nav_order: 2
+applies_to: "0.2.30"
+last_verified: 2026-11-26
 ---
 
 # The Console
@@ -53,6 +55,7 @@ Click the trigger's name in a line to open that trigger so you can edit it.
 | Message | What it means |
 |---|---|
 | The pattern is not a valid regular expression, so this trigger will not match. | A phrase with **RegEx** on has a mistake, such as a missing bracket. Nag skips that phrase and tells you once. Fix the phrase in the trigger. See [Why didn't my trigger fire?]({{ '/triggers/why-didnt-it-fire' | relative_url }}). |
+| System Error The pattern is not valid: ... | A red line with no trigger name, shown next to the line above for the same broken phrase. It gives the reason the phrase was refused, in the words of the regular expression checker, such as "Unterminated group". Use the reason to find the mistake. |
 
 The Console keeps the most recent lines only. It starts empty each time you start Nag.
 
