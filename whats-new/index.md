@@ -8,33 +8,68 @@ hide_meta: true
 
 What changed in each Nag release. You can also open the **Update Notes** window from the **Settings** tab, by clicking **Notes** at the top.
 
-## Coming after 0.2.27
+## v0.2.30 (pre-release)
 
-These changes are in the development version and are not in a release yet.
+Pre-release builds are offered only if you turn on **Get pre-release updates** in **Settings**. See [Install Nag]({{ '/get-started/install' | relative_url }}).
 
 ### New
 
-- **Roll Tracker.** Nag follows `/random` rolls, ranks them, handles ties and can copy or speak the result. It has a **Rolls** tab, a roll panel on screen, a **Test overlay** button and a **Roll Tracker** section in **Settings**. See [Roll Tracker]({{ '/guides/roll-tracker' | relative_url }}).
+- **Push Recap.** After a kill, a hotkey shows each player's push spells and procs. It is built in, like Clear All. See [Push Recap]({{ '/guides/push-recap' | relative_url }}).
+- **Push tab.** Keeps every recap and can scan a whole log, including old backed-up logs, for boss kills. See [Push Recap]({{ '/guides/push-recap' | relative_url }}).
+- **Possible procs.** Spells that share a landing message with a push proc no longer take credit for pushes they did not do. Unsure ones are listed separately.
+- **Features tab.** Rolls and Push share one tab, so the tab bar fits on a normal window.
+- **.nag files.** Save a trigger share to a file and send it any way you like. Open it by dragging it onto Nag or with **Import from File...**. See [Quick Share]({{ '/guides/quick-share' | relative_url }}).
+- **Settings redesign.** Sections on the left, everyday options first, extras under **Advanced**, and a **Status** card that shows which logs Nag is reading. See the [Settings reference]({{ '/reference/settings' | relative_url }}).
+- **Your class updates by itself** from persona swaps and your own `/who`.
+- **Death Recap Off option.** It is the default for new profiles. Picking a mode recreates a deleted Death Recap trigger, and the window says "No death found" when there is none.
+
+### Fixes
+
+- **Less CPU use in raids.** Nag only tries the triggers that could match a log line. Matches are unchanged.
+- **Trigger Library packages install into the right folders.** If a package left triggers in loose top-level folders, reinstall it. Nag moves them back and removes the empty folders.
+- **One broken trigger pattern** no longer slows down every log line. Nag skips it and reports it once in the Console.
+- **Floating combat text:** Crippling Blow, Twincast and Slay Undead hits show in their own modifier group, and riposte hits show again. See [Floating Combat Text]({{ '/guides/floating-combat-text' | relative_url }}).
+- **Conditions** with spaces around `|` work, and two conditions on the same variable keep their own values.
+- **Renamed or archived log copies** no longer show up as extra characters.
+- Your EverQuest folder is kept when its drive is offline at start-up.
+- Smaller fixes: quitting, start-up without a saved window size, the Console scrolling sideways, and a few buttons in the trigger editor.
+
+### Security
+
+- **Shared triggers are checked field by field** before they are installed. Damaged or tampered triggers are skipped and listed by name.
+- **Timer icons in shares must be embedded images** (PNG, JPEG, GIF, WebP or SVG), up to 256 KB through the share server or 10 MB in a .nag file.
+
+### Heads-up
+
+- On first start, floating combat text groups that show Normal hits also get Slay Undead.
+
+## v0.2.29 (pre-release)
+
+### New
+
+- **Roll Tracker.** Nag follows `/random` rolls, ranks them, handles ties and can copy or speak the result. See [Roll Tracker]({{ '/guides/roll-tracker' | relative_url }}).
 - **Help & guides link** at the top of **Settings**. It opens this site.
 - **Your zone from `/who`.** The built-in Capture Zone trigger also sets `CurrentZone` from your own `/who` line. See [Conditions and variables]({{ '/triggers/conditions' | relative_url }}#zone-conditions).
+- **DoT timers start at once.** They count down from the cast, and restart from the first damage line if you chose one.
+- **Millions show as "1.5M"** in the DPS meter and floating combat text.
 
 ### Fixes
 
-- **DoT timers start at once.** They count down from the cast, and restart from the first damage line if you chose one. They no longer sit at "(??)".
-- **Quarm and TAKP spell damage in the DPS meter** is credited to the right caster.
-- **Spell import reads tick durations correctly.** "12 ticks" is 72 seconds, not 12.
-- **The Console search box and character list work.**
+- **Less CPU use**, especially with overlays and many timers on screen.
+- **No more white "Nag Renderer" bar** stuck at the top of the screen.
+- **Timers that never appeared** on the overlay now show.
+- **Imported spells lasting 10 or more ticks** get the right duration. Re-import affected timers.
+- **Pet ownership** is detected on live servers again.
+- **TAKP:** your spell damage is credited to you in the DPS meter.
 - **Settings are saved safely.** A crash or power loss can no longer cut a settings file short. If Nag cannot read a file it shows "Nag could not read its data" and closes, so nothing is overwritten. See the [FAQ]({{ '/help/faq' | relative_url }}#could-not-read).
 - **Plain timers leave the overlay as soon as they reach zero**, instead of showing "0s" for a second.
-- **Millions show as "1.5M"** in the DPS meter and floating combat text. It used to be a lowercase m.
-- **The ending and ended sound buttons** in the DoT Timer editor work.
-- **Sequential triggers** remove the finished sequence, not another one.
-- **Death Recap** no longer fails on damage lines from your own DoTs.
+- Death Recap, Sequential triggers, the Console search box and character list, and the sound buttons in the DoT Timer editor work again.
 
-## v0.2.27 (not released yet)
+## v0.2.28 (latest) and v0.2.27
 
 ### Fixes
 
+- **Number conditions** check again after the first run. (New in 0.2.28.)
 - **The Setup window no longer gets stuck.** On a new install, or after Nag's settings files were lost or damaged, the buttons could stop working and the window covered the app. This affected every version since 0.2.23. Anyone already stuck is fixed automatically after updating.
 - **Clear All works again on live servers.** EverQuest's October 2026 patch puts `~ ` in front of the player's name on `/emote` messages. That stopped the built-in Clear All trigger. It now accepts both the new and the old format, so it also keeps working on emulator servers.
 - **The Death Recap hotkey works again on live servers.** It had the same problem. Existing Death Recap triggers are updated automatically, unless you edited the phrase yourself.

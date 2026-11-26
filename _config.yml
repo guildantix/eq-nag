@@ -50,8 +50,8 @@ defaults:
       path: ""
     values:
       layout: doc
-      applies_to: "0.2.27"
-      last_verified: 2026-11-01
+      applies_to: "0.2.30"
+      last_verified: 2026-11-26
 
 exclude:
   - README.md
