@@ -2,6 +2,8 @@
 title: Quick Share
 parent: How-to guides
 nav_order: 8
+applies_to: "0.2.30"
+last_verified: 2026-11-26
 ---
 
 # Quick Share
@@ -27,7 +29,7 @@ Quick Share sends triggers from one Nag to another. You can send them as a short
 7. If you picked **Save as file**, choose where to save it and click **Save**.
 
 {: .note }
-If neither box is ticked, the window says **Pick at least one way to share**, and the button stays grey.
+If neither box is ticked, the window says **Pick at least one way to share**, and the button stays gray.
 
 Send the code, or the file, to your friend. Paste the code in any chat. Nag players can also receive it in a game channel, see [Who can send you triggers](#who-can-send-you-triggers).
 
@@ -75,8 +77,12 @@ A window called **Receive trigger(s) and folder(s)** opens.
 1. Tick the folders and triggers you want. Hover over an icon at the end of a row to read what it means. The green cloud only shows while your mouse is over that row. The orange icons always show.
    - A green cloud with an arrow: the trigger is new and will be installed.
    - An orange cloud with an arrow: you have this trigger already, and it will be updated.
+   - A red cloud with an arrow: "This trigger will be overwritten." One of your triggers with the same name in the same folder will be replaced.
    - A red cloud with a line through it: the trigger will be duplicated.
+   - A green folder with a plus: "This folder will be created."
    - An orange exclamation mark on a folder: "This folder contains triggers that will be updated."
+   - A red warning triangle on a folder: "This contains triggers that will be overwritten."
+   - An orange warning triangle on a folder: "This folder contains triggers with possible duplicates."
 2. Read the two boxes at the bottom:
    - **Overwrite existing triggers.** replaces triggers you already have with the new versions.
    - **Stage new triggers.** puts new triggers in a folder called **Quick Share Staged** at the top of your list, so you can look at them before you use them. Click the **?** button next to it for details.

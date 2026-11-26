@@ -47,7 +47,7 @@ Timers and countdowns take their length from the **Timer duration** you set. If 
 | **Use color** | All | Picks a bar color instead of the overlay's color. |
 | **Cast time** | Beneficial | The spell's base cast time in milliseconds, so 2.5 seconds is 2500. Enter 0 for instant effects. |
 | **Do not use beneficial spell haste focus.** | Beneficial | For item clicks, which do not benefit from spell haste. |
-| **Timer Icon** | All | **Select Icon File**, **Select EverQuest Spell Icon**, or **Reset Icon** to remove it. An icon only travels in a share when it is an embedded PNG, JPEG, GIF, WebP or SVG image. The limit is 256 KB through the share server and 10 MB in a `.nag` file. Nag stores the image as text, so the picture file itself must be about a quarter smaller (about 190 KB and 7.5 MB). See [Quick Share]({{ '/guides/quick-share' | relative_url }}#timer-icons-in-shares). |
+| **Timer Icon** | All | **Select Icon File**, **Select EverQuest Spell Icon**, or **Reset Icon** to remove it. An icon only travels in a share when it is an embedded PNG, JPEG, GIF, WebP or SVG image. The limit is 256 KB through the share server and 10 MB in a `.nag` file. See [Quick Share]({{ '/guides/quick-share' | relative_url }}#timer-icons-in-shares). |
 
 ## Restart behavior
 

@@ -2,6 +2,8 @@
 title: Downloading trigger packages
 parent: How-to guides
 nav_order: 2
+applies_to: "0.2.30"
+last_verified: 2026-11-26
 ---
 
 # Downloading trigger packages
@@ -50,16 +52,19 @@ Some packages left their triggers in loose folders at the top of your **Triggers
 2. Click **Uninstall Package**.
 3. Click **Install Package**.
 
-Nag moves the triggers back into the right folders and removes the loose folders it empties. A trigger you moved yourself stays where you put it. **Uninstall Package** also removes the empty package folders it leaves behind. Updating a package no longer causes the problem.
+**Uninstall Package** removes every trigger of the package, including any you moved or changed yourself. It also removes the empty package folders it leaves behind. **Install Package** then adds the triggers again, switched on, in the package's own folders. Updating a package no longer causes the problem.
+
+{: .note }
+Changes you made to the package's triggers are lost when you uninstall.
 
 ## Publishing your own packages
 
-The green plus button at the top of **Browse Packages** creates a new package. It only shows for verified authors. To ask for verification:
+The green plus button at the top of **Browse Packages** creates a new package. It only shows for trusted authors. To ask for verification:
 
 1. Open **Settings**, then **Sharing**.
 2. Under **Author details**, type your **Author name** and click **Save**.
 3. Click **Request verification**. This button shows after your author name is saved. Nag says **Request submitted!**
 
-Once you are verified, a small shield icon shows next to the **Sharing** title in Settings, and the plus button appears in the Trigger Library.
+Once you are a trusted author, a small shield icon shows next to the **Sharing** title in Settings, and the plus button appears in the Trigger Library.
 
 To share a package with a friend, click **Copy Quick Share Code** and send them the code. See [Quick Share]({{ '/guides/quick-share' | relative_url }}).
