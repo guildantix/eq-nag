@@ -227,6 +227,8 @@ Combat statistics read every hit in your log while you play. Floating Combat Tex
 
 **Show more** opens the **Combat database**: one tab per server with your **Players**, **Pets** and **NPCs**. Search by name or class. Use the menu on a row to move a name between lists, change class or level, assign a pet owner or remove it.
 
+See [Combat Statistics]({{ '/guides/combat-statistics' | relative_url }}) for the meter and Combat Log Sync, and [Floating Combat Text]({{ '/guides/floating-combat-text' | relative_url }}) for FCT groups.
+
 ## Advanced
 
 The **Advanced** section is not behind the switch. It holds settings that are rarely needed.

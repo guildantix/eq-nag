@@ -35,7 +35,7 @@ Right-click the folder and click **Enable All Triggers** to turn them back on. N
 3. Click the **Triggers** tab.
 4. Click the green check box at the left of the trigger's row. It changes to a red box with an x.
 
-The trigger stays on for your other characters.
+The trigger stays on for your other characters. To turn the same set of triggers off for several characters, see [Trigger profiles and character triggers]({{ '/guides/trigger-profiles' | relative_url }}).
 
 ## Where to go next
 
