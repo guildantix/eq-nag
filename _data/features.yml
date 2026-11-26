@@ -27,10 +27,9 @@
   status: documented
   note: "Screenshots need a refresh."
 - id: arrange-overlays
-  feature: "Arrange overlays"
+  feature: "Overlays tab and arrange overlays"
   page: guides/arrange-overlays.md
   status: documented
-  note: "Screenshots need a refresh."
 - id: buff-timer-generator
   feature: "Buff timer generator"
   page: guides/add-buff-timer.md
@@ -167,16 +166,16 @@
   status: documented
 - id: combat-statistics
   feature: "Combat Statistics, DPS meter and pets"
-  page: null
-  status: missing
+  page: guides/combat-statistics.md
+  status: documented
 - id: floating-combat-text
   feature: "Floating combat text"
-  page: null
-  status: missing
+  page: guides/floating-combat-text.md
+  status: documented
 - id: combat-log-sync
   feature: "Combat Log Sync"
-  page: null
-  status: missing
+  page: guides/combat-statistics.md
+  status: documented
 - id: settings
   feature: "Settings window"
   page: reference/settings.md
