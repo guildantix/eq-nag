@@ -4,31 +4,32 @@ parent: How-to guides
 nav_order: 3
 ---
 
-## Finding a Trigger
+# Searching your triggers
 
-After a while, there can be a lot of triggers and finding a specific trigger can be rather daunting even with everything organized into folders.  We can use the Search function on the Triggers tab to find a specific trigger.
+After a while you may have a lot of triggers. Folders help, and the search box finds a trigger faster.
 
-The search function uses fuzzy search logic and looks at many properties of the trigger, including by order of importance:
-1. Trigger Name
-2. Trigger Capture Phrase (the log text used to execute a trigger)
-3. Description
+## Search for a trigger
 
-Start by navigating to the triggers tab.
+1. Click the **Triggers** tab.
+2. Click the search box at the top of the window. Its hint says "Search for triggers by name, description, phrase, etc...".
+3. Type a word or two. The list shows the best matches first.
 
-![image](https://user-images.githubusercontent.com/66176124/136666378-e850c1f9-e504-45a6-90ef-7efbe2e72312.png)
+If a folder is selected, the search looks only inside that folder and the folders in it. To search all your triggers, click the selected folder again so it is no longer highlighted, then search.
 
-Then enter your search text into the Search textbox at the top of the Triggers tab.
+![The Triggers tab with a search typed in the search box]({{ '/assets/images/guides/find-a-trigger-search.png' | relative_url }})
 
-![image](https://user-images.githubusercontent.com/66176124/136666417-f5c7f9c3-52f2-44dd-a50b-31653a6af1ab.png)
+The search is forgiving. A small typo still finds the trigger. It looks at the trigger name and the text the trigger shows or says first. Then it looks at the description and the phrase Nag listens for.
 
-### Examples
+The column header shows **Count**, the number of triggers found.
 
-![image](https://user-images.githubusercontent.com/66176124/136666450-b0ed672e-3085-4282-aa9d-98b91158a9c2.png)
+## Show the whole list again
 
-<sup>*Searching for a Divine Intervention trigger*</sup>
+Clear the search box. The list goes back to the triggers of the selected folder, or to all your triggers if no folder is selected.
 
-![image](https://user-images.githubusercontent.com/66176124/136666550-817c775b-c892-46cc-ac5a-763716984dca.png)
+## Open a trigger you found
 
-<sup>*Searching for an Ice Breath trigger*</sup>
+Click **Edit** at the left of its row.
 
-As you can clearly see in each example, multiple triggers appear for each query, but the trigger we're looking for is on top.
+## Where to go next
+
+- [Disabling specific triggers]({{ '/guides/disabling-triggers' | relative_url }})

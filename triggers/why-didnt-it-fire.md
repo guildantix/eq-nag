@@ -31,7 +31,7 @@ On the **Capture** tab, the **Conditions** group says: "If any condition fails, 
 
 - A condition on a variable needs the variable to have a value. `CurrentZone` stays empty until Nag has seen a zone line, which it also looks for in your log when it starts.
 - **Equals** is an exact match and is case sensitive. **Contains** ignores case and matches part of a value. **Is empty** passes only when the variable has no value.
-- Use `|` between values to allow several, such as `Fizzlethorp Keep|Fizzlethorp Depths`. Do not put spaces around the `|`. Nag does not trim them, so a space becomes part of the value.
+- Use `|` between values to allow several, such as `Fizzlethorp Keep|Fizzlethorp Depths`. Spaces around the `|` are ignored. See [Conditions and variables]({{ '/triggers/conditions' | relative_url }}).
 - A condition on a counter offers **Equals**, **Is not equal to**, **Is less than** and **Is greater than**.
 
 ## Plain text or regular expression?
@@ -48,6 +48,12 @@ Each phrase has a **RegEx** check box. It changes how the phrase is read.
 The most common slip is a phrase that uses `{S1}` or `^` with **RegEx** off. The phrase then looks for those characters in the log line and never finds them.
 
 The other common slip is the reverse. With **RegEx** on, a dot is "any character" and a bracket starts a group. A line like `You feel better (a little).` needs `\(a little\)\.` to match literally.
+
+## Is the phrase a valid regular expression?
+
+A phrase with **RegEx** on has to follow JavaScript rules. A missing bracket, or a group written the Python way such as `(?P<name>...)`, makes the phrase invalid. Nag skips an invalid phrase, so it never matches. Nag reports it once in the Console, as a red line that starts with the trigger's name and says "The pattern is not a valid regular expression, so this trigger will not match." Click the arrow on that line to see its details, a list of the raw fields Nag recorded, which includes the error text. See [The Console]({{ '/help/console' | relative_url }}).
+
+Fix the phrase in the trigger's **Capture** tab. The **Regex Visualizer** below the phrase marks the mistake in red.
 
 ## Anchors and the timestamp
 
@@ -89,7 +95,7 @@ On the **Actions** tab, each action has a **Trigger on phrase** box. A phrase ca
 ## It fires, but I see or hear nothing
 
 - **Display Text and timers** need an overlay window. Check **Overlay Window** on the action, and that the overlay is visible. See [Arrange overlays]({{ '/guides/arrange-overlays' | relative_url }}).
-- **Screen Glow** can be switched off in **Settings**, under **Shared/Installed Trigger Permissions** (**Disable Screen Glow** and **Disable All Screen Glow Actions**).
+- **Screen Glow** can be switched off. Open **Settings**, choose **Sharing**, turn on **Advanced**, and look under **Shared and installed trigger permissions**. **Disable screen glow** stops glow on triggers made by another author. **Disable all screen glow actions** stops it on every trigger.
 - **Speak** needs a voice chosen in **Settings**.
 - **Play Audio** needs a clip chosen, and volume above zero in **Settings**.
 - A **Timer** or **Countdown** with a duration of zero is not shown.
@@ -106,7 +112,7 @@ Give at least one line a timestamp, such as `[Sat Nov 01 20:15:03 2026] Fizzleth
 
 ## Read the Console
 
-The **Console** button at the bottom right of the main window opens Nag's Console. Each time an action fires, it adds a line with the trigger name and the log line. Click the arrow on the line (tooltip "Show more details") to see the rendered phrase and what matched.
+The **Console** button at the bottom right of the main window opens Nag's Console. You can also press F12. [The Console]({{ '/help/console' | relative_url }}) explains each part of it. Each time an action fires, it adds a line with the trigger name and the log line. Click the arrow on the line (tooltip "Show more details") to see its details, a list of the raw fields Nag recorded for that line.
 
 - If your trigger's name shows up, the phrase matched and an action ran. Look at the action settings.
 - If it does not show up, the line did not match, or a condition failed.

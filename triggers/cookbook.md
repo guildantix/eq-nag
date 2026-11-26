@@ -105,7 +105,7 @@ In the **Conditions** group on the **Capture** tab, click **New** and set:
 - **Operator**: **Equals**
 - **Value**: `Fizzlethorp Keep|Fizzlethorp Depths`
 
-The `|` separates alternatives, and there are no spaces around it. Nag does not trim them. The condition passes in either zone.
+The `|` separates alternatives. Spaces around it are ignored. The condition passes in either zone.
 
 **Settings**
 

@@ -4,14 +4,36 @@ parent: How-to guides
 nav_order: 4
 ---
 
-## Disabling Triggers
+# Disabling specific triggers
 
-Sometimes you may find a trigger package that contains more than you are looking for.  In that case you can easily disable a trigger by clicking on the green checkmark next to the trigger to disable it.
+A trigger package can hold more triggers than you want. You can turn off the ones you do not need. They stay in your list, so you can turn them back on later.
 
-Start by navigating to the triggers tab.
+## Turn off one trigger
 
-![image](https://user-images.githubusercontent.com/66176124/136666378-e850c1f9-e504-45a6-90ef-7efbe2e72312.png)
+1. Click the **Triggers** tab.
+2. Find the trigger. Click a folder in **Trigger folders** to open it, or type in the search box. See [Searching your triggers]({{ '/guides/find-a-trigger' | relative_url }}).
+3. Click the green check box at the left of the trigger's row. It changes to a red box with an x. The trigger is now off.
 
-Followed by either [searching]({{ '/guides/find-a-trigger' | relative_url }}) or click on the trigger folder to find the trigger you want to disable and click on the checkbox.
+![A trigger row with the red off box]({{ '/assets/images/guides/disabling-triggers-row.png' | relative_url }})
 
-![image](https://user-images.githubusercontent.com/66176124/136666761-dc2cb8f4-5e6e-4634-9e77-5123cb2742e7.png)
+To turn it back on, click the red box. It changes back to the green check box.
+
+## Turn off a whole folder
+
+1. Right-click the folder in **Trigger folders**.
+2. Click **Disable All Triggers**.
+
+Right-click the folder and click **Enable All Triggers** to turn them back on.
+
+## Turn off a trigger for one character only
+
+1. Click the **Characters** tab.
+2. Open the character.
+3. Click the **Triggers** tab.
+4. Click the green check box at the left of the trigger's row. It changes to a red box with an x.
+
+The trigger stays on for your other characters.
+
+## Where to go next
+
+- [Why didn't my trigger fire?]({{ '/triggers/why-didnt-it-fire' | relative_url }})
