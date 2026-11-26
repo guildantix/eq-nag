@@ -39,7 +39,7 @@ const equipmentSetSavedRegex = new RegExp( `^Your (?<className>${classNameAltern
 
 // The set named in the message is the wrong one, the class after "currently" is the real one.
 // Matches: You cannot load your Cleric equipment set because you are currently a Monk.
-// Matches: You cannot load your Cleric equipment set because you are currently an Enchanter.
+// Matches: You cannot save your Cleric equipment set because you are currently an Enchanter.
 const equipmentSetRefusedRegex = new RegExp( `^You cannot (?:load|save) your (?:${classNameAlternation}) equipment set because you are currently an? (?<className>${classNameAlternation})\.` );
 
 const equipmentSetRegexes = [ equipmentSetLoadedRegex, equipmentSetSavedRegex, equipmentSetRefusedRegex ];
