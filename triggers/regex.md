@@ -107,14 +107,22 @@ Names matter for variables. When a Clear Variable action runs from a phrase that
 
 ## Performance tips
 
-Nag checks every enabled trigger's regex against every new log line, so a slow pattern costs you on every line.
+Since 0.2.30, Nag first looks for a short piece of fixed text from each phrase in the log line. If it isn't there, the trigger is skipped for that line; if it is, the full phrase runs as usual. This never makes a trigger miss: when Nag can't find fixed text it is sure about, the trigger simply runs on every line.
+
+Nag uses the **longest stretch of fixed text** in the phrase and checks its **first 16 characters**, ignoring upper and lower case. Shortcodes such as `{S1}` and `{C}`, wildcards, `[ ]` and anything inside `( )` end a stretch. `^` and `$` are ignored. A plain-text phrase uses its own first 16 characters.
+
+- Give every phrase at least 3 characters of fixed text outside `( )`. With top-level `|`, each side needs its own.
+- Make the distinctive part the longest stretch. `^{S1} begins casting Complete Heal` checks for ` begins casting `, which is on every cast line. Wrap the common words in `(?:...)` and Nag skips them: `^{S1} (?:begins casting) Complete Heal` checks for ` complete heal`. Both phrases match exactly the same lines.
+- Alternatives inside `( )` are not used for the check. When merging near-identical triggers with `(?:a|b)`, keep the shared fixed text outside the group, as in `^Your (?:Shield of Dreams|Shield of Fate) spell has worn off\.$`.
+- These phrases run on every line: a side of `|` with fewer than 3 fixed characters, a plain phrase with `${Variable}` or `{L}`, and escapes such as `\x`, `\u` or `\1`. A **Sequential** trigger is checked with its first phrase.
+
+When a phrase does run, the usual regex advice still applies:
 
 - Start with `^` and some fixed text. The line can then be ruled out at its first characters.
 - Avoid starting with `.*` or `.+`. Nag then has to try matching from every position in the line.
 - Put `{S1}` between fixed words, as in `^{S1} tells you, '{S2}'$`, so it knows where to stop.
 - Avoid repeating a repeat, such as `(.+)+` or `(a*)*`. These can make a single line take a very long time. A badly nested pattern like `(a+)+` can freeze this tester while you type, and it can slow Nag down the same way.
 - If you do not need to grab anything, use a plain-text phrase.
-- Merge near-identical triggers with `(?:a|b)` instead of keeping ten copies.
 - For lines that arrive in bursts, turn on **Cooldown**. While it runs, Nag does not run the trigger's phrases at all.
 
 ## Common mistakes
