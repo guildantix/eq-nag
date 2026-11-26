@@ -51,9 +51,21 @@ When an update has been downloaded, Nag asks **Install Update?**
 
 A window called **Update Notes** opens the first time you run Nag, and once after each update. You can open it again from the **Settings** tab by clicking **Notes** at the top.
 
-Nag only offers test versions if you turn on **Get pre-release updates**. To find it, click the **Settings** tab, click **Advanced** in the list on the left, and look under **Updates**.
+Nag only offers test versions if you turn them on.
 
-![The Settings tab of Nag, with the Notes link at the top right]({{ '/assets/images/install/settings-update.png' | relative_url }})
+In Nag 0.2.30 and newer:
+
+1. Click the **Settings** tab.
+2. In the list on the left, click **Advanced**.
+3. Under **Updates**, tick **Get pre-release updates**.
+
+![The Advanced page of the Settings tab, with Get pre-release updates under Updates]({{ '/assets/images/install/settings-update.png' | relative_url }})
+
+In Nag 0.2.28 and 0.2.29:
+
+1. Click the **Settings** tab.
+2. Scroll down to **Update Settings**.
+3. Tick **Allow Pre-release.**
 
 {: .tip }
 If an update does not install, download the newest installer from the [releases page](https://github.com/guildantix/eq-nag/releases/latest) and run it again.

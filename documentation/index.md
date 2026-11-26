@@ -24,3 +24,9 @@ The details of every advanced feature. For a task with steps to follow, see the 
 - [Trigger hotkeys]({{ '/triggers/hotkeys' | relative_url }}): hotkey lines and the values Nag asks for.
 - [Cookbook]({{ '/triggers/cookbook' | relative_url }}): worked recipes from log line to alert.
 - [Why didn't my trigger fire?]({{ '/triggers/why-didnt-it-fire' | relative_url }}): a checklist for triggers that stay silent.
+
+## Reference
+
+[Reference]({{ '/reference/' | relative_url }}): every setting in Nag, explained.
+
+- [Settings reference]({{ '/reference/settings' | relative_url }}): every section of the **Settings** tab, option by option.

@@ -2,6 +2,8 @@
 title: Death Recap
 parent: How-to guides
 nav_order: 9
+applies_to: "0.2.30"
+last_verified: 2026-11-26
 ---
 
 # Death Recap

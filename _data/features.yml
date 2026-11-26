@@ -172,8 +172,8 @@
   status: missing
 - id: settings
   feature: "Settings window"
-  page: null
-  status: missing
+  page: reference/settings.md
+  status: documented
 - id: hotkey-menu
   feature: "Hotkeys menu"
   page: null

@@ -3,6 +3,8 @@ title: Settings reference
 parent: Reference
 grand_parent: Documentation
 nav_order: 1
+applies_to: "0.2.30"
+last_verified: 2026-11-26
 ---
 
 # Settings reference
@@ -56,7 +58,7 @@ Click **Save changes** to keep a change, or **Cancel** to drop it.
 
 ## Overlays
 
-Create, move and test overlays on the **Overlays** tab.
+Create, move and test overlays on the **Overlays** tab. See the [Overlays guide]({{ '/guides/arrange-overlays' | relative_url }}) for the steps.
 
 ### Default overlays
 
@@ -115,6 +117,8 @@ Fixes names the voice says badly. Each row replaces the text on the left with th
 ## Sharing
 
 ### Quick Share
+
+See the [Quick Share guide]({{ '/guides/quick-share' | relative_url }}) for how to share and import triggers.
 
 | Setting | What it does |
 |---|---|

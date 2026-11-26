@@ -41,7 +41,6 @@ Check these, in order:
 4. Does the phrase match? Paste a line into **Simulate Log** to test. New phrases ignore capital letters. The small **i** button next to the phrase is lit when that is on. If a phrase was imported, check that **i** is lit.
 5. Is **Cooldown** on? It blocks repeats for the time you set.
 6. Did you pick **Trigger on phrase** on each action?
-7. Still stuck? Open the Console. It lists each trigger match, and any phrase that is not a valid regular expression. See [The Console]({{ '/help/console' | relative_url }}).
 
 See [Get your first alert]({{ '/get-started/first-trigger' | relative_url }}) and the [Documentation]({{ '/documentation/' | relative_url }}).
 </details>
