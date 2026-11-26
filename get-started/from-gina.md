@@ -51,7 +51,7 @@ Items that are already imported are hidden from the list. Click the round check 
 | Early enders | **End Early** phrases |
 | Timer ending and ended alerts | The **Timer Ending** and **Timer Ended** tabs of the timer |
 | Counter reset timer | **Counter** action |
-| Phonetic transforms | **Phonetic Transforms** in **Settings** |
+| Phonetic transforms | **Phonetic transforms** under **Settings** › **Sound & voice** › **Advanced** |
 
 GINA's timer start choices become these Nag choices:
 

@@ -95,7 +95,7 @@ Draws a colored glow around the main display. It is useful for "move now" calls 
 Right-click inside the action to **Copy Properties** and **Paste Properties**.
 
 {: .note }
-Screen Glow can be switched off in **Settings**, under **Shared/Installed Trigger Permissions**. **Disable Screen Glow** blocks glows from triggers made by other authors. **Disable All Screen Glow Actions** (shown once the first is ticked) blocks all of them, including your own.
+Screen Glow can be switched off in **Settings** › **Sharing**. Turn on **Advanced**, then find **Shared and installed trigger permissions**. **Disable screen glow** blocks glows from triggers made by other authors. **Disable all screen glow actions** (shown once the first is ticked) blocks all of them, including your own.
 
 ## Clipboard
 

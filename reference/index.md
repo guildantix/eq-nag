@@ -2,12 +2,12 @@
 title: "Reference"
 parent: Documentation
 nav_order: 2
+has_children: true
 hide_meta: true
-nav_exclude: true
 ---
 
 # Reference
 
-Lookup pages for settings, commands and other details.
+Lookup pages for settings and other details.
 
-Coming soon.
+- [Settings reference]({{ '/reference/settings' | relative_url }}): every section of the **Settings** tab, with each setting's label, what it does and its default.

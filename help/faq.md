@@ -41,6 +41,7 @@ Check these, in order:
 4. Does the phrase match? Paste a line into **Simulate Log** to test. New phrases ignore capital letters. The small **i** button next to the phrase is lit when that is on. If a phrase was imported, check that **i** is lit.
 5. Is **Cooldown** on? It blocks repeats for the time you set.
 6. Did you pick **Trigger on phrase** on each action?
+7. Still stuck? Open the Console. It lists each trigger match, and any phrase that is not a valid regular expression. See [The Console]({{ '/help/console' | relative_url }}).
 
 See [Get your first alert]({{ '/get-started/first-trigger' | relative_url }}) and the [Documentation]({{ '/documentation/' | relative_url }}).
 </details>
@@ -77,6 +78,12 @@ It was removed in 0.2.27 because Allakhazam does not allow automated access. Use
 <summary>Nag does nothing at all</summary>
 
 Nag reads the log file EverQuest writes. Turn logging on with `/log on` in the game, once for each character. Then check that the character is in the **Characters** tab. See [Add your character]({{ '/get-started/first-character' | relative_url }}).
+</details>
+
+<details id="character-list" markdown="1">
+<summary>My character is not in the list, or an old log shows up</summary>
+
+In **New Character**, the **Server** and **Character** lists only show real log files, named like `eqlog_Name_server.txt`. A renamed or archived copy of a log, such as one with something in front of `eqlog_`, is not listed. If your character is missing, check that logging is on with `/log on`, or click **Select Log File** and pick the file yourself.
 </details>
 
 <details id="thj" markdown="1">
@@ -120,7 +127,7 @@ Nag also reads your zone from your own `/who` line, and `/who` can add an instan
 <details id="data-folder" markdown="1">
 <summary>Where does Nag keep my settings and triggers?</summary>
 
-In a folder called `electron-angular-eq-parse` inside your Windows `AppData\Roaming` folder. Type `%APPDATA%` in the Windows File Explorer address bar and press **Enter** to get there. Close Nag before you copy anything. Do not edit these files by hand.
+In a folder called `electron-angular-eq-parse` inside your Windows `AppData\Roaming` folder. The quick way is to open the **Settings** tab, click **Diagnostics** and then **Show data folder**. Or type `%APPDATA%` in the Windows File Explorer address bar and press **Enter** to get there. Close Nag before you copy anything. Do not edit these files by hand.
 </details>
 
 <details id="could-not-read" markdown="1">
@@ -139,7 +146,7 @@ Saves are also crash-safe now. Nag writes a new copy and swaps it in, so a crash
 <details id="help-link" markdown="1">
 <summary>Where do I find these guides from inside Nag?</summary>
 
-Open the **Settings** tab. The **Help & guides** row at the top has an **Open the guides** link. It opens this site in your browser.
+Open the **Settings** tab. The **Status** section is the first one. Its **Help & guides** row has an **Open the guides** link. It opens this site in your browser.
 </details>
 
 <script>
