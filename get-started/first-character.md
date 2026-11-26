@@ -97,9 +97,34 @@ If Nag does not recognize the file name, it asks you for **Character Name**, **S
 
 You will see the class next to your character's name.
 
+{: .note }
+You do not have to do this by hand. Nag also sets the class by itself while it reads the log. It happens in two cases. See [Nag can set the class for you](#nag-can-set-the-class-for-you).
+
 ![A character open in the Characters tab, with the Character Class list set and the Focus Effects switches below it]({{ '/assets/images/first-character/character-class-focus.png' | relative_url }})
 
 Nag uses your class to work out how long your timers last. It also keeps class-only triggers quiet for other classes.
+
+## Nag can set the class for you
+
+While Nag reads your character's log, it can pick the class by itself. It saves the same **Character Class** you would pick by hand, and the **Characters** tab updates. It happens in two cases.
+
+**You swap to another class.** Some servers let a character switch class with equipment sets. When you load or save an equipment set, EverQuest writes a line with the class name, and Nag uses it. These lines work:
+
+- You successfully loaded your Monk equipment set.
+- You loaded only part of your Monk equipment set.
+- Your Shadow Knight equipment set has been saved.
+- You cannot load your Cleric equipment set because you are currently a Monk. Nag takes the class after "currently", which is your real class.
+
+**You type /who on your own character.** When your own line shows up in the `/who` results, Nag reads your class from it. It ignores everyone else's lines. A few things to know:
+
+- Your line must show your class. If you are anonymous, it does not, and Nag changes nothing.
+- On most servers the line shows your class name or class title. Nag knows the titles, such as Warlord for a Warrior.
+- On The Heroes' Journey (the **THJ** service), the line shows a short code such as WAR. Nag reads that instead.
+
+If Nag does not know the class in the line, it leaves your class alone. You can always pick a class by hand. The class you pick is replaced the next time one of these lines shows up.
+
+{: .note }
+Nag only learns this while it is reading the character's log. Turn on logging with `/log on`.
 
 ## 5. Set your focus effects
 
