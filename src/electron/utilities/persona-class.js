@@ -35,12 +35,12 @@ const classNameAlternation = Object.keys( eqClassTitleMap )
 const equipmentSetLoadedRegex = new RegExp( `^You (?:successfully loaded|loaded only part of) your (?<className>${classNameAlternation}) equipment set\.` );
 
 // Matches: Your Shadow Knight equipment set has been saved.
-const equipmentSetSavedRegex = new RegExp( `^Your (?<className>${classNameAlternation}) equipment set has been saved\.` );
+const equipmentSetSavedRegex = new RegExp( `^Your (?<className>${classNameAlternation}) equipment set has been saved\.$` );
 
 // The set named in the message is the wrong one, the class after "currently" is the real one.
 // Matches: You cannot load your Cleric equipment set because you are currently a Monk.
-// Matches: You cannot load your Cleric equipment set because you are currently an Enchanter.
-const equipmentSetRefusedRegex = new RegExp( `^You cannot load your (?:${classNameAlternation}) equipment set because you are currently an? (?<className>${classNameAlternation})\.` );
+// Matches: You cannot save your Cleric equipment set because you are currently an Enchanter.
+const equipmentSetRefusedRegex = new RegExp( `^You cannot (?:load|save) your (?:${classNameAlternation}) equipment set because you are currently an? (?<className>${classNameAlternation})\.$` );
 
 const equipmentSetRegexes = [ equipmentSetLoadedRegex, equipmentSetSavedRegex, equipmentSetRefusedRegex ];
 
